@@ -1,253 +1,253 @@
 [preface]
-== Quick Glossary
+== 용어집
 
 //FIXME:include this?
 
-This quick glossary contains many of the terms used in relation to bitcoin. These terms are used throughout the book, so bookmark this for a quick reference.
+이 용어집은 비트코인과 관련해 사용되는 주요 용어를 정리한 것입니다. 이 용어들은 책 전반에 걸쳐 쓰이므로, 빠르게 찾아볼 수 있도록 북마크해 두세요.
 
-address::
-    A Bitcoin address looks like +1DSrfJdB2AnWaFNgSbv3MZC2m74996JafV+. It consists of a string of letters and numbers. It's really an encoded base58check version of a public key 160-bit hash. Just as you ask others to send an email to your email address, you would ask others to send you bitcoin to one of your Bitcoin addresses.
+address(주소)::
+    비트코인 주소는 +1DSrfJdB2AnWaFNgSbv3MZC2m74996JafV+ 와 같은 형태입니다. 문자와 숫자로 이루어진 문자열이며, 실제로는 공개키의 160비트 해시를 base58check로 인코딩한 값입니다. 다른 사람에게 이메일 주소로 메일을 보내달라고 하듯이, 비트코인 주소 중 하나를 알려주고 그리로 비트코인을 보내달라고 하면 됩니다.
 
-bip::
-    Bitcoin Improvement Proposals.  A set of proposals that members of the bitcoin community have submitted to improve bitcoin. For example, BIP21 is a proposal to improve the bitcoin uniform resource identifier (URI) scheme.
+bip(비트코인 개선 제안)::
+    Bitcoin Improvement Proposals. 비트코인을 개선하기 위해 비트코인 커뮤니티 구성원들이 제출한 제안 모음입니다. 예를 들어 BIP21은 비트코인 URI(uniform resource identifier) 체계를 개선하기 위한 제안입니다.
 
-bitcoin::
-    The name of the currency unit (the coin), the network, and the software.
+bitcoin(비트코인)::
+    화폐 단위(코인), 네트워크, 그리고 소프트웨어를 모두 가리키는 이름입니다.
 
-block::
-    A grouping of transactions, marked with a timestamp, and a commitment to the previous block. The block header is hashed to produce a proof of work, thereby validating the transactions. Valid blocks are added to the main blockchain by network consensus.
+block(블록)::
+    타임스탬프가 찍히고 이전 블록에 대한 커밋먼트를 담은 트랜잭션 묶음입니다. 블록 헤더를 해시해 작업증명을 만들어내며, 이를 통해 트랜잭션이 검증됩니다. 유효한 블록은 네트워크 합의를 거쳐 메인 블록체인에 추가됩니다.
 
-blockchain::
-	A list of validated blocks, each linking to its predecessor all the way to the genesis block.
+blockchain(블록체인)::
+	검증된 블록들의 목록으로, 각 블록은 제네시스 블록까지 거슬러 올라가며 바로 앞 블록에 연결됩니다.
 
-Byzantine Generals Problem::
-    A reliable computer system must be able to cope with the failure of one or more of its components. A failed component may exhibit a type of behavior that is often overlooked--namely, sending conflicting information to different parts of the system. The problem of coping with this type of failure is expressed abstractly as the Byzantine Generals Problem.
+Byzantine Generals Problem(비잔틴 장군 문제)::
+    신뢰할 수 있는 컴퓨터 시스템은 하나 이상의 구성 요소가 고장 나더라도 이를 감당할 수 있어야 합니다. 고장 난 구성 요소는 흔히 간과되는 유형의 동작을 보일 수 있는데, 바로 시스템의 서로 다른 부분에 상충하는 정보를 보내는 것입니다. 이런 유형의 고장에 대처하는 문제를 추상화한 것이 비잔틴 장군 문제입니다.
 
-coinbase::
-	A special field used as the sole input for coinbase transactions. The coinbase allows claiming the block reward and provides up to 100 bytes for arbitrary data.
-	Not to be confused with Coinbase transaction.
+coinbase(코인베이스)::
+	코인베이스 트랜잭션의 유일한 입력으로 사용되는 특수 필드입니다. 코인베이스를 통해 블록 보상을 청구할 수 있으며, 임의의 데이터를 최대 100바이트까지 넣을 수 있습니다.
+	코인베이스 트랜잭션과 혼동하지 마세요.
 
-coinbase transaction::
-	The first transaction in a block. Always created by a miner, it includes a single coinbase.
-	Not to be confused with Coinbase.
+coinbase transaction(코인베이스 트랜잭션)::
+	블록의 첫 번째 트랜잭션입니다. 항상 채굴자가 만들며, 하나의 코인베이스를 포함합니다.
+	코인베이스와 혼동하지 마세요.
 
-cold storage::
-	Refers to keeping a reserve of bitcoin offline. Cold storage is achieved when Bitcoin private keys are created and stored in a secure offline environment. Cold storage is important for anyone with bitcoin holdings. Online computers are vulnerable to hackers and should not be used to store a significant amount of bitcoin.
+cold storage(콜드 스토리지)::
+	비트코인을 오프라인 상태로 보관하는 것을 말합니다. 콜드 스토리지는 비트코인 비밀키를 안전한 오프라인 환경에서 생성하고 보관할 때 이루어집니다. 비트코인을 보유한 사람이라면 누구에게나 콜드 스토리지는 중요합니다. 온라인에 연결된 컴퓨터는 해커에게 취약하므로 상당한 양의 비트코인을 보관하는 데 사용해서는 안 됩니다.
 
-colored coins::
-	An open source Bitcoin 2.0 protocol that enables developers to create digital assets on top of bitcoin blockchain utilizing its functionalities beyond currency.
+colored coins(컬러드 코인)::
+	비트코인 블록체인 위에서 그 기능을 화폐 이상으로 활용해 디지털 자산을 만들 수 있게 해주는 오픈소스 비트코인 2.0 프로토콜입니다.
 
-confirmations::
-	Once a transaction is included in a block, it has one confirmation. As soon as _another_ block is mined on the same blockchain, the transaction has two confirmations, and so on. Six or more confirmations is considered sufficient proof that a transaction cannot be reversed.
+confirmations(확인)::
+	트랜잭션이 블록에 포함되면 확인 1회를 받은 것입니다. 같은 블록체인 위에 _다음_ 블록이 채굴되면 확인 2회가 되고, 이런 식으로 계속됩니다. 확인 6회 이상이면 해당 트랜잭션을 되돌릴 수 없다는 충분한 증거로 여겨집니다.
 
-consensus::
-    When several nodes, usually most nodes on the network, all have the same blocks in their locally-validated best blockchain.
-    Not to be confused with consensus rules.
+consensus(합의)::
+    여러 노드, 보통은 네트워크상의 대다수 노드가 각자 로컬에서 검증한 최선의 블록체인에 모두 동일한 블록을 담고 있는 상태입니다.
+    합의 규칙과 혼동하지 마세요.
 
-consensus rules::
-    The block validation rules that full nodes follow to stay in consensus with other nodes.
-    Not to be confused with consensus.
+consensus rules(합의 규칙)::
+    풀 노드가 다른 노드들과 합의를 유지하기 위해 따르는 블록 검증 규칙입니다.
+    합의와 혼동하지 마세요.
 
-difficulty::
-	A network-wide setting that controls how much computation is required to produce a proof of work.
+difficulty(난이도)::
+	작업증명을 만들어내는 데 필요한 연산량을 조절하는 네트워크 전역 설정값입니다.
 
-difficulty retargeting::
-	A network-wide recalculation of the difficulty that occurs once every 2,016 blocks and considers the hashing power of the previous 2,016 blocks.
+difficulty retargeting(난이도 재조정)::
+	2,016블록마다 한 번씩 이루어지는 네트워크 전역의 난이도 재계산으로, 직전 2,016블록의 해시파워를 반영합니다.
 
-difficulty target::
-    A difficulty at which all the computation in the network will find blocks approximately every 10 minutes.
+difficulty target(난이도 목표)::
+    네트워크 전체의 연산이 대략 10분마다 블록을 찾아내게 되는 난이도입니다.
 
-double-spending::
-    Double spending is the result of successfully spending some money more than once. Bitcoin protects against double-spending by verifying each transaction added to the blockchain to ensure that the inputs for the transaction had not previously already been spent.
+double-spending(이중지불)::
+    이중지불은 같은 돈을 두 번 이상 성공적으로 사용하는 것을 말합니다. 비트코인은 블록체인에 추가되는 모든 트랜잭션을 검증해 그 입력이 이전에 이미 사용되지 않았음을 확인함으로써 이중지불을 방지합니다.
 
 ECDSA::
-    Elliptic Curve Digital Signature Algorithm or ECDSA is a cryptographic algorithm used by Bitcoin to ensure that funds can only be spent by their rightful owners.
+    타원곡선 디지털 서명 알고리즘(Elliptic Curve Digital Signature Algorithm, ECDSA)은 자금을 정당한 소유자만 사용할 수 있도록 비트코인이 사용하는 암호학 알고리즘입니다.
 
-extra nonce::
-    As difficulty increased, miners often cycled through all 4 billion values of the nonce without finding a block. Because the coinbase script can store between 2 and 100 bytes of data, miners started using that space as extra nonce space, allowing them to explore a much larger range of block header values to find valid blocks.
+extra nonce(엑스트라 논스)::
+    난이도가 올라가면서, 채굴자들은 논스의 40억 개 값을 모두 훑고도 블록을 찾지 못하는 일이 잦아졌습니다. 코인베이스 스크립트에는 2~100바이트의 데이터를 넣을 수 있기 때문에, 채굴자들은 그 공간을 추가 논스 공간으로 쓰기 시작했고, 덕분에 유효한 블록을 찾기 위해 훨씬 넓은 범위의 블록 헤더 값을 탐색할 수 있게 되었습니다.
 
-fees::
-	The sender of a transaction often includes a fee to the network for processing the requested transaction.  Most transactions require a minimum fee of 0.5 mBTC.
+fees(수수료)::
+	트랜잭션을 보내는 쪽은 요청한 트랜잭션을 처리해주는 대가로 네트워크에 수수료를 포함시키는 경우가 많습니다. 대부분의 트랜잭션에는 최소 0.5mBTC의 수수료가 필요합니다.
 
-fork::
-    Fork, also known as accidental fork, occurs when two or more blocks have the same block height, forking the blockchain. Typically occurs when two or more miners find blocks at nearly the same time. Can also happen as part of an attack.
+fork(포크)::
+    우발적 포크라고도 하며, 둘 이상의 블록이 같은 블록 높이를 가져 블록체인이 갈라지는 상황입니다. 보통 둘 이상의 채굴자가 거의 동시에 블록을 찾았을 때 발생합니다. 공격의 일환으로 발생하기도 합니다.
 
-genesis block::
-	The first block in the blockchain, used to initialize the cryptocurrency.
+genesis block(제네시스 블록)::
+	블록체인의 첫 번째 블록으로, 암호화폐를 초기화하는 데 사용됩니다.
 
-hard fork::
-    Hard fork, also known as Hard-Forking Change, is a permanent divergence in the blockchain, commonly occurs when non-upgraded nodes can’t validate blocks created by upgraded nodes that follow newer consensus rules.
-    Not to be confused with fork, soft fork, software fork or Git fork.
+hard fork(하드 포크)::
+    하드 포킹 변경(Hard-Forking Change)이라고도 하며, 블록체인이 영구적으로 갈라지는 것을 말합니다. 업그레이드되지 않은 노드가, 새로운 합의 규칙을 따르는 업그레이드된 노드가 만든 블록을 검증하지 못할 때 흔히 발생합니다.
+    포크, 소프트 포크, 소프트웨어 포크, Git 포크와 혼동하지 마세요.
 
-hardware wallet::
-    A hardware wallet is a special type of bitcoin wallet which stores the user's private keys in a secure hardware device.
+hardware wallet(하드웨어 지갑)::
+    하드웨어 지갑은 사용자의 비밀키를 안전한 하드웨어 장치에 저장하는 특수한 종류의 비트코인 지갑입니다.
 
 //FIXME: needs improvement
-hash::
-    A digital commitment to some binary input.
+hash(해시)::
+    어떤 이진 입력에 대한 디지털 커밋먼트입니다.
 
-hashlocks::
-    A hashlock is a type of encumbrance that restricts the spending of an output until a specified piece of data is publicly revealed. Hashlocks have the useful property that once any hashlock is opened publicly, any other hashlock secured using the same key can also be opened. This makes it possible to create multiple outputs that are all encumbered by the same hashlock and which all become spendable at the same time.
+hashlocks(해시락)::
+    해시락은 특정 데이터가 공개적으로 드러날 때까지 출력의 사용을 제한하는 제약 조건의 한 종류입니다. 해시락에는 유용한 성질이 있는데, 어떤 해시락 하나가 공개적으로 열리면 같은 키로 잠긴 다른 모든 해시락도 열 수 있다는 점입니다. 덕분에 같은 해시락으로 잠긴 여러 출력을 만들어 한꺼번에 사용 가능해지도록 할 수 있습니다.
 
-HD protocol::
-    The Hierarchical Deterministic (HD) key creation and transfer protocol (BIP32), which allows creating child keys from parent keys in a hierarchy.
+HD protocol(HD 프로토콜)::
+    계층 결정적(Hierarchical Deterministic, HD) 키 생성 및 전송 프로토콜(BIP32)로, 부모 키로부터 자식 키를 계층 구조로 만들어낼 수 있게 해줍니다.
 
-HD wallet::
-    Wallets using the Hierarchical Deterministic (HD Protocol) key creation and transfer protocol (BIP32).
+HD wallet(HD 지갑)::
+    계층 결정적 키 생성 및 전송 프로토콜(HD 프로토콜, BIP32)을 사용하는 지갑입니다.
 
-HD wallet seed::
-    HD wallet seed or root seed is a potentially-short value used as a seed to generate the master private key and master chain code for an HD wallet.
+HD wallet seed(HD 지갑 시드)::
+    HD 지갑 시드 또는 루트 시드는 HD 지갑의 마스터 비밀키와 마스터 체인 코드를 생성하는 씨앗으로 쓰이는, 비교적 짧을 수도 있는 값입니다.
 
 HTLC::
-    A Hashed TimeLock Contract or HTLC is a class of payments that use hashlocks and timelocks to require that the receiver of a payment either acknowledge receiving the payment prior to a deadline by generating cryptographic proof of payment or forfeit the ability to claim the payment, returning it to the payer.
+    해시 타임락 계약(Hashed TimeLock Contract, HTLC)은 해시락과 타임락을 사용하는 결제 방식의 한 부류입니다. 수취인은 정해진 기한 전에 암호학적 지불 증명을 생성해 수령 사실을 확인하거나, 그러지 못하면 해당 금액을 청구할 권리를 잃고 지불자에게 되돌려주게 됩니다.
 
 KYC::
-    Know your customer (KYC) is the process of a business, identifying and verifying the identity of its clients. The term is also used to refer to the bank regulation which governs these activities.
+    고객확인제도(Know Your Customer, KYC)는 기업이 자사 고객의 신원을 확인하고 검증하는 절차입니다. 이 용어는 이러한 활동을 규율하는 은행 규제를 가리키는 데도 쓰입니다.
 
 LevelDB::
-    LevelDB is an open source on-disk key-value store. LevelDB is a light-weight, single-purpose library for persistence with bindings to many platforms.
+    LevelDB는 오픈소스 온디스크 키-값 저장소입니다. 가볍고 단일 목적에 특화된 영속성 라이브러리로, 다양한 플랫폼용 바인딩을 제공합니다.
 
-Lightning Networks::
-    Lightning Network is a proposed implementation of Hashed Timelock Contracts (HTLCs) with bi-directional payment channels which allows payments to be securely routed across multiple peer-to-peer payment channels. This allows the formation of a network where any peer on the network can pay any other peer even if they don't directly have a channel open between each other.
+Lightning Networks(라이트닝 네트워크)::
+    라이트닝 네트워크는 양방향 결제 채널과 해시 타임락 계약(HTLC)을 결합한 구현 제안으로, 여러 P2P 결제 채널을 거쳐 결제를 안전하게 라우팅할 수 있게 합니다. 이를 통해 네트워크상의 어떤 피어든, 서로 직접 채널이 열려 있지 않더라도 다른 피어에게 지불할 수 있는 네트워크가 형성됩니다.
 
-Lock time::
-    Lock time is the part of a transaction which indicates the earliest time or earliest block when that transaction may be added to the blockchain.
+Lock time(잠금 시간)::
+    잠금 시간은 해당 트랜잭션이 블록체인에 추가될 수 있는 가장 이른 시각 또는 가장 이른 블록을 나타내는 트랜잭션의 한 부분입니다.
 
-mempool::
-    The bitcoin Mempool (memory pool) is a collection of all transaction data in a block that have been verified by Bitcoin nodes, but are not yet confirmed.
+mempool(멤풀)::
+    비트코인 멤풀(memory pool)은 비트코인 노드가 검증했지만 아직 확인되지 않은 트랜잭션 데이터의 모음입니다.
 
-merkle root::
-    The root node of a merkle tree, a descendant of all the hashed pairs in the tree. Block headers must include a valid merkle root descended from all transactions in that block.
+merkle root(머클 루트)::
+    머클 트리의 루트 노드로, 트리 안에서 쌍을 이루어 해시된 모든 값의 후손입니다. 블록 헤더에는 해당 블록의 모든 트랜잭션으로부터 만들어진 유효한 머클 루트가 반드시 포함되어야 합니다.
 
-merkle tree::
-    A tree constructed by hashing paired data (the leaves), then pairing and hashing the results until a single hash remains, the merkle root. In Bitcoin, the leaves are almost always transactions from a single block.
+merkle tree(머클 트리)::
+    데이터를 둘씩 짝지어(잎 노드) 해시하고, 그 결과를 다시 짝지어 해시하는 과정을 하나의 해시, 즉 머클 루트만 남을 때까지 반복해 만든 트리입니다. 비트코인에서 잎 노드는 거의 항상 하나의 블록에 담긴 트랜잭션들입니다.
 
-miner::
-    A network node that finds valid proof of work for new blocks, by repeated hashing.
+miner(채굴자)::
+    반복적인 해싱을 통해 새 블록에 대한 유효한 작업증명을 찾아내는 네트워크 노드입니다.
 
-multisignature::
-    Multisignature (multisig) refers to requiring more than one key to authorize a bitcoin transaction.
+multisignature(다중서명)::
+    다중서명(멀티시그)은 비트코인 트랜잭션을 승인하는 데 둘 이상의 키가 필요하도록 하는 것을 말합니다.
 
-network::
-    A peer-to-peer network that propagates transactions and blocks to every Bitcoin node on the network.
+network(네트워크)::
+    트랜잭션과 블록을 네트워크상의 모든 비트코인 노드에 전파하는 P2P 네트워크입니다.
 
-nonce::
-    The "nonce" in a bitcoin block is a 32-bit (4-byte) field whose value is set so that the hash of the block will contain a run of leading zeros. The rest of the fields may not be changed, as they have a defined meaning.
+nonce(논스)::
+    비트코인 블록의 "논스"는 32비트(4바이트) 필드로, 블록의 해시가 앞자리에 0이 연속해서 나오도록 값을 맞춰 넣습니다. 나머지 필드는 정해진 의미가 있으므로 바꿀 수 없습니다.
 
-offchain transactions::
-    An offchain transaction is the movement of value outside of the blockchain. While an onchain transaction&#x2014;usually referred to as simply __a transaction__&#x2014;modifies the blockchain and depends on the blockchain to determine its validity an offchain transaction relies on other methods to record and validate the transaction.
+offchain transactions(오프체인 트랜잭션)::
+    오프체인 트랜잭션은 블록체인 바깥에서 이루어지는 가치의 이동입니다. 온체인 트랜잭션&#x2014;보통 그냥 __트랜잭션__이라고 부르는&#x2014;은 블록체인을 수정하고 유효성 판단도 블록체인에 의존하는 반면, 오프체인 트랜잭션은 다른 방법으로 트랜잭션을 기록하고 검증합니다.
 
-opcode::
-    Operation codes from the Bitcoin Script language which push data or perform functions within a pubkey script or signature script.
+opcode(옵코드)::
+    비트코인 스크립트 언어의 연산 코드로, 공개키 스크립트나 서명 스크립트 안에서 데이터를 푸시하거나 특정 기능을 수행합니다.
 
 OP_RETURN::
-    An opcode used in one of the outputs in an OP_RETURN transaction. Not to be confused with OP_RETURN transaction.
+    OP_RETURN 트랜잭션의 출력 중 하나에 사용되는 옵코드입니다. OP_RETURN 트랜잭션과 혼동하지 마세요.
 
-OP_RETURN transaction::
-    A transaction type that adds arbitrary data to a provably unspendable pubkey script that full nodes don’t have to store in their UTXO database. Not to be confused with OP_RETURN opcode.
+OP_RETURN transaction(OP_RETURN 트랜잭션)::
+    증명 가능하게 사용 불가능한 공개키 스크립트에 임의의 데이터를 추가하는 트랜잭션 유형으로, 풀 노드가 이를 UTXO 데이터베이스에 저장하지 않아도 됩니다. OP_RETURN 옵코드와 혼동하지 마세요.
 
-orphan block::
-    Blocks whose parent block has not been processed by the local node, so they can’t be fully validated yet. Not to be confused with stale block.
+orphan block(고아 블록)::
+    부모 블록이 아직 로컬 노드에서 처리되지 않아 완전히 검증할 수 없는 블록입니다. 스테일 블록과 혼동하지 마세요.
 
-orphan transactions::
-    Transactions that can't go into the pool due to one or more missing input transactions.
+orphan transactions(고아 트랜잭션)::
+    하나 이상의 입력 트랜잭션이 없어서 풀에 들어가지 못하는 트랜잭션입니다.
 
-output::
-    Output, transaction output, or TxOut is an output in a transaction which contains two fields: a value field for transferring zero or more satoshis and a pubkey script for indicating what conditions must be fulfilled for those satoshis to be further spent.
+output(출력)::
+    출력, 트랜잭션 출력 또는 TxOut은 트랜잭션 안의 출력으로, 두 개의 필드를 가집니다. 0 이상의 사토시를 전송하기 위한 값 필드와, 그 사토시를 다시 사용하려면 어떤 조건을 충족해야 하는지 나타내는 공개키 스크립트입니다.
 
 P2PKH::
-    Transactions that pay a Bitcoin address contain P2PKH or Pay To PubKey Hash scripts. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key.
+    비트코인 주소로 지불하는 트랜잭션에는 P2PKH(Pay To PubKey Hash) 스크립트가 들어 있습니다. P2PKH 스크립트로 잠긴 출력은 공개키와 그에 대응하는 비밀키로 만든 디지털 서명을 제시해 해제(사용)할 수 있습니다.
 
 P2SH::
-    P2SH or Pay-to-Script-Hash is a powerful new type of transaction that greatly simplifies the use of complex transaction scripts. With P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script.
+    P2SH(Pay-to-Script-Hash)는 복잡한 트랜잭션 스크립트의 사용을 크게 단순화하는 강력한 새 트랜잭션 유형입니다. P2SH에서는 출력을 사용하기 위한 조건을 상세히 담은 복잡한 스크립트(리딤 스크립트)가 잠금 스크립트에 그대로 들어가지 않고, 그 해시만 잠금 스크립트에 들어갑니다.
 
-P2SH address::
-    P2SH addresses are Base58Check encodings of the 20-byte hash of a script, P2SH addresses use the version prefix "5", which results in Base58Check-encoded addresses that start with a "3". P2SH addresses hide all of the complexity, so that the person making a payment does not see the script.
+P2SH address(P2SH 주소)::
+    P2SH 주소는 스크립트의 20바이트 해시를 Base58Check로 인코딩한 것입니다. P2SH 주소는 버전 접두사 "5"를 사용하며, 그 결과 Base58Check로 인코딩된 주소가 "3"으로 시작합니다. P2SH 주소는 모든 복잡함을 감추기 때문에 지불하는 사람은 스크립트를 볼 일이 없습니다.
 
 P2WPKH::
-    The signature of a P2WPKH (Pay-to-Witness-Public-Key-Hash) contains the same information as a P2PKH spending, but is located in the witness structure instead of the input script. The output script is also modified.
+    P2WPKH(Pay-to-Witness-Public-Key-Hash)의 서명은 P2PKH를 사용할 때와 같은 정보를 담지만, 입력 스크립트가 아니라 위트니스 구조에 위치합니다. 출력 스크립트도 함께 바뀝니다.
 
 P2WSH::
-    The difference between P2SH and P2WSH (Pay-to-Witness-Script-Hash) is about the cryptographic proof location change from the input script to the witness structure and the output script that is also modified.
+    P2SH와 P2WSH(Pay-to-Witness-Script-Hash)의 차이는 암호학적 증명의 위치가 입력 스크립트에서 위트니스 구조로 옮겨지고 출력 스크립트도 함께 바뀐다는 점입니다.
 
-paper wallet::
-    In the most specific sense, a paper wallet is a document containing all of the data necessary to generate any number of Bitcoin private keys, forming a wallet of keys. However, people often use the term to mean any way of storing bitcoin offline as a physical document. This second definition also includes paper keys and redeemable codes.
+paper wallet(종이 지갑)::
+    가장 좁은 의미에서 종이 지갑은 임의 개수의 비트코인 비밀키를 생성하는 데 필요한 모든 데이터를 담은 문서로, 키들의 지갑을 이룹니다. 다만 사람들은 이 용어를 비트코인을 물리적 문서 형태로 오프라인에 보관하는 모든 방식을 가리키는 데 쓰기도 합니다. 이 두 번째 정의에는 종이 키와 교환 코드도 포함됩니다.
 
-payment channels::
-    A micropayment channel or payment channel is class of techniques designed to allow users to make multiple Bitcoin transactions without committing all of the transactions to the bitcoin blockchain. In a typical payment channel, only two transactions are added to the blockchain but an unlimited or nearly unlimited number of payments can be made between the participants.
+payment channels(결제 채널)::
+    소액결제 채널 또는 결제 채널은 모든 트랜잭션을 비트코인 블록체인에 기록하지 않고도 사용자가 여러 번의 비트코인 트랜잭션을 할 수 있게 해주는 기법들을 말합니다. 전형적인 결제 채널에서는 블록체인에 추가되는 트랜잭션은 두 개뿐이지만, 참여자들 사이에서는 무제한에 가까운 횟수의 지불이 이루어질 수 있습니다.
 
-pooled mining::
-    Pooled mining is a mining approach where multiple generating clients contribute to the generation of a block, and then split the block reward according the contributed processing power.
+pooled mining(풀 채굴)::
+    풀 채굴은 여러 채굴 클라이언트가 하나의 블록 생성에 함께 기여하고, 기여한 연산력에 따라 블록 보상을 나누는 채굴 방식입니다.
 
-Proof-of-Stake::
-    Proof-of-Stake (PoS) is a method by which a cryptocurrency blockchain network aims to achieve distributed consensus. Proof-of-Stake asks users to prove ownership of a certain amount of currency (their "stake" in the currency).
+Proof-of-Stake(지분증명)::
+    지분증명(Proof-of-Stake, PoS)은 암호화폐 블록체인 네트워크가 분산 합의를 이루기 위해 사용하는 방법 중 하나입니다. 지분증명은 사용자에게 일정량의 화폐(해당 화폐에 대한 "지분")를 소유하고 있음을 증명하도록 요구합니다.
 
-Proof-of-Work::
-    A piece of data that requires significant computation to find. In bitcoin, miners must find a numeric solution to the SHA256 algorithm that meets a network-wide target, the difficulty target.
+Proof-of-Work(작업증명)::
+    찾아내는 데 상당한 연산이 필요한 데이터 조각입니다. 비트코인에서 채굴자는 네트워크 전역의 목표값, 즉 난이도 목표를 충족하는 SHA256 알고리즘의 수치 해답을 찾아야 합니다.
 
-reward::
-    An amount included in each new block as a reward by the network to the miner who found the Proof-of-Work solution. It is currently 12.5 BTC per block.
+reward(보상)::
+    작업증명 해답을 찾아낸 채굴자에게 네트워크가 주는 보상으로, 새 블록마다 포함됩니다. 현재는 블록당 12.5 BTC입니다.
 
 RIPEMD-160::
-    RIPEMD-160 is a 160-bit cryptographic hash function. RIPEMD-160 is a strengthened version of RIPEMD with a 160-bit hash result, and is expected to be secure for the next ten years or more.
+    RIPEMD-160은 160비트 암호학적 해시 함수입니다. RIPEMD를 강화한 버전으로 160비트 해시 결과를 내며, 앞으로 10년 이상 안전할 것으로 예상됩니다.
 
-satoshi::
-    A satoshi is the smallest denomination of bitcoin that can be recorded on the blockchain. It is the equivalent of 0.00000001 bitcoin and is named after the creator of Bitcoin, Satoshi Nakamoto. 
+satoshi(사토시)::
+    사토시는 블록체인에 기록될 수 있는 비트코인의 최소 단위입니다. 0.00000001비트코인에 해당하며, 비트코인의 창시자 사토시 나카모토의 이름을 딴 것입니다.
 
-Satoshi Nakamoto::
-    Satoshi Nakamoto is the name used by the person or people who designed Bitcoin and created its original reference implementation, Bitcoin Core. As a part of the implementation, they also devised the first blockchain database. In the process they were the first to solve the double-spending problem for digital currency. Their real identity remains unknown.
+Satoshi Nakamoto(사토시 나카모토)::
+    사토시 나카모토는 비트코인을 설계하고 최초의 참조 구현인 비트코인 코어를 만든 사람 또는 사람들이 사용한 이름입니다. 구현의 일부로 최초의 블록체인 데이터베이스도 고안했습니다. 그 과정에서 디지털 화폐의 이중지불 문제를 처음으로 해결했습니다. 실제 정체는 알려지지 않았습니다.
 
-Script::
-    Bitcoin uses a scripting system for transactions. Forth-like, Script is simple, stack-based, and processed from left to right. It is purposefully not Turing-complete, with no loops.
+Script(스크립트)::
+    비트코인은 트랜잭션에 스크립팅 시스템을 사용합니다. 스크립트는 Forth를 닮은 언어로, 단순하고 스택 기반이며 왼쪽에서 오른쪽으로 처리됩니다. 의도적으로 튜링 완전하지 않게 만들어졌고 반복문이 없습니다.
 
-Output script::
-    A script included in outputs which sets the conditions that must be fulfilled for those satoshis to be spent. Data for fulfilling the conditions can be provided in a signature script.
+Output script(출력 스크립트)::
+    출력에 포함되는 스크립트로, 해당 사토시를 사용하려면 충족해야 하는 조건을 정합니다. 그 조건을 충족하는 데 필요한 데이터는 서명 스크립트로 제공할 수 있습니다.
 
-Input script::
-    The data generated by a spender which is almost always used as variables to satisfy an output script.
+Input script(입력 스크립트)::
+    사용하는 쪽이 생성하는 데이터로, 출력 스크립트를 충족시키기 위한 변수로 쓰이는 것이 거의 대부분입니다.
 
-secret key (aka private key)::
-	The secret number that unlocks bitcoin sent to the corresponding address.  pass:[<span class="keep-together">A secret</span>] key looks like the following:
+secret key (aka private key)(비밀키)::
+	해당 주소로 보내진 비트코인을 풀어서 쓸 수 있게 하는 비밀 숫자입니다. pass:[<span class="keep-together">비밀키는</span>] 다음과 같은 형태입니다.
 +
 ----
 5J76sF8L5jTtzE96r66Sf8cka9y44wdpJjMwCxR3tzLh3ibVPxh
 ----
 
-Segregated Witness::
-    Segregated Witness is a proposed upgrade to the Bitcoin protocol which technological innovation separates signature data from bitcoin transactions. Segregated Witness is a proposed soft fork; a change that technically makes Bitcoin’s protocol rules more restrictive.
+Segregated Witness(분리된 증인, 세그윗)::
+    세그윗은 서명 데이터를 비트코인 트랜잭션에서 분리하는 기술 혁신을 담은 비트코인 프로토콜 업그레이드 제안입니다. 세그윗은 소프트 포크로 제안되었으며, 이는 기술적으로 비트코인 프로토콜 규칙을 더 엄격하게 만드는 변경입니다.
 
 SHA::
-    The Secure Hash Algorithm or SHA is a family of cryptographic hash functions published by the National Institute of Standards and Technology (NIST).
+    보안 해시 알고리즘(Secure Hash Algorithm, SHA)은 미국 국립표준기술연구소(NIST)가 발표한 암호학적 해시 함수 계열입니다.
 
-Simplified Payment Verification (SPV)::
-    A method for verifying particular transactions were included in a block without downloading the entire block. The method is used by some lightweight Bitcoin clients.
+Simplified Payment Verification (SPV)(단순 지불 검증)::
+    블록 전체를 내려받지 않고도 특정 트랜잭션이 블록에 포함되었는지 검증하는 방법입니다. 일부 경량 비트코인 클라이언트가 이 방법을 사용합니다.
 
-soft fork::
-    soft fork or Soft-Forking Change is a temporary fork in the blockchain which commonly occurs when miners using non-upgraded nodes don't follow a new consensus rule their nodes don’t know about.
-    Not to be confused with fork, hard fork, software fork or Git fork.
+soft fork(소프트 포크)::
+    소프트 포크 또는 소프트 포킹 변경(Soft-Forking Change)은 블록체인에서 일시적으로 발생하는 포크로, 업그레이드되지 않은 노드를 쓰는 채굴자가 자기 노드가 알지 못하는 새 합의 규칙을 따르지 않을 때 흔히 발생합니다.
+    포크, 하드 포크, 소프트웨어 포크, Git 포크와 혼동하지 마세요.
 
-stale block::
-    Block that was successfully mined but that isn’t included on the current best blockchain, likely because some other block at the same height had its chain extended first. Not to be confused with orphan block.
+stale block(스테일 블록)::
+    채굴에는 성공했지만 현재 최선의 블록체인에 포함되지 못한 블록입니다. 같은 높이의 다른 블록이 먼저 체인을 이어갔기 때문인 경우가 많습니다. 고아 블록과 혼동하지 마세요.
 
-timelocks::
-    A timelock is a type of encumbrance that restricts the spending of some bitcoin until a specified future time or block height. Timelocks feature prominently in many Bitcoin contracts, including payment channels and hashed timelock contracts.
+timelocks(타임락)::
+    타임락은 지정된 미래 시각이나 블록 높이에 도달할 때까지 비트코인의 사용을 제한하는 제약 조건의 한 종류입니다. 타임락은 결제 채널과 해시 타임락 계약을 비롯한 여러 비트코인 계약에서 두드러지게 쓰입니다.
 
-transaction::
-    In simple terms, a transfer of bitcoin from one address to another. More precisely, a transaction is a signed data structure expressing a transfer of value. Transactions are transmitted over the Bitcoin network, collected by miners, and included into blocks, made permanent on the blockchain.
+transaction(트랜잭션)::
+    간단히 말해 한 주소에서 다른 주소로 비트코인을 옮기는 것입니다. 더 정확히는 가치의 이전을 표현하는 서명된 데이터 구조입니다. 트랜잭션은 비트코인 네트워크를 통해 전송되고, 채굴자에 의해 수집되어 블록에 담기며, 블록체인에 영구히 기록됩니다.
 
-transaction pool::
-    An unordered collection of transactions that are not in blocks in the main chain, but for which we have input transactions.
+transaction pool(트랜잭션 풀)::
+    메인 체인의 블록에는 들어 있지 않지만 그 입력 트랜잭션은 우리가 가지고 있는, 순서 없는 트랜잭션 모음입니다.
 
-Turing completeness::
-    A program language is called "Turing complete" if it can run any program that a Turing machine can run, given enough time and memory.
+Turing completeness(튜링 완전성)::
+    어떤 프로그래밍 언어가 충분한 시간과 메모리만 주어지면 튜링 기계가 실행할 수 있는 모든 프로그램을 실행할 수 있을 때 그 언어를 "튜링 완전"하다고 합니다.
 
-unspent transaction output (UTXO)::
-    UTXO is an unspent transaction output that can be spent as an input in a new transaction.
+unspent transaction output (UTXO)(미사용 트랜잭션 출력)::
+    UTXO는 아직 사용되지 않은 트랜잭션 출력으로, 새 트랜잭션의 입력으로 사용할 수 있습니다.
 
-wallet::
-    Software that holds all your Bitcoin addresses and secret keys. Use it to send, receive, and store your bitcoin.
+wallet(지갑)::
+    여러분의 모든 비트코인 주소와 비밀키를 보관하는 소프트웨어입니다. 비트코인을 보내고, 받고, 보관하는 데 사용합니다.
 
-Wallet Import Format (WIF)::
-    WIF or Wallet Import Format is a data interchange format designed to allow exporting and importing a single private key with a flag indicating whether or not it uses a compressed public key.
+Wallet Import Format (WIF)(지갑 가져오기 형식)::
+    WIF(Wallet Import Format)는 하나의 비밀키를 내보내고 가져올 수 있도록 설계된 데이터 교환 형식으로, 압축 공개키를 사용하는지 여부를 나타내는 플래그를 함께 담습니다.
 
-Some contributed definitions have been sourced under a CC-BY license from the https://en.bitcoin.it/wiki/Main_Page[bitcoin Wiki] or from other open source documentation sources.
+일부 기여된 정의는 https://en.bitcoin.it/wiki/Main_Page[비트코인 위키] 또는 다른 오픈소스 문서에서 CC-BY 라이선스로 가져온 것입니다.
