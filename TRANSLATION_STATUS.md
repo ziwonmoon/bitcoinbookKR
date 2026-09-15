@@ -17,7 +17,7 @@
 ## 2단계 — 도입부
 
 - [x] `ch01_intro.adoc`
-- [ ] `ch02_overview.adoc`
+- [x] `ch02_overview.adoc`
 
 ## 3단계 — 키·지갑·트랜잭션
 
