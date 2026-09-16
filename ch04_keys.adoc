@@ -1,152 +1,120 @@
 [[ch04_keys_addresses]]
-== Keys and Addresses
+== 키와 주소
 
-Alice wants to pay Bob, but the thousands of Bitcoin full nodes who
-will verify her transaction don't know who Alice or Bob are--and we want
-to keep it that way to protect their privacy.  Alice needs to
-communicate that Bob should receive some of her bitcoins without tying
-any aspect of that transaction to Bob's real-world identity or to other
-Bitcoin payments that Bob receives.  The method Alice uses must ensure
-that only Bob can further spend the bitcoins he receives.
+앨리스는 밥에게 지불하고 싶지만, 그의 트랜잭션을 검증할 수천 개의 비트코인 풀
+노드는 앨리스나 밥이 누구인지 모릅니다. 그리고 두 사람의 프라이버시를 지키려면
+계속 그래야 합니다. 앨리스는 자기 비트코인 일부를 밥이 받아야 한다는 사실을,
+그 트랜잭션의 어떤 부분도 밥의 현실 세계 신원이나 밥이 받는 다른 비트코인
+지불과 엮이지 않게 하면서 전달해야 합니다. 앨리스가 사용하는 방법은 밥이 받은
+비트코인을 오직 밥만 다시 사용할 수 있도록 보장해야 합니다.
 
-The original Bitcoin paper describes a very simple scheme for achieving
-those goals, shown in <<pay-to-pure-pubkey>>.  
+비트코인 원 논문은 이 목표들을 달성하는 아주 단순한 방식을 설명하며,
+<<pay-to-pure-pubkey>>에 나타냈습니다.
 
 [[pay-to-pure-pubkey]]
-.Transaction chain from original Bitcoin paper.
+.비트코인 원 논문에 실린 트랜잭션 사슬.
 image::images/mbc3_aain01.png["Transaction chain from original Bitcoin paper"]
 
-A receiver like Bob
-accepts bitcoins to a public key in a transaction that is signed by the
-spender (like Alice).  The bitcoins that Alice is spending had been
-previously received to one of her public keys, and she uses the
-corresponding private key to generate her signature.  Full nodes can
-verify that Alice's signature commits to the output of a hash function
-that itself commits to Bob's public key and other transaction details.
+밥 같은 수신자는 지불하는 쪽(앨리스 같은)이 서명한 트랜잭션에서 공개키 앞으로
+비트코인을 받습니다. 앨리스가 사용하는 비트코인은 이전에 앨리스의 공개키 중
+하나로 받은 것이며, 앨리스는 그에 대응하는 비밀키로 서명을 만듭니다. 풀 노드는
+앨리스의 서명이 어떤 해시 함수의 출력에 커밋하고 있고 그 해시 자체가 밥의
+공개키와 다른 트랜잭션 세부 정보에 커밋하고 있음을 검증할 수 있습니다.
 
-We'll examine public keys, private keys, signatures, and hash functions
-in this chapter, and then use all of them together to describe
-the addresses used by modern Bitcoin software.
+이 장에서는 공개키와 비밀키, 서명, 해시 함수를 살펴본 다음, 이들을 모두 함께
+사용해 현대 비트코인 소프트웨어가 쓰는 주소를 설명하겠습니다.
 
-=== Public Key Cryptography
+=== 공개키 암호
 
-Public ((("public key cryptography", id="pub-key")))key
-cryptography was invented in the 1970s and is a mathematical foundation
-for modern computer and information security.
+공개키 ((("public key cryptography", id="pub-key")))암호는
+1970년대에 발명되었으며 현대 컴퓨터 및 정보 보안의 수학적 토대입니다.
 
-Since the invention of public key cryptography, several suitable
-mathematical functions, such as prime number exponentiation and elliptic
-curve multiplication, have been discovered. These mathematical functions
-are easy to calculate in
-one direction and infeasible to calculate in the opposite direction
-using the computers and algorithms available today.
-Based on these mathematical functions, cryptography enables the creation
-of unforgeable digital signatures. Bitcoin uses
-elliptic curve addition and multiplication as the basis for its cryptography.
+공개키 암호가 발명된 이후, 소수 거듭제곱과 타원곡선 곱셈 같은 여러 적합한 수학
+함수가 발견되었습니다. 이 수학 함수들은 한 방향으로는 계산하기 쉽지만, 오늘날
+쓸 수 있는 컴퓨터와 알고리즘으로는 반대 방향으로 계산하는 것이 현실적으로
+불가능합니다. 암호학은 이런 수학 함수를 바탕으로 위조할 수 없는 디지털 서명을
+만들어낼 수 있게 합니다. 비트코인은 타원곡선 덧셈과 곱셈을 암호 기술의 토대로
+사용합니다.
 
-In Bitcoin, we can use public key cryptography to create a ((("key pairs", id="key-pair")))((("public keys", "purpose of")))((("private keys", "purpose of")))key pair that
-controls access to bitcoins. The key pair consists of a private key
-and a public key derived from the private key. The public key is used to
-receive funds, and the private key is used to sign transactions to spend
-the funds.
+비트코인에서는 공개키 암호를 사용해 비트코인에 대한 접근을 통제하는 ((("key pairs", id="key-pair")))((("public keys", "purpose of")))((("private keys", "purpose of")))키 쌍을
+만들 수 있습니다. 키 쌍은 비밀키와, 그 비밀키에서 유도된 공개키로 이루어집니다.
+공개키는 자금을 받는 데 쓰이고, 비밀키는 그 자금을 사용하기 위해 트랜잭션에
+서명하는 데 쓰입니다.
 
-There is a mathematical relationship between the public and the private
-key that allows the private key to be used to generate signatures on
-messages. These signatures can be validated against the public key without
-revealing the private key.
+공개키와 비밀키 사이에는 수학적 관계가 있어서, 비밀키로 메시지에 대한 서명을
+만들 수 있습니다. 이 서명은 비밀키를 드러내지 않고도 공개키로 검증할 수 있습니다.
 
 [TIP]
 ====
-In some wallet
-implementations, the private and public keys are stored together as a
-_key pair_ for convenience. However, the public key can be calculated
-from the private key, so storing only the private key is also possible.
+일부 지갑 구현에서는 편의를 위해 비밀키와 공개키를 _키 쌍_ 으로 함께 저장합니다.
+다만 공개키는 비밀키에서 계산해낼 수 있으므로 비밀키만 저장하는 것도 가능합니다.
 ====
 
-A Bitcoin wallet contains a collection of key
-pairs, each consisting of a private key and a public key. The private
-key (_k_) is a number, usually derived from a number picked at random.
-From the private key, we
-use elliptic curve multiplication, a one-way cryptographic function, to
-generate a public key (_K_).
+비트코인 지갑에는 비밀키와 공개키로 이루어진 키 쌍의 모음이 들어 있습니다.
+비밀키(_k_)는 숫자이며, 보통 무작위로 고른 수에서 유도합니다. 이 비밀키에
+일방향 암호 함수인 타원곡선 곱셈을 적용해 공개키(_K_)를 만들어냅니다.
 
 [role="less_space pagebreak-before"]
-.Why Use Asymmetric Cryptography (Public/Private Keys)?
+.왜 비대칭 암호(공개키/비밀키)를 쓰는가?
 ****
-Why is ((("asymmetric cryptography", see="public key cryptography")))((("public key cryptography", "purpose in Bitcoin")))((("digital signatures")))asymmetric
-cryptography used in Bitcoin? It's not used to "encrypt" (make secret)
-the transactions. Rather, a useful property of asymmetric cryptography
-is the ability to generate _digital signatures_. A private key can be
-applied to a transaction to produce a
-numerical signature. This signature can only be produced by someone with
-knowledge of the private key. However, anyone with access to the public
-key and the transaction can use them to _verify_ the
-signature. This useful property of asymmetric cryptography makes it
-possible for anyone to verify every signature on every transaction,
-while ensuring that only the owners of private keys can produce valid
-signatures.
+비트코인에서는 ((("asymmetric cryptography", see="public key cryptography")))((("public key cryptography", "purpose in Bitcoin")))((("digital signatures")))왜 비대칭
+암호를 쓸까요? 트랜잭션을 "암호화"(비밀로 만들기)하기 위해서가 아닙니다. 오히려
+비대칭 암호의 유용한 성질은 _디지털 서명_ 을 만들어낼 수 있다는 점입니다.
+비밀키를 트랜잭션에 적용해 수치로 된 서명을 만들 수 있습니다. 이 서명은 비밀키를
+아는 사람만 만들어낼 수 있습니다. 반면 공개키와 트랜잭션에 접근할 수 있는
+사람이라면 누구나 이를 이용해 서명을 _검증_ 할 수 있습니다. 비대칭 암호의 이
+유용한 성질 덕분에, 누구나 모든 트랜잭션의 모든 서명을 검증할 수 있으면서도
+유효한 서명은 비밀키 소유자만 만들어낼 수 있게 됩니다.
 ****
 
 [[private_keys]]
-==== Private Keys
+==== 비밀키
 
-A
-private ((("private keys", "generating", id="private-key-generate")))key is simply a number, picked at random.  Control
-over the private key is the root of user control over all funds
-associated with the corresponding Bitcoin public key. The private key is
-used to create signatures that are used to spend bitcoins by proving
-control of funds used in a transaction. The private key must remain
-secret at all times because revealing it to third parties is equivalent
-to giving them control over the bitcoins secured by that key. The private
-key must also be backed up and protected from accidental loss because
-if it's lost, it cannot be recovered and the funds secured by it are
-forever lost too.
+비밀키는 ((("private keys", "generating", id="private-key-generate")))그저 무작위로 고른 숫자입니다. 비밀키에 대한 통제권이야말로
+대응하는 비트코인 공개키와 연결된 모든 자금에 대한 사용자 통제의 뿌리입니다.
+비밀키는 트랜잭션에 쓰이는 자금에 대한 통제권을 증명해 비트코인을 사용하는 데
+필요한 서명을 만드는 데 쓰입니다. 비밀키는 언제나 비밀로 유지되어야 합니다.
+제삼자에게 알려주는 것은 그 키가 지키는 비트코인의 통제권을 넘기는 것과 같기
+때문입니다. 또한 비밀키는 백업해 두고 실수로 잃어버리지 않도록 보호해야 합니다.
+잃어버리면 복구할 수 없고, 그 키가 지키던 자금도 영원히 사라지기 때문입니다.
 
 [TIP]
 ====
-A Bitcoin private key is just a number. You can pick your private keys
-randomly using just a coin, pencil, and paper: toss a coin 256 times and
-you have the binary digits of a random private key you can use in a
-Bitcoin wallet. The public key can then be generated from the private
-key.  Be careful, though, as any process that's less than completely
-random can significantly reduce the security of your private key and the
-bitcoins it controls.
+비트코인 비밀키는 그저 숫자입니다. 동전과 연필, 종이만 있으면 비밀키를 무작위로
+고를 수 있습니다. 동전을 256번 던지면 비트코인 지갑에 쓸 수 있는 무작위 비밀키의
+이진수 자릿수가 나옵니다. 그다음 공개키는 비밀키에서 만들어낼 수 있습니다. 다만
+조심하세요. 완전히 무작위가 아닌 과정은 무엇이든 여러분의 비밀키와 그 키가
+통제하는 비트코인의 보안을 크게 떨어뜨릴 수 있습니다.
 ====
 
-The first and most important step in generating keys is to find a secure
-source of randomness (which computer scientists ((("entropy")))call _entropy_). Creating a Bitcoin key is almost
-the same as "Pick a number between 1 and 2^256^." The exact method you
-use to pick that number does not matter as long as it is not predictable
-or repeatable. Bitcoin software uses cryptographically secure random
-number generators to produce 256 bits of entropy.
+키를 생성할 때 가장 먼저이자 가장 중요한 단계는 안전한 무작위성의 원천(컴퓨터
+과학자들은 ((("entropy")))_엔트로피_ 라고 부릅니다)을 찾는 것입니다. 비트코인 키를
+만드는 일은 "1과 2^256^ 사이의 수를 하나 고르시오"와 거의 같습니다. 그 수를 고르는
+정확한 방법은, 예측 가능하거나 반복 가능하지만 않다면 중요하지 않습니다. 비트코인
+소프트웨어는 암호학적으로 안전한 난수 생성기를 사용해 256비트의 엔트로피를
+만들어냅니다.
 
 [role="less_space pagebreak-before"]
-More precisely, the private key can be any number between 0 and _n_ -
-1 inclusive, where _n_ is a constant (_n_ = 1.1578 × 10^77^, slightly less
-than 2^256^) defined as the order of the elliptic curve used in Bitcoin
-(see <<elliptic_curve>>). To create such a key, we randomly pick a
-256-bit number and check that it is less than _n_. In programming terms,
-this is usually achieved by feeding a larger string of random bits,
-collected from a cryptographically secure source of randomness, into the
-SHA256 hash algorithm, which will conveniently produce a 256-bit value
-that can be interpreted as a number.
-If the result is less than _n_, we have a suitable private key.
-Otherwise, we simply try again with another random number.
+더 정확히 말하면 비밀키는 0 이상 _n_ - 1 이하의 어떤 수든 될 수 있습니다. 여기서
+_n_ 은 비트코인이 사용하는 타원곡선의 위수로 정의된 상수(_n_ = 1.1578 × 10^77^,
+2^256^ 보다 약간 작음)입니다(<<elliptic_curve>> 참고). 이런 키를 만들려면
+256비트 수를 무작위로 골라 _n_ 보다 작은지 확인합니다. 프로그래밍에서는 보통
+암호학적으로 안전한 무작위성 원천에서 모은 더 긴 무작위 비트 문자열을 SHA256 해시
+알고리즘에 넣는 방식으로 처리하는데, 그러면 숫자로 해석할 수 있는 256비트 값이
+편리하게 나옵니다. 결과가 _n_ 보다 작으면 쓸 만한 비밀키를 얻은 것입니다.
+그렇지 않으면 다른 무작위 수로 다시 시도하면 됩니다.
 
 [WARNING]
 ====
-Do not write your own code to create a random
-number or use a "simple" random number generator offered by your
-programming language. Use a cryptographically secure pseudorandom number
-generator (CSPRNG) with a seed from a source of sufficient entropy.
-Study the documentation of the random number generator library you
-choose to make sure it is cryptographically secure. Correct
-implementation of the CSPRNG is critical to the security of the keys.
+난수를 만드는 코드를 직접 작성하거나 프로그래밍 언어가 제공하는 "단순한" 난수
+생성기를 쓰지 마세요. 충분한 엔트로피 원천에서 얻은 시드로 초기화한 암호학적으로
+안전한 의사난수 생성기(CSPRNG)를 사용하세요. 선택한 난수 생성기 라이브러리의
+문서를 살펴 암호학적으로 안전한지 확인하세요. CSPRNG를 올바르게 구현하는 것은
+키의 보안에 결정적으로 중요합니다.
 ====
 
-The following is a randomly generated private key (_k_) shown in
-hexadecimal format (256 bits shown as 64 hexadecimal digits, each 4
-bits):
+다음은 무작위로 생성된 비밀키(_k_)를 16진수 형식으로 나타낸 것입니다(256비트를
+각각 4비트인 16진수 64자리로 표시).
 
 ----
 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD
@@ -154,32 +122,27 @@ bits):
 
 [TIP]
 ====
-The size of Bitcoin's private key space (2^256^) is an unfathomably
-large number. It is approximately 10^77^ in decimal. For comparison, the
-visible universe is estimated to((("private keys", "generating", startref="private-key-generate"))) contain 10^80^ atoms.
+비트코인 비밀키 공간의 크기(2^256^)는 헤아리기 힘들 만큼 큰 수입니다. 10진수로
+대략 10^77^ 입니다. 비교하자면 관측 가능한 우주에는 10^80^ 개의 원자가 있다고
+((("private keys", "generating", startref="private-key-generate")))추정됩니다.
 ====
 
 [[elliptic_curve]]
-==== Elliptic Curve Cryptography Explained
+==== 타원곡선 암호 설명
 
-Elliptic curve cryptography (ECC) is((("public key cryptography", "elliptic curve cryptography as", id="pub-key-ecc")))((("elliptic curve cryptography (ECC)", id="ecc"))) a type of asymmetric
-or public key cryptography based on the discrete logarithm problem as
-expressed by addition and multiplication on the points of an elliptic
-curve.
+타원곡선 암호(ECC)는((("public key cryptography", "elliptic curve cryptography as", id="pub-key-ecc")))((("elliptic curve cryptography (ECC)", id="ecc"))) 타원곡선 위의 점에 대한 덧셈과 곱셈으로
+표현되는 이산로그 문제에 기반한 비대칭 암호, 즉 공개키 암호의 한 종류입니다.
 
-<<ecc-curve>> is an example of an elliptic curve, similar to that used
-by Bitcoin.
+<<ecc-curve>>는 비트코인이 사용하는 것과 비슷한 타원곡선의 예입니다.
 
 [[ecc-curve]]
 [role="width-50"]
-.An elliptic curve.
+.타원곡선.
 image::images/mbc3_0402.png["ecc-curve"]
 
-Bitcoin uses a specific elliptic curve and set of mathematical
-constants, as defined in a standard called +secp256k1+, established by
-the National Institute of Standards and Technology (NIST). The
-+secp256k1+ curve is defined by the following function, which produces
-an elliptic curve:
+비트코인은 미국 국립표준기술연구소(NIST)가 정한 +secp256k1+ 이라는 표준에
+정의된 특정 타원곡선과 수학 상수 집합을 사용합니다. +secp256k1+ 곡선은 다음
+함수로 정의되며, 이 함수가 타원곡선을 만들어냅니다.
 
 [latexmath]
 ++++
@@ -188,7 +151,7 @@ an elliptic curve:
 \end{equation}
 ++++
 
-or
+또는
 
 [latexmath]
 ++++
@@ -197,26 +160,23 @@ or
 \end{equation}
 ++++
 
-The _mod p_ (modulo prime number _p_) indicates that this curve is over a
-finite field of prime order _p_, also written as latexmath:[\(
-\mathbb{F}_p\)], where _p_ = 2^256^ – 2^32^ – 2^9^ – 2^8^ – 2^7^ – 2^6^ –
-2^4^ – 1, a very large prime number.
+_mod p_ (소수 _p_ 에 대한 모듈로)는 이 곡선이 위수가 소수 _p_ 인 유한체 위에
+정의되어 있음을 나타내며, latexmath:[\( \mathbb{F}_p\)] 로도 씁니다. 여기서
+_p_ = 2^256^ – 2^32^ – 2^9^ – 2^8^ – 2^7^ – 2^6^ – 2^4^ – 1 로, 매우 큰
+소수입니다.
 
-Because this curve is defined over a finite field of prime order instead
-of over the real numbers, it looks like a pattern of dots scattered in
-two dimensions, which makes it difficult to visualize. However, the math
-is identical to that of an elliptic curve over real numbers. As an
-example, <<ecc-over-F17-math>> shows the same elliptic curve over a much
-smaller finite field of prime order 17, showing a pattern of dots on a
-grid. The +secp256k1+ Bitcoin elliptic curve can be thought of as a much
-more complex pattern of dots on a unfathomably large grid.
+이 곡선은 실수가 아니라 위수가 소수인 유한체 위에 정의되어 있으므로, 2차원에
+흩뿌려진 점의 패턴처럼 보여서 눈으로 그려보기가 어렵습니다. 하지만 수학은 실수
+위의 타원곡선과 동일합니다. 예로 <<ecc-over-F17-math>>는 훨씬 작은 위수 17의
+유한체 위에 있는 같은 타원곡선을 보여주는데, 격자 위의 점 패턴으로 나타납니다.
++secp256k1+ 비트코인 타원곡선은 헤아릴 수 없이 큰 격자 위에 훨씬 더 복잡한 점
+패턴이 놓인 것이라고 생각할 수 있습니다.
 
 [[ecc-over-F17-math]]
-.Elliptic curve cryptography: visualizing an elliptic curve over F(p), with p=17.
+.타원곡선 암호: p=17일 때 F(p) 위의 타원곡선을 시각화한 모습.
 image::images/mbc3_0403.png["ecc-over-F17-math"]
 
-So, for example, the following is a point P with coordinates (x, y) that
-is a point on the +secp256k1+ curve:
+예를 들어 다음은 +secp256k1+ 곡선 위에 있는 좌표 (x, y)를 가진 점 P입니다.
 
 [source, python]
 ----
@@ -225,10 +185,10 @@ P =
 32670510020758816978083085130507043184471273380659243275938904335757337482424)
 ----
 
-<<example_4_1>> shows how you can check this yourself using Python.
+<<example_4_1>>은 파이썬으로 이를 직접 확인하는 방법을 보여줍니다.
 
 [[example_4_1]]
-.Using Python to confirm that this point is on the elliptic curve
+.파이썬으로 이 점이 타원곡선 위에 있는지 확인하기
 ====
 [source, pycon]
 ----
@@ -243,82 +203,64 @@ Type "help", "copyright", "credits" or "license" for more information.
 ====
 
 [role="less_space pagebreak-before"]
-In elliptic curve math, there is a point called the "point at infinity,"
-which roughly corresponds to the role of zero in addition. On computers,
-it's sometimes represented by x = y = 0 (which doesn't satisfy the
-elliptic curve equation, but it's an easy separate case that can be
-checked).
+타원곡선 수학에는 "무한원점"이라 불리는 점이 있는데, 대략 덧셈에서 0이 하는
+역할에 해당합니다. 컴퓨터에서는 x = y = 0 으로 나타내기도 합니다(이 값은 타원곡선
+방정식을 만족하지 않지만, 따로 확인하기 쉬운 별도의 경우입니다).
 
-There is also a pass:[+] operator, called "addition," which has some
-properties similar to the traditional addition of real numbers that
-gradeschool children learn. Given two points P~1~ and P~2~ on the
-elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the
-elliptic curve.
+또한 "덧셈"이라 불리는 pass:[+] 연산자가 있는데, 초등학생이 배우는 실수의 전통적인
+덧셈과 비슷한 성질을 일부 가집니다. 타원곡선 위의 두 점 P~1~ 과 P~2~ 가 주어지면,
+역시 타원곡선 위에 있는 세 번째 점 P~3~ = P~1~ + P~2~ 가 존재합니다.
 
-Geometrically, this third point P~3~ is calculated by drawing a line
-between P~1~ and P~2~. This line will intersect the elliptic curve in
-exactly one additional place. Call this point P~3~' = (x, y). Then
-reflect in the x-axis to get P~3~ = (x, –y).
+기하학적으로 이 세 번째 점 P~3~ 은 P~1~ 과 P~2~ 사이에 직선을 그어 구합니다. 이
+직선은 타원곡선과 정확히 한 곳에서 더 만납니다. 그 점을 P~3~' = (x, y)라고 합시다.
+그다음 x축에 대해 반사시키면 P~3~ = (x, –y)를 얻습니다.
 
-There are a couple of special cases that explain the need for the "point
-at infinity."
+"무한원점"이 왜 필요한지 설명해 주는 몇 가지 특수한 경우가 있습니다.
 
-If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~
-should extend to be the tangent on the curve at this point P~1~. This
-tangent will intersect the curve in exactly one new point. You can use
-techniques from calculus to determine the slope of the tangent line.
-These techniques curiously work, even though we are restricting our
-interest to points on the curve with two integer coordinates!
+P~1~ 과 P~2~ 가 같은 점이라면, P~1~ 과 P~2~ "사이"의 직선은 그 점 P~1~ 에서
+곡선에 접하는 접선으로 확장되어야 합니다. 이 접선은 곡선과 정확히 한 개의 새로운
+점에서 만납니다. 접선의 기울기는 미적분학의 기법으로 구할 수 있습니다. 우리가
+관심을 두는 대상을 두 좌표가 모두 정수인 곡선 위의 점으로 제한하고 있는데도 이
+기법이 통한다는 점이 신기합니다!
 
-In some cases (i.e., if P~1~ and P~2~ have the same x values but
-different y values), the tangent line will be exactly vertical, in which
-case P~3~ = "point at infinity."
+어떤 경우(즉 P~1~ 과 P~2~ 의 x 값은 같고 y 값은 다른 경우)에는 접선이 정확히
+수직이 되는데, 이때 P~3~ = "무한원점"입니다.
 
-If P~1~ is the "point at infinity," then P~1~ + P~2~ = P~2~. Similarly,
-if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows
-how the point at infinity plays the role of zero.
+P~1~ 이 "무한원점"이면 P~1~ + P~2~ = P~2~ 입니다. 마찬가지로 P~2~ 가 무한원점이면
+P~1~ + P~2~ = P~1~ 입니다. 이는 무한원점이 0의 역할을 한다는 것을 보여줍니다.
 
-It turns out that pass:[+] is associative, which means that (A pass:[+]
-B) pass:[+] C = A pass:[+] (B pass:[+] C). That means we can write A
-pass:[+] B pass:[+] C without parentheses and without ambiguity.
+pass:[+] 는 결합법칙을 만족하는 것으로 드러났습니다. 즉 (A pass:[+] B) pass:[+]
+C = A pass:[+] (B pass:[+] C)입니다. 따라서 괄호 없이 모호함 없이 A pass:[+] B
+pass:[+] C 라고 쓸 수 있습니다.
 
-Now that we have defined addition, we can define multiplication in the
-standard way that extends addition. For a point P on the elliptic curve,
-if k is a whole number, then kP = P + P + P + ... + P (k times). Note
-that k is sometimes confusingly called an "exponent" in ((("public key cryptography", "elliptic curve cryptography as", startref="pub-key-ecc")))((("elliptic curve cryptography (ECC)", startref="ecc")))this case.
+덧셈을 정의했으니, 이제 덧셈을 확장하는 표준적인 방식으로 곱셈을 정의할 수
+있습니다. 타원곡선 위의 점 P에 대해 k가 자연수라면, kP = P + P + P + ... + P
+(k번)입니다. 이때 k를 혼란스럽게도 "지수"라고 부르는 경우가 ((("public key cryptography", "elliptic curve cryptography as", startref="pub-key-ecc")))((("elliptic curve cryptography (ECC)", startref="ecc")))있습니다.
 
 [[public_key_derivation]]
-==== Public Keys
+==== 공개키
 
-The ((("public keys", "generating", id="public-key-generate")))((("elliptic curve multiplication", id="elliptic-multiply")))public key is calculated from
-the private key using elliptic curve multiplication, which is
-irreversible: _K_ = _k_ × _G_, where _k_ is the private key, _G_ is a
-constant point called the _generator point_, and _K_ is the resulting
-public key. The reverse operation, known as "finding the discrete
-logarithm"—calculating _k_ if you know __K__—is as difficult as trying
-all possible values of _k_ (i.e., a brute-force search). Before we
-demonstrate how to generate a public key from a private key, let's look
-at elliptic curve cryptography in a bit more detail.
+((("public keys", "generating", id="public-key-generate")))((("elliptic curve multiplication", id="elliptic-multiply")))공개키는 되돌릴 수 없는 연산인 타원곡선 곱셈을 사용해
+비밀키로부터 계산합니다. _K_ = _k_ × _G_ 이며, _k_ 는 비밀키, _G_ 는 _생성점_
+이라 불리는 상수 점, _K_ 는 그 결과인 공개키입니다. "이산로그 구하기"로 알려진
+역연산, 즉 __K__ 를 알 때 _k_ 를 계산하는 일은 가능한 _k_ 값을 모두 시도하는
+것(즉 무차별 대입 탐색)만큼이나 어렵습니다. 비밀키에서 공개키를 만들어내는 방법을
+보여주기 전에, 타원곡선 암호를 조금 더 자세히 살펴봅시다.
 
 [TIP]
 ====
-Elliptic curve multiplication is a type of function that cryptographers
-call a "trap door" function: it is easy to do in one direction
-(multiplication) and impossible to do in the reverse direction
-(division). Someone with a private key can easily create the public
-key and then share it with the world knowing that no one can reverse the
-function and calculate the private key from the public key. This
-mathematical trick becomes the basis for unforgeable and secure digital
-signatures that prove control over bitcoin funds.
+타원곡선 곱셈은 암호학자들이 "함정문(trap door)" 함수라고 부르는 종류의
+함수입니다. 한 방향(곱셈)으로는 쉽지만 반대 방향(나눗셈)으로는 불가능합니다.
+비밀키를 가진 사람은 손쉽게 공개키를 만들어 세상에 공유할 수 있으며, 아무도 그
+함수를 거꾸로 돌려 공개키에서 비밀키를 계산해낼 수 없다는 것을 압니다. 이 수학적
+묘기가 비트코인 자금에 대한 통제권을 증명하는, 위조할 수 없고 안전한 디지털 서명의
+토대가 됩니다.
 ====
 
-Starting with a private key in the
-form of a randomly generated number _k_, we multiply it by a
-predetermined point on the curve called the _generator point_ _G_ to
-produce another point somewhere else on the curve, which is the
-corresponding public key _K_. The generator point is specified as part
-of the +secp256k1+ standard and is always the same for all keys in
-bitcoin:
+무작위로 생성된 수 _k_ 형태의 비밀키에서 출발해, 이를 곡선 위의 미리 정해진 점인
+_생성점_ _G_ 와 곱하면 곡선 위 다른 어딘가의 점이 나오는데 이것이 대응하는 공개키
+_K_ 입니다. 생성점은 +secp256k1+ 표준의 일부로 지정되어 있으며 비트코인의 모든
+키에 대해 항상 동일합니다.
 
 [latexmath]
 ++++
@@ -327,31 +269,27 @@ bitcoin:
 \end{equation}
 ++++
 
-where _k_ is the private key, _G_ is the generator point, and _K_ is the
-resulting public key, a point on the curve. Because the generator point
-is always the same for all Bitcoin users, a private key _k_ multiplied
-with _G_ will always result in the same public key _K_. The relationship
-between _k_ and _K_ is fixed but can only be calculated in one
-direction, from _k_ to _K_. That's why a Bitcoin public key (_K_) can be
-shared with anyone and does not reveal the user's private key (_k_).
+여기서 _k_ 는 비밀키, _G_ 는 생성점, _K_ 는 그 결과인 공개키로 곡선 위의 한
+점입니다. 생성점은 모든 비트코인 사용자에게 항상 같으므로, 비밀키 _k_ 에 _G_ 를
+곱하면 항상 같은 공개키 _K_ 가 나옵니다. _k_ 와 _K_ 의 관계는 고정되어 있지만
+_k_ 에서 _K_ 로 가는 한 방향으로만 계산할 수 있습니다. 그래서 비트코인
+공개키(_K_)는 누구에게나 공유할 수 있고 사용자의 비밀키(_k_)를 드러내지 않습니다.
 
 [TIP]
 ====
-A private key can be converted into a public key, but a public key
-cannot be converted back into a private key because the math only works
-one way.
+비밀키는 공개키로 바꿀 수 있지만, 공개키는 비밀키로 되돌릴 수 없습니다. 수학이
+한 방향으로만 작동하기 때문입니다.
 ====
 
-Implementing the elliptic curve multiplication, we take the private key
-_k_ generated previously and multiply it with the generator point _G_ to
-find the public key _K_:
+타원곡선 곱셈을 실제로 적용해, 앞에서 생성한 비밀키 _k_ 를 생성점 _G_ 와 곱해
+공개키 _K_ 를 구합니다.
 
 [source, python]
 ----
 K = 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD × G
 ----
 
-Public key _K_ is defined as a point _K_ = (_x_, _y_):
+공개키 _K_ 는 점 _K_ = (_x_, _y_)로 정의됩니다.
 
 [latexmath]
 ++++
@@ -361,7 +299,7 @@ K = (x, y)
 ++++
 
 
-where,
+여기서,
 
 ----
 x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
@@ -370,53 +308,47 @@ y = 07CF33DA18BD734C600B96A72BBC4749D5141C90EC8AC328AE52DDFE2E505BDB
 
 
 
-To visualize multiplication of a point with an integer, we will use the
-simpler elliptic curve over real numbers&#x2014;remember, the math is
-the same. Our goal is to find the multiple _kG_ of the generator point
-_G_, which is the same as adding _G_ to itself, _k_ times in a row. In
-elliptic curves, adding a point to itself is the equivalent of drawing a
-tangent line on the point and finding where it intersects the curve
-again, then reflecting that point on the x-axis.
+점과 정수의 곱셈을 눈으로 그려보기 위해 더 단순한 실수 위의 타원곡선을
+사용하겠습니다&#x2014;수학은 동일하다는 점을 기억하세요. 우리의 목표는 생성점
+_G_ 의 배수 _kG_ 를 구하는 것이며, 이는 _G_ 를 자기 자신에 _k_ 번 연달아 더하는
+것과 같습니다. 타원곡선에서 한 점을 자기 자신에 더하는 것은, 그 점에서 접선을
+그어 곡선과 다시 만나는 지점을 찾은 다음 그 점을 x축에 대해 반사시키는 것과
+같습니다.
 
-<<ecc_illustrated>> shows the process for deriving _G_, _2G_, _4G_, as a
-geometric operation on the curve.
+<<ecc_illustrated>>는 곡선 위의 기하학적 연산으로 _G_, _2G_, _4G_ 를 유도하는
+과정을 보여줍니다.
 
 [TIP]
 ====
-Many Bitcoin implementations use
-the https://oreil.ly/wD60m[libsecp256k1 cryptographic
-library] to do the elliptic curve((("public keys", "generating", startref="public-key-generate")))((("elliptic curve multiplication", startref="elliptic-multiply"))) math.
+많은 비트코인 구현이 타원곡선 수학 연산에
+https://oreil.ly/wD60m[libsecp256k1 암호 라이브러리]를((("public keys", "generating", startref="public-key-generate")))((("elliptic curve multiplication", startref="elliptic-multiply"))) 사용합니다.
 ====
 
 [[ecc_illustrated]]
-.Elliptic curve cryptography: visualizing the multiplication of a point G by an integer k on an elliptic curve.
+.타원곡선 암호: 타원곡선 위의 점 G에 정수 k를 곱하는 과정을 시각화한 모습.
 image::images/mbc3_0404.png["ecc_illustrated"]
 
-=== Output and Input Scripts
+=== 출력 스크립트와 입력 스크립트
 
-Although((("public key cryptography", "input/output scripts", id="pub-key-input-output")))((("input scripts", id="input-script")))((("output scripts", id="output-script")))((("scripts", "input/output", id="script-input-output"))) the illustration from the original Bitcoin paper, <<pay-to-pure-pubkey>>,
-shows public keys (pubkeys) and signatures (sigs) being used directly,
-the first version of Bitcoin instead had payments sent to a field called
-_output script_ and had spends of those bitcoins authorized by a field called _input script_.
-These fields allow additional operations to be performed in addition to
-(or instead of) verifying that a signature corresponds to a public key.
-For example, an output script can contain two public keys and require two
-corresponding signatures be placed in the spending input script.
+비트코인((("public key cryptography", "input/output scripts", id="pub-key-input-output")))((("input scripts", id="input-script")))((("output scripts", id="output-script")))((("scripts", "input/output", id="script-input-output"))) 원 논문의 그림 <<pay-to-pure-pubkey>>는 공개키(pubkey)와
+서명(sig)을 직접 사용하는 모습을 보여주지만, 비트코인의 첫 버전은 그 대신
+_출력 스크립트_ 라는 필드로 지불을 보내고 _입력 스크립트_ 라는 필드로 그
+비트코인의 사용을 승인했습니다. 이 필드들 덕분에 서명이 공개키에 대응하는지
+검증하는 것에 더해(또는 그 대신) 추가 연산을 수행할 수 있습니다. 예를 들어 출력
+스크립트에 공개키 두 개를 담고, 사용하는 쪽의 입력 스크립트에 대응하는 서명 두
+개를 넣도록 요구할 수 있습니다.
 
-Later, in <<tx_script>>, we'll learn about scripts in detail.  For now,
-all we need to understand is that bitcoins are received to an
-output script that acts like a public key, and bitcoin spending is
-authorized by an input script that acts like a ((("public key cryptography", "input/output scripts", startref="pub-key-input-output")))((("input scripts", startref="input-script")))((("output scripts", startref="output-script")))((("scripts", "input/output", startref="script-input-output")))signature.
-
+나중에 <<tx_script>>에서 스크립트를 자세히 배웁니다. 지금 이해해야 할 것은,
+비트코인은 공개키처럼 동작하는 출력 스크립트로 받고, 비트코인의 사용은 서명처럼
+동작하는 입력 스크립트로 ((("public key cryptography", "input/output scripts", startref="pub-key-input-output")))((("input scripts", startref="input-script")))((("output scripts", startref="output-script")))((("scripts", "input/output", startref="script-input-output")))승인된다는 점뿐입니다.
 [[p2pk]]
-=== IP Addresses: The Original Address for Bitcoin (P2PK)
+=== IP 주소: 비트코인의 최초 주소 방식(P2PK)
 
-We've ((("public key cryptography", "IP address payments and", id="pub-key-ipaddress")))((("IP addresses for Bitcoin payments", id="ipaddress-payment")))((("payments", "via IP addresses", id="payment-ipaddress")))((("P2PK (pay to public key)", id="p2pk-ch4")))((("addresses", "P2PK (pay to public key)", id="address-p2pk-ch4")))established that Alice can pay Bob by assigning some of her
-bitcoins to one of Bob's public keys.  But how does Alice get one of
-Bob's public keys?  Bob could just give her a copy, but let's look again
-at the public key we worked with in <<public_key_derivation>>.  Notice
-that it's quite long.  Imagine Bob trying to read that to Alice over the
-phone:
+앞에서 ((("public key cryptography", "IP address payments and", id="pub-key-ipaddress")))((("IP addresses for Bitcoin payments", id="ipaddress-payment")))((("payments", "via IP addresses", id="payment-ipaddress")))((("P2PK (pay to public key)", id="p2pk-ch4")))((("addresses", "P2PK (pay to public key)", id="address-p2pk-ch4")))앨리스가 자기 비트코인 일부를 밥의 공개키 중 하나에 할당해 지불할 수
+있다는 것을 확인했습니다. 그런데 앨리스는 밥의 공개키를 어떻게 얻을까요? 밥이
+그냥 사본을 건네줄 수도 있겠지만, <<public_key_derivation>>에서 다룬 공개키를
+다시 봅시다. 꽤 길다는 점에 주목하세요. 밥이 이것을 전화로 앨리스에게 읽어주는
+장면을 상상해 보세요.
 
 ----
 x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
@@ -424,140 +356,119 @@ y = 07CF33DA18BD734C600B96A72BBC4749D5141C90EC8AC328AE52DDFE2E505BDB
 ----
 
 
-Instead of direct public key entry, the earliest version of Bitcoin
-software allowed a spender to enter the receiver's IP address, as shown in <<bitcoin_01_send>>.  This
-feature was later removed--there are many problems
-with using IP addresses--but a quick description of it will help us
-better understand why certain features may have been added to the
-Bitcoin protocol.
+공개키를 직접 입력하는 대신, 비트코인 소프트웨어의 가장 초기 버전은 지불하는
+쪽이 받는 쪽의 IP 주소를 입력할 수 있게 했습니다(<<bitcoin_01_send>> 참고). 이
+기능은 나중에 제거되었습니다. IP 주소를 쓰는 데는 문제가 많기 때문입니다. 하지만
+간단히 살펴보면 비트코인 프로토콜에 왜 특정 기능들이 추가되었는지 더 잘 이해하는
+데 도움이 됩니다.
 
 [[bitcoin_01_send]]
-.Early send screen for Bitcoin via https://oreil.ly/IDV1a[The Internet Archive].
+.https://oreil.ly/IDV1a[인터넷 아카이브]에 남아 있는 초기 비트코인 보내기 화면.
 image::images/mbc3_0405.png["Early Bitcoin send screen"]
 
-If Alice entered Bob's IP address in Bitcoin 0.1, her full node would
-establish a connection with his full node and receive a new public key
-from Bob's wallet that his node had never previously given anyone.  This
-being a new public key was important to ensure that different
-transactions paying Bob couldn't be connected together by someone
-looking at the blockchain and noticing that all of the transactions paid
-the same public key.
+비트코인 0.1에서 앨리스가 밥의 IP 주소를 입력하면, 앨리스의 풀 노드가 밥의 풀
+노드와 연결을 맺고 밥의 지갑에서 그 노드가 이전에 누구에게도 준 적 없는 새
+공개키를 받아 옵니다. 새 공개키라는 점이 중요했는데, 누군가 블록체인을 보고 모든
+트랜잭션이 같은 공개키로 지불되었다는 것을 알아채 밥에게 지불하는 여러 트랜잭션을
+서로 연결 짓는 일을 막기 위해서였습니다.
 
-Using the public key her node received from Bob's node, Alice's wallet
-would construct a transaction output paying a very simple output script:
+앨리스의 노드는 밥의 노드에게서 받은 공개키를 사용해, 아주 단순한 출력 스크립트로
+지불하는 트랜잭션 출력을 만듭니다.
 
 ----
 <Bob's public key> OP_CHECKSIG
 ----
 
-Bob would later be able to spend that output with an input script consisting
-entirely of his signature:
+밥은 나중에 자신의 서명만으로 이루어진 입력 스크립트로 그 출력을 사용할 수
+있습니다.
 
 ----
 <Bob's signature>
 ----
 
-To figure out what an output and input script are doing, you can
-combine them together (input script first) and then note that each piece of
-data (shown in angle brackets) is placed at the top of a list of items,
-called a stack.  When an operation code (opcode) is encountered, it uses
-items from the stack, starting with the topmost items.  Let's look at
-how that works by beginning with the combined script:
+출력 스크립트와 입력 스크립트가 무엇을 하는지 알아보려면, 둘을 이어 붙인 다음
+(입력 스크립트가 먼저) 각 데이터 조각(꺾쇠 괄호로 표시)이 스택이라 불리는 항목
+목록의 맨 위에 놓인다고 생각하면 됩니다. 연산 코드(옵코드)를 만나면 스택의 맨 위
+항목부터 가져다 씁니다. 이어 붙인 스크립트로 시작해 어떻게 동작하는지 봅시다.
 
 ----
 <Bob's signature> <Bob's public key> OP_CHECKSIG
 ----
 
-For this script, Bob's signature is put on the stack, then Bob's public
-key is placed on top of it.  The +OP_CHECKSIG+ operation consumes two
-elements, starting with the public key and followed by the signature,
-removing them from the stack.  It verifies the signature corresponds to
-the public key and also commits to (signs) the various fields in the
-transaction.  If the signature is correct, +OP_CHECKSIG+ replaces itself
-on the stack with the value 1; if the signature was not correct, it
-replaces itself with a 0.  If there's a nonzero item on top of the stack at the
-end of evaluation, the script passes.  If all scripts in a transaction
-pass, and all of the other details about the transaction are valid, then
-full nodes will consider the transaction to be valid.
+이 스크립트에서는 밥의 서명이 스택에 올라가고, 그 위에 밥의 공개키가 놓입니다.
++OP_CHECKSIG+ 연산은 공개키부터 시작해 서명까지 두 개의 요소를 소비하며 스택에서
+제거합니다. 그리고 그 서명이 공개키에 대응하는지 검증하고, 트랜잭션의 여러 필드에
+커밋(서명)합니다. 서명이 올바르면 +OP_CHECKSIG+ 는 스택에서 자기 자신을 값 1로
+바꿔 놓고, 올바르지 않으면 0으로 바꿔 놓습니다. 평가가 끝났을 때 스택 맨 위에
+0이 아닌 항목이 있으면 스크립트가 통과합니다. 트랜잭션의 모든 스크립트가
+통과하고 트랜잭션의 나머지 세부 사항도 모두 유효하면, 풀 노드는 그 트랜잭션을
+유효한 것으로 봅니다.
 
-In short, the preceding script uses the same public key and signature
-described in the original paper but adds in the complexity of two script
-fields and an opcode.  That seems like extra work here, but we'll begin
-to see the benefits when we look at the following section.
+요컨대 앞의 스크립트는 원 논문에서 설명한 것과 같은 공개키와 서명을 사용하되,
+스크립트 필드 두 개와 옵코드 하나라는 복잡성을 더한 것입니다. 여기서는 괜한 일을
+하는 것처럼 보이지만, 다음 절을 보면 그 이점이 드러나기 시작합니다.
 
-This type of output is known today as _pay to public key_, or _P2PK_ for
-short.  It was never widely used for payments, and no widely used
-program has supported IP address payments for almost((("public key cryptography", "IP address payments and", startref="pub-key-ipaddress")))((("IP addresses for Bitcoin payments", startref="ipaddress-payment")))((("payments", "via IP addresses", startref="payment-ipaddress")))((("P2PK (pay to public key)", startref="p2pk-ch4")))((("addresses", "P2PK (pay to public key)", startref="address-p2pk-ch4"))) a decade.
+오늘날 이런 유형의 출력을 _공개키로 지불(pay to public key)_, 줄여서 _P2PK_ 라고
+부릅니다. 지불에 널리 쓰인 적은 없으며, 널리 쓰이는 프로그램 중에 IP 주소 지불을
+지원하는 것은 거의 10년째((("public key cryptography", "IP address payments and", startref="pub-key-ipaddress")))((("IP addresses for Bitcoin payments", startref="ipaddress-payment")))((("payments", "via IP addresses", startref="payment-ipaddress")))((("P2PK (pay to public key)", startref="p2pk-ch4")))((("addresses", "P2PK (pay to public key)", startref="address-p2pk-ch4")))없습니다.
 
 [[addresses_for_p2pkh]]
-=== Legacy Addresses for P2PKH
+=== P2PKH를 위한 레거시 주소
 
-Entering ((("public key cryptography", "hash functions and", id="pub-key-hash")))((("hash functions", "Bitcoin payments and", id="hash-payment")))((("payments", "with hash functions", secondary-sortas="hash functions", id="payment-hash")))((("P2PKH (pay to public key hash)", id="p2pkh-legacy")))((("addresses", "P2PKH (pay to public key hash)", id="address-p2pkh-legacy")))the IP address of the person you want to pay has a number of
-advantages, but it also has a number of downsides.  One particular
-downside is that the receiver needs their wallet to be online at their
-IP address, and it needs to be accessible from the outside world.  For
-a lot of people, that isn't an option.  They turn their computers off at
-night, their laptops go to sleep, they're behind firewalls, or they're
-using Network Address Translation (NAT).
+지불하려는 ((("public key cryptography", "hash functions and", id="pub-key-hash")))((("hash functions", "Bitcoin payments and", id="hash-payment")))((("payments", "with hash functions", secondary-sortas="hash functions", id="payment-hash")))((("P2PKH (pay to public key hash)", id="p2pkh-legacy")))((("addresses", "P2PKH (pay to public key hash)", id="address-p2pkh-legacy")))상대의 IP 주소를 입력하는 방식에는 여러 장점이 있지만 단점도
+여럿 있습니다. 특히 받는 쪽의 지갑이 자신의 IP 주소에서 온라인 상태여야 하고,
+바깥 세상에서 접근할 수 있어야 한다는 점이 문제입니다. 많은 사람에게 이는 가능한
+선택지가 아닙니다. 밤에는 컴퓨터를 끄고, 노트북은 절전 모드로 들어가고, 방화벽
+뒤에 있거나, 네트워크 주소 변환(NAT)을 쓰고 있으니까요.
 
-This brings us back to the problem of receivers like Bob having to give
-spenders like Alice a long public key.  The shortest version of Bitcoin
-public keys known to the developers of early Bitcoin were 65 bytes, the
-equivalent of 130 characters when written in hexadecimal.  However, Bitcoin
-already contains several data structures much larger than 65 bytes
-that need to be securely referenced in other parts of Bitcoin using the
-smallest amount of data that was secure.
+그러면 밥 같은 수신자가 앨리스 같은 지불자에게 긴 공개키를 건네야 한다는 문제로
+다시 돌아옵니다. 초기 비트코인 개발자들이 알던 가장 짧은 비트코인 공개키는
+65바이트였고, 16진수로 쓰면 130자에 해당합니다. 그런데 비트코인에는 이미 65바이트보다
+훨씬 큰 데이터 구조가 여럿 있었고, 이들을 비트코인의 다른 부분에서 안전한 선에서
+가장 적은 데이터로 참조해야 했습니다.
 
-Bitcoin accomplishes that with a _hash function_, a function that takes
-a potentially large amount of data, scrambles it (hashes it), and outputs a
-fixed amount of data.  A cryptographic hash function will always produce
-the same output when given the same input, and a secure function will
-also make it impractical for somebody to choose a different input that
-produces a previously-seen output.  That makes the ((("commitments", id="commitment")))output a _commitment_
-to the input.  It's a promise that, in practice, only input _x_ will
-produce output _X_.
+비트코인은 이를 _해시 함수_ 로 해결합니다. 해시 함수는 잠재적으로 큰 양의 데이터를
+받아 뒤섞은(해시한) 뒤 정해진 크기의 데이터를 내놓는 함수입니다. 암호학적 해시
+함수는 같은 입력에 대해 항상 같은 출력을 내놓으며, 안전한 함수라면 누군가 이미
+본 적 있는 출력을 만들어내는 다른 입력을 골라내는 일이 현실적으로 불가능합니다.
+그래서 그 출력은 입력에 대한 ((("commitments", id="commitment")))_커밋먼트_ 가 됩니다. 현실적으로 입력
+_x_ 만이 출력 _X_ 를 만들어낸다는 약속인 셈입니다.
 
-For example, imagine I want to ask you a question and also give you my
-answer in a form that you can't read immediately.  Let's say the
-question is, "in what year did Satoshi Nakamoto start working on
-Bitcoin?"  I'll give you a commitment to my answer in the form of
-output from the((("SHA256 hash function"))) SHA256 hash function, the function most commonly used in
-Bitcoin:
+예를 들어 내가 여러분에게 질문을 하면서, 내 답을 당장은 읽을 수 없는 형태로 함께
+건네고 싶다고 해봅시다. 질문은 "사토시 나카모토는 몇 년에 비트코인 작업을
+시작했는가?"라고 하죠. 나는 비트코인에서 가장 흔히 쓰이는 함수인((("SHA256 hash function"))) SHA256 해시
+함수의 출력 형태로 내 답에 대한 커밋먼트를 건넵니다.
 
 ----
 94d7a772612c8f2f2ec609d41f5bd3d04a5aa1dfe3582f04af517d396a302e4e
 ----
 
-Later, after you tell me your guess to the answer of the question, I can
-reveal my answer and prove to you that my answer, as input to the hash
-function, produces exactly the same output I gave you earlier:
+나중에 여러분이 그 질문에 대한 추측을 말하고 나면, 나는 내 답을 공개하고 그 답을
+해시 함수의 입력으로 넣었을 때 앞서 건넨 것과 정확히 같은 출력이 나온다는 것을
+증명할 수 있습니다.
 
 ----
 $ echo "2007.  He said about a year and a half before Oct 2008" | sha256sum
 94d7a772612c8f2f2ec609d41f5bd3d04a5aa1dfe3582f04af517d396a302e4e
 ----
 
-Now imagine that we ask Bob the question, "what is your public key?" Bob
-can use a hash function to give us a cryptographically secure commitment
-to his public key.  If he later reveals his key, and we verify it
-produces the same commitment he previously gave us, we can be sure it
-was the exact same key that was used to create that earlier commitment.
+이제 밥에게 "당신의 공개키는 무엇입니까?"라고 묻는다고 상상해 보세요. 밥은 해시
+함수를 사용해 자기 공개키에 대한 암호학적으로 안전한 커밋먼트를 줄 수 있습니다.
+나중에 밥이 자기 키를 공개하고, 그 키가 앞서 준 것과 같은 커밋먼트를 만들어내는지
+우리가 검증하면, 그 키가 앞선 커밋먼트를 만드는 데 쓰인 바로 그 키라고 확신할 수
+있습니다.
 
-The SHA256 hash function is considered to be very secure and produces
-256 bits (32 bytes) of output, less than half the size of original
-Bitcoin public keys.  However, there are other slightly less secure hash
-functions that produce smaller output, such as the ((("RIPEMD-160 hash function")))RIPEMD-160 hash
-function whose output is 160 bits (20 bytes).  For reasons Satoshi
-Nakamoto never stated, the original version of Bitcoin made commitments
-to public keys by first hashing the key with SHA256 and then hashing
-that output with RIPEMD-160; this produced a 20-byte commitment to the
-public key.
+SHA256 해시 함수는 매우 안전하다고 여겨지며 256비트(32바이트) 출력을 내놓는데,
+이는 원래 비트코인 공개키 크기의 절반도 되지 않습니다. 그런데 이보다 살짝 덜
+안전하지만 더 작은 출력을 내놓는 다른 해시 함수들도 있습니다. 출력이
+160비트(20바이트)인 ((("RIPEMD-160 hash function")))RIPEMD-160 해시 함수가 그렇습니다. 사토시
+나카모토가 이유를 밝힌 적은 없지만, 비트코인의 원래 버전은 공개키를 먼저 SHA256으로
+해시한 다음 그 출력을 RIPEMD-160으로 해시하는 방식으로 공개키에 대한 커밋먼트를
+만들었습니다. 그 결과 공개키에 대한 20바이트 커밋먼트가 나옵니다.
 
 [role="less_space pagebreak-before"]
-We can look at that algorithmically.
-Starting with the public key _K_, we compute the SHA256 hash and then
-compute the RIPEMD-160 hash of the result, producing a 160-bit (20-byte)
-number:
+이를 알고리즘으로 살펴봅시다. 공개키 _K_ 에서 시작해 SHA256 해시를 계산하고, 그
+결과의 RIPEMD-160 해시를 계산하면 160비트(20바이트) 수가 나옵니다.
 
 [latexmath]
 ++++
@@ -566,186 +477,162 @@ number:
 \end{equation}
 ++++
 
-where _K_ is the public key and _A_ is the resulting commitment.
+여기서 _K_ 는 공개키이고 _A_ 는 그 결과인 커밋먼트입니다.
 
-Now that we understand how to make a commitment to a public key, we need
-to figure out how to use it in a transaction.  Consider the following
-output script:
+공개키에 대한 커밋먼트를 만드는 방법을 알았으니, 이제 그것을 트랜잭션에서 어떻게
+쓰는지 알아내야 합니다. 다음 출력 스크립트를 생각해 봅시다.
 
 ----
 OP_DUP OP_HASH160 <Bob's commitment> OP_EQUAL OP_CHECKSIG
 ----
 
-And also the following input script:
+그리고 다음 입력 스크립트도 함께 봅시다.
 
 ----
 <Bob's signature> <Bob's public key>
 ----
 
-Together, they form the following script:
+둘을 합치면 다음 스크립트가 됩니다.
 
 ----
 <sig> <pubkey> OP_DUP OP_HASH160 <commitment> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-As we did in <<p2pk>>, we start putting items on the stack.  Bob's
-signature goes on first; his public key is then placed on top of the
-stack.  The +OP_DUP+ operation duplicates the top item, so the top and
-second-to-top item on the stack are now both Bob's public key.  The
-+OP_HASH160+ operation consumes (removes) the top public key and
-replaces it with the result of hashing it with +RIPEMD160(SHA256(K))+,
-so now the top of the stack is a hash of Bob's public key.  Next, the
-commitment to Bob's public key is added to the top of the stack.  The
-+OP_EQUALVERIFY+ operation consumes the top two items and verifies that
-they are equal; that should be the case if the public key Bob provided
-in the input script is the same public key used to create the commitment in
-the output script that Alice paid.  If +OP_EQUALVERIFY+ fails, the whole
-script fails.  Finally, we're left with a stack containing just Bob's
-signature and his public key; the +OP_CHECKSIG+ opcode verifies they
-correspond with each other and that the signature commits to the
-transaction.
+<<p2pk>>에서 했듯이 항목을 스택에 올리는 것으로 시작합니다. 밥의 서명이 먼저
+올라가고, 그다음 밥의 공개키가 스택 맨 위에 놓입니다. +OP_DUP+ 연산은 맨 위
+항목을 복제하므로, 이제 스택의 맨 위와 그 아래 항목이 모두 밥의 공개키입니다.
++OP_HASH160+ 연산은 맨 위 공개키를 소비(제거)하고 그 자리에 +RIPEMD160(SHA256(K))+
+로 해시한 결과를 놓습니다. 이제 스택 맨 위는 밥의 공개키의 해시입니다. 다음으로
+밥의 공개키에 대한 커밋먼트가 스택 맨 위에 추가됩니다. +OP_EQUALVERIFY+ 연산은
+맨 위 두 항목을 소비하고 둘이 같은지 검증합니다. 밥이 입력 스크립트에 제시한
+공개키가 앨리스가 지불한 출력 스크립트의 커밋먼트를 만드는 데 쓰인 공개키와
+같다면 둘은 같아야 합니다. +OP_EQUALVERIFY+ 가 실패하면 스크립트 전체가
+실패합니다. 마지막으로 스택에는 밥의 서명과 공개키만 남고, +OP_CHECKSIG+ 옵코드가
+둘이 서로 대응하는지, 그리고 그 서명이 트랜잭션에 커밋하는지 검증합니다.
 
-Although this process of paying to a public key hash (_P2PKH_) may seem
-convoluted, it allows Alice's payment to
-Bob to contain only a 20 byte commitment to his public key instead of
-the key itself, which would've been 65 bytes in the original version of
-Bitcoin.  That's a lot less data for Bob to have to communicate to
-Alice.
+공개키 해시로 지불하는(_P2PKH_) 이 과정이 복잡해 보일지 모르지만, 덕분에 앨리스가
+밥에게 보내는 지불에는 공개키 자체 대신 그에 대한 20바이트 커밋먼트만 담으면
+됩니다. 공개키 자체는 비트코인의 원래 버전에서 65바이트였습니다. 밥이 앨리스에게
+전달해야 하는 데이터가 훨씬 줄어든 것입니다.
 
-However, we haven't yet discussed how Bob gets those 20 bytes from his
-Bitcoin wallet to Alice's wallet.  There are commonly used encodings for
-byte values, such as hexadecimal, but any mistake made in copying a
-commitment would result in the bitcoins being sent to an unspendable
-output, causing them to be lost forever.  In the next section, we'll
-look at compact encoding and reliable ((("public key cryptography", "hash functions and", startref="pub-key-hash")))((("hash functions", "Bitcoin payments and", startref="hash-payment")))((("payments", "with hash functions", secondary-sortas="hash functions", startref="payment-hash")))((("P2PKH (pay to public key hash)", startref="p2pkh-legacy")))((("addresses", "P2PKH (pay to public key hash)", startref="address-p2pkh-legacy")))((("commitments", startref="commitment")))checksums.
+하지만 밥이 그 20바이트를 자기 비트코인 지갑에서 앨리스의 지갑으로 어떻게
+전달하는지는 아직 이야기하지 않았습니다. 16진수처럼 바이트 값을 나타내는 흔한
+인코딩이 있긴 하지만, 커밋먼트를 옮겨 적다가 실수하면 비트코인이 사용할 수 없는
+출력으로 보내져 영원히 사라지게 됩니다. 다음 절에서는 간결한 인코딩과 믿을 만한
+((("public key cryptography", "hash functions and", startref="pub-key-hash")))((("hash functions", "Bitcoin payments and", startref="hash-payment")))((("payments", "with hash functions", secondary-sortas="hash functions", startref="payment-hash")))((("P2PKH (pay to public key hash)", startref="p2pkh-legacy")))((("addresses", "P2PKH (pay to public key hash)", startref="address-p2pkh-legacy")))((("commitments", startref="commitment")))체크섬을 살펴봅니다.
 
 [[base58]]
-=== Base58check Encoding
+=== Base58check 인코딩
 
-In order((("public key cryptography", "base58check encoding", id="pub-key-base58")))((("base58check encoding", id="base58-ch4")))((("encoding", "base58check", id="encode-base58"))) to represent long numbers in a compact way,
-using fewer symbols, many computer systems use mixed-alphanumeric
-representations with a base (or radix) higher than 10. For example,
-whereas the traditional decimal system uses 10 numerals, 0 through 9,
-the hexadecimal system uses 16, with the letters A through F as the six
-additional symbols. A number represented in hexadecimal format is
-shorter than the equivalent decimal representation. Even more compact,
-base64 representation ((("base64 encoding")))uses 26 lowercase letters, 26 capital letters, 10
-numerals, and 2 more characters such as "+" and "/" to
-transmit binary data over text-based media such as email.
+긴 수를((("public key cryptography", "base58check encoding", id="pub-key-base58")))((("base58check encoding", id="base58-ch4")))((("encoding", "base58check", id="encode-base58"))) 더 적은 기호로 간결하게 나타내기 위해, 많은 컴퓨터
+시스템이 밑(또는 기수)이 10보다 큰 영숫자 혼합 표현을 사용합니다. 예를 들어
+전통적인 10진법은 0부터 9까지 10개의 숫자를 쓰지만, 16진법은 A부터 F까지 여섯
+개의 추가 기호를 더해 16개를 씁니다. 16진수 형식으로 나타낸 수는 같은 값을 10진수로
+나타낸 것보다 짧습니다. 더 간결한 base64 표현은((("base64 encoding"))) 소문자 26개, 대문자 26개,
+숫자 10개, 그리고 "+" 와 "/" 같은 문자 2개를 사용해 이메일처럼 텍스트 기반
+매체로 이진 데이터를 전송합니다.
 
-Base58 is a similar encoding to
-base64, using upper- and lowercase letters and numbers,
-but omitting some characters that are frequently mistaken for one
-another and can appear identical when displayed in certain fonts.
-Specifically, base58 is base64 without the 0 (number zero), O (capital
-o), l (lower L), I (capital i), and the symbols "+" and
-"/." Or, more simply, it is a set of lowercase and capital letters and
-numbers without the four (0, O, l, I) just mentioned. <<base58alphabet>>
-shows the full base58 alphabet.
+Base58은 base64와 비슷한 인코딩으로 대소문자와 숫자를 쓰되, 서로 혼동하기 쉽고
+특정 글꼴에서 똑같아 보일 수 있는 일부 문자를 뺀 것입니다. 구체적으로 base58은
+base64에서 0(숫자 영), O(대문자 오), l(소문자 엘), I(대문자 아이), 그리고 "+"
+와 "/" 기호를 뺀 것입니다. 더 간단히 말하면 방금 언급한 네 글자(0, O, l, I)를
+뺀 대소문자와 숫자의 집합입니다. <<base58alphabet>>에 base58 알파벳 전체를
+나타냈습니다.
 
 [[base58alphabet]]
-.Bitcoin's base58 alphabet
+.비트코인의 base58 알파벳
 ====
 ----
 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
 ----
 ====
 
-To add extra security against typos or transcription errors, base58check
-includes((("checksums"))) a _checksum_ encoded in the base58 alphabet. The checksum is an
-additional four bytes
-added to the end of the data that is being encoded. The checksum is
-derived from the hash of the encoded data and can therefore be used to
-detect transcription and typing errors. When presented with
-base58check code, the decoding software will calculate the checksum of
-the data and compare it to the checksum included in the code. If the two
-do not match, an error has been introduced and the base58check data is
-invalid. This prevents a mistyped Bitcoin address from being accepted by
-the wallet software as a valid destination, an error that would
-otherwise result in loss of funds.
+오타나 옮겨 적는 실수에 대비해 보안을 더하기 위해, base58check는 base58 알파벳으로
+인코딩된 ((("checksums")))_체크섬_ 을 포함합니다. 체크섬은 인코딩되는 데이터 끝에 덧붙는
+4바이트입니다. 체크섬은 인코딩된 데이터의 해시에서 유도되므로, 옮겨 적기나 입력
+실수를 잡아내는 데 쓸 수 있습니다. base58check 코드를 받으면 디코딩 소프트웨어가
+데이터의 체크섬을 계산해 코드에 포함된 체크섬과 비교합니다. 둘이 맞지 않으면
+오류가 끼어든 것이고 그 base58check 데이터는 유효하지 않습니다. 이 덕분에 잘못
+입력한 비트코인 주소가 유효한 목적지로 지갑 소프트웨어에 받아들여지는 일을 막을
+수 있으며, 그렇지 않았다면 자금 손실로 이어졌을 오류입니다.
 
-To convert data (a number) into a base58check format, we first add a
-prefix to the data, called ((("version prefixes", id="version-prefix")))the "version byte," which serves to easily
-identify the type of data that is encoded. For example, the prefix zero
-(0x00 in hex) indicates that the data should be used as the commitment (hash) in
-a legacy P2PKH output script.  A list of common version prefixes is shown
-in <<base58check_versions>>.
+데이터(수)를 base58check 형식으로 바꾸려면, 먼저 데이터 앞에 "버전 바이트"라
+불리는 ((("version prefixes", id="version-prefix")))접두사를 붙입니다. 이는 인코딩된 데이터의 유형을 쉽게 식별하는
+역할을 합니다. 예를 들어 접두사 0(16진수로 0x00)은 그 데이터가 레거시 P2PKH 출력
+스크립트에서 커밋먼트(해시)로 쓰여야 함을 나타냅니다. 흔히 쓰이는 버전 접두사
+목록은 <<base58check_versions>>에 있습니다.
 
-Next, we compute the "double-SHA" checksum, meaning we apply the SHA256
-hash-algorithm twice on the previous result (the prefix concatenated
-with the data):
+다음으로 "이중 SHA" 체크섬을 계산합니다. 즉 앞의 결과(접두사와 데이터를 이어
+붙인 것)에 SHA256 해시 알고리즘을 두 번 적용합니다.
 
 ----
 checksum = SHA256(SHA256(prefix||data))
 ----
 
-From the resulting 32-byte hash (hash-of-a-hash), we take only the first
-four bytes. These four bytes serve as the error-checking code, or
-checksum. The checksum is appended to the end.
+그렇게 나온 32바이트 해시(해시의 해시)에서 앞의 4바이트만 취합니다. 이 4바이트가
+오류 검사 코드, 즉 체크섬 역할을 합니다. 체크섬은 맨 끝에 덧붙입니다.
 
-The result is composed of three items: a prefix, the data, and a
-checksum. This result is encoded using the base58 alphabet described
-previously. <<base58check_encoding>> illustrates the base58check
-encoding process.
+그 결과는 접두사, 데이터, 체크섬의 세 항목으로 이루어집니다. 이 결과를 앞에서
+설명한 base58 알파벳으로 인코딩합니다. <<base58check_encoding>>에 base58check
+인코딩 과정을 나타냈습니다.
 
 [[base58check_encoding]]
-.Base58check encoding: a base58, versioned, and checksummed format for unambiguously encoding bitcoin data.
+.Base58check 인코딩: 비트코인 데이터를 모호함 없이 인코딩하기 위한 base58 기반의 버전·체크섬 형식.
 image::images/mbc3_0406.png["Base58checkEncoding"]
 
 ++++
 <p class="fix_tracking2">
-In Bitcoin, other data besides public key commitments are presented to the user in
-base58check encoding to make that data compact, easy to read, and easy to detect
-errors. The version prefix in base58check encoding is used to create
-easily distinguishable formats, which when encoded in base58 contain
-specific characters at the beginning of the base58check-encoded payload.
-These characters make it easy for humans to identify the type of data
-that is encoded and how to use it. This is what differentiates, for
-example, a base58check-encoded Bitcoin address that starts with a 1 from
-a base58check-encoded private key wallet import format (WIF) that starts with a 5. Some example
-version prefixes and the resulting base58 characters are shown in
-<a data-type="xref" href="#base58check_versions">#base58check_versions</a>.
+비트코인에서는 공개키 커밋먼트 외의 다른 데이터도 간결하고 읽기 쉬우며 오류를
+발견하기 쉽도록 base58check 인코딩으로 사용자에게 제시됩니다. base58check
+인코딩의 버전 접두사는 쉽게 구별되는 형식을 만드는 데 쓰이며, base58로 인코딩되면
+base58check로 인코딩된 페이로드의 앞부분에 특정 문자가 오게 됩니다. 이 문자들
+덕분에 사람이 인코딩된 데이터의 유형과 쓰임새를 쉽게 알아볼 수 있습니다. 예를
+들어 1로 시작하는 base58check 인코딩 비트코인 주소와 5로 시작하는 base58check
+인코딩 비밀키 지갑 가져오기 형식(WIF)을 구별해 주는 것이 바로 이것입니다. 버전
+접두사와 그 결과로 나오는 base58 문자의 예를
+<a data-type="xref" href="#base58check_versions">#base58check_versions</a>에
+나타냈습니다.
 </p>
 ++++
 
 ++++
 <table id="base58check_versions">
-<caption>Base58check version prefix and encoded result examples</caption>
+<caption>Base58check 버전 접두사와 인코딩 결과 예시</caption>
 <thead>
 <tr>
-<th>Type</th>
-<th>Version prefix (hex)</th>
-<th>Base58 result prefix</th>
+<th>유형</th>
+<th>버전 접두사(16진수)</th>
+<th>Base58 결과 접두사</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><p>Address for pay to public key hash (P2PKH)</p></td>
+<td><p>공개키 해시로 지불(P2PKH) 주소</p></td>
 <td><p>0x00</p></td>
 <td><p>1</p></td>
 </tr>
 <tr>
-<td><p>Address for pay to script hash (P2SH)</p></td>
+<td><p>스크립트 해시로 지불(P2SH) 주소</p></td>
 <td><p>0x05</p></td>
 <td><p>3</p></td>
 </tr>
 <tr>
-<td><p>Testnet Address for P2PKH</p></td>
+<td><p>테스트넷 P2PKH 주소</p></td>
 <td><p>0x6F</p></td>
-<td><p>m or n</p></td>
+<td><p>m 또는 n</p></td>
 </tr>
 <tr>
-<td><p>Testnet Address for P2SH</p></td>
+<td><p>테스트넷 P2SH 주소</p></td>
 <td><p>0xC4</p></td>
 <td><p>2</p></td>
 </tr>
 <tr>
-<td><p>Private Key WIF</p></td>
+<td><p>비밀키 WIF</p></td>
 <td><p>0x80</p></td>
-<td><p>5, K, or L</p></td>
+<td><p>5, K, 또는 L</p></td>
 </tr>
 <tr>
-<td><p>BIP32 Extended Public Key</p></td>
+<td><p>BIP32 확장 공개키</p></td>
 <td><p>0x0488B21E</p></td>
 <td><p>xpub</p></td>
 </tr>
@@ -753,50 +640,42 @@ version prefixes and the resulting base58 characters are shown in
 </table>
 ++++
 
-Combining public keys, hash-based commitments, and base58check
-encoding, <<pubkey_to_address>> illustrates the conversion of a public key
-into a Bitcoin ((("public key cryptography", "base58check encoding", startref="pub-key-base58")))((("base58check encoding", startref="base58-ch4")))((("encoding", "base58check", startref="encode-base58")))((("version prefixes", startref="version-prefix")))address.
+공개키와 해시 기반 커밋먼트, base58check 인코딩을 결합해, <<pubkey_to_address>>에
+공개키를 비트코인 ((("public key cryptography", "base58check encoding", startref="pub-key-base58")))((("base58check encoding", startref="base58-ch4")))((("encoding", "base58check", startref="encode-base58")))((("version prefixes", startref="version-prefix")))주소로 변환하는 과정을 나타냈습니다.
 
 [[pubkey_to_address]]
-.Public key to Bitcoin address: conversion of a public key to a Bitcoin address.
+.공개키에서 비트코인 주소로: 공개키를 비트코인 주소로 변환하는 과정.
 image::images/mbc3_0407.png["pubkey_to_address"]
-
 [[comp_pub]]
-=== Compressed Public Keys
+=== 압축 공개키
 
 //https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2011-November/000778.html
 
 
-When ((("public key cryptography", "compressed public keys", id="pub-key-compress")))((("compressed public keys", id="compress-pub-key")))((("uncompressed public keys", id="uncompress-pub-key")))Bitcoin was first authored, its developers only knew how to create
-65-byte public keys.  However, a later developer became aware of an
-alternative encoding for public keys that used only 33 bytes and which
-was backward compatible with all Bitcoin full nodes at the time,
-so there was no need to change the Bitcoin protocol.  Those 33-byte
-public keys are known as _compressed public keys_, and the original 65-byte keys are known as _uncompressed public keys_.  Using smaller public keys
-results in smaller transactions, allowing more payments to be made in the same
-block.
+비트코인이 ((("public key cryptography", "compressed public keys", id="pub-key-compress")))((("compressed public keys", id="compress-pub-key")))((("uncompressed public keys", id="uncompress-pub-key")))처음 만들어졌을 때 개발자들은 65바이트 공개키를 만드는
+방법만 알고 있었습니다. 그런데 나중에 한 개발자가 33바이트만 쓰면서도 당시 모든
+비트코인 풀 노드와 하위 호환되는 공개키 인코딩 방식을 알게 되었고, 덕분에 비트코인
+프로토콜을 바꿀 필요가 없었습니다. 이 33바이트 공개키를 _압축 공개키_ 라고 하고,
+원래의 65바이트 키를 _비압축 공개키_ 라고 합니다. 더 작은 공개키를 쓰면 트랜잭션도
+작아지므로 같은 블록에 더 많은 지불을 담을 수 있습니다.
 
-As we saw in the section <<public_key_derivation>>, a public key is a point [.keep-together]#(x, y)# on an
-elliptic curve. Because the curve expresses a mathematical function, a
-point on the curve represents a solution to the equation and, therefore,
-if we know the _x_ coordinate, we can calculate the _y_ coordinate by
-solving the equation [.keep-together]#y^2^ mod p = (x^3^ + 7) mod p.# That allows us to
-store only the _x_ coordinate of the public key point, omitting the _y_
-coordinate and reducing the size of the key and the space required to
-store it by 256 bits. An almost 50% reduction in size in every
-transaction adds up to a lot of data saved over time!
+<<public_key_derivation>> 절에서 보았듯이 공개키는 타원곡선 위의 점
+[.keep-together]#(x, y)# 입니다. 곡선이 수학 함수를 나타내므로 곡선 위의 점은 그
+방정식의 해에 해당하고, 따라서 _x_ 좌표를 알면 방정식
+[.keep-together]#y^2^ mod p = (x^3^ + 7) mod p# 를 풀어 _y_ 좌표를 계산할 수
+있습니다. 그래서 공개키 점의 _x_ 좌표만 저장하고 _y_ 좌표는 생략할 수 있으며, 키와
+그 저장 공간을 256비트만큼 줄일 수 있습니다. 모든 트랜잭션에서 크기가 거의 50%
+줄어들면 시간이 지날수록 절약되는 데이터가 엄청나게 쌓입니다!
 
-Here is the public key generated by the private key we created in
-<<public_key_derivation>>:
+다음은 <<public_key_derivation>>에서 만든 비밀키로 생성한 공개키입니다.
 
 ----
 x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
 y = 07CF33DA18BD734C600B96A72BBC4749D5141C90EC8AC328AE52DDFE2E505BDB
 ----
 
-Here's the same public key shown as a 520-bit number (130 hex digits)
-with the prefix +04+ followed by +x+ and then +y+ coordinates, as +04 x
-y+:
+다음은 같은 공개키를 접두사 +04+ 뒤에 +x+ 와 +y+ 좌표가 오는 +04 x y+ 형태로,
+520비트 수(16진수 130자리)로 나타낸 것입니다.
 
 ++++
 <pre data-type="programlisting">
@@ -805,113 +684,95 @@ K = 04F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A\
 </pre>
 ++++
 
-Whereas uncompressed public keys have a prefix of +04+, compressed
-public keys start with either a +02+ or a +03+ prefix. Let's look at why
-there are two possible prefixes: because the left side of the equation
-is __y__^2^, the solution for _y_ is a square root, which can have a
-positive or negative value. Visually, this means that the resulting _y_
-coordinate can be above or below the x-axis. As you can see from the
-graph of the elliptic curve in <<ecc-curve>>, the curve is symmetric,
-meaning it is reflected like a mirror by the x-axis. So, while we can
-omit the _y_ coordinate, we have to store the _sign_ of _y_ (positive or
-negative); in other words, we have to remember if it was above or
-below the x-axis because each of those options represents a different
-point and a different public key. When calculating the elliptic curve in
-binary arithmetic on the finite field of prime order p, the _y_
-coordinate is either even or odd, which corresponds to the
-positive/negative sign as explained earlier. Therefore, to distinguish
-between the two possible values of _y_, we store a compressed public key
-with the prefix +02+ if the _y_ is even, and +03+ if it is odd, allowing
-the software to correctly deduce the _y_ coordinate from the _x_
-coordinate and uncompress the public key to the full coordinates of the
-point. Public key compression is illustrated in <<pubkey_compression>>.
+비압축 공개키의 접두사가 +04+ 인 반면, 압축 공개키는 +02+ 또는 +03+ 접두사로
+시작합니다. 접두사가 왜 둘일 수 있는지 봅시다. 방정식의 좌변이 __y__^2^ 이므로
+_y_ 의 해는 제곱근이고, 양수와 음수 값을 가질 수 있습니다. 시각적으로 이는 그
+결과 _y_ 좌표가 x축 위에 있을 수도 아래에 있을 수도 있다는 뜻입니다.
+<<ecc-curve>>의 타원곡선 그래프에서 볼 수 있듯 곡선은 대칭이며, x축을 기준으로
+거울처럼 반사되어 있습니다. 그래서 _y_ 좌표를 생략할 수는 있지만 _y_ 의
+_부호_ (양수인지 음수인지)는 저장해야 합니다. 다시 말해 그 점이 x축 위에 있었는지
+아래에 있었는지 기억해야 하는데, 두 경우가 서로 다른 점이자 서로 다른 공개키를
+나타내기 때문입니다. 위수가 소수 p인 유한체에서 이진 연산으로 타원곡선을 계산하면
+_y_ 좌표는 짝수이거나 홀수이며, 이는 앞서 설명한 양/음 부호에 대응합니다. 따라서
+_y_ 의 두 가능한 값을 구별하기 위해, _y_ 가 짝수이면 접두사 +02+ 를, 홀수이면
++03+ 을 붙여 압축 공개키를 저장합니다. 그러면 소프트웨어가 _x_ 좌표로부터 _y_
+좌표를 올바르게 유도해 공개키를 점의 전체 좌표로 복원할 수 있습니다. 공개키 압축을
+<<pubkey_compression>>에 나타냈습니다.
 
 
 [[pubkey_compression]]
-.Public key compression.
+.공개키 압축.
 image::images/mbc3_0408.png["pubkey_compression"]
 
 
-Here's the same public key generated in <<public_key_derivation>>, shown as a compressed
-public key stored in 264 bits (66 hex digits) with the prefix +03+
-indicating the _y_ coordinate is odd:
+다음은 <<public_key_derivation>>에서 생성한 것과 같은 공개키를, _y_ 좌표가
+홀수임을 나타내는 접두사 +03+ 과 함께 264비트(16진수 66자리)로 저장한 압축
+공개키로 나타낸 것입니다.
 
 ----
 K = 03F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
 ----
 
-This compressed public key corresponds to the same private key, meaning
-it is generated from the same private key. However, it looks different
-from the uncompressed public key. More importantly, if we convert this
-compressed public key to a commitment using the HASH160
-function (+RIPEMD160(SHA256(K))+), it will produce a _different_
-commitment than the uncompressed public key, leading to a different
-address. This can be confusing because it means that a single private
-key can produce a public key expressed in two different formats
-(compressed and uncompressed) that produce two different Bitcoin
-addresses. However, the private key is identical for both Bitcoin
-addresses.
+이 압축 공개키는 같은 비밀키에 대응합니다. 즉 같은 비밀키에서 생성된 것입니다.
+하지만 비압축 공개키와는 다르게 보입니다. 더 중요한 점은, 이 압축 공개키를
+HASH160 함수(+RIPEMD160(SHA256(K))+)로 커밋먼트로 변환하면 비압축 공개키와는
+_다른_ 커밋먼트가 나오고, 따라서 다른 주소가 된다는 것입니다. 하나의 비밀키가
+서로 다른 두 형식(압축과 비압축)으로 표현된 공개키를 만들어내고 그것이 서로 다른
+두 비트코인 주소를 낳는다는 뜻이라 혼란스러울 수 있습니다. 하지만 두 비트코인
+주소의 비밀키는 동일합니다.
 
 
 
-Compressed public keys are now the default in almost all Bitcoin
-software and were required when using certain new features added
-in later protocol upgrades.
+이제 거의 모든 비트코인 소프트웨어에서 압축 공개키가 기본값이며, 이후 프로토콜
+업그레이드로 추가된 일부 새 기능을 쓸 때는 필수였습니다.
 
-However, some software still needs to support uncompressed public keys,
-such as a wallet application importing private keys from an older
-wallet.  When the new wallet scans the blockchain for old P2PKH outputs
-and inputs, it needs to know whether to scan the 65-byte keys (and
-commitments to those keys) or 33-byte keys (and their commitments).  Failure
-to scan for the correct type can lead to the user not being able to
-spend their full balance.  To resolve this issue, when private keys are
-exported from a wallet, the WIF that is used to
-represent them is implemented slightly differently in newer Bitcoin
-wallets to indicate that these private keys have been used to produce((("public key cryptography", "compressed public keys", startref="pub-key-compress")))((("compressed public keys", startref="compress-pub-key")))((("uncompressed public keys", startref="uncompress-pub-key")))
-compressed public keys.
+다만 일부 소프트웨어는 여전히 비압축 공개키를 지원해야 합니다. 예를 들어 오래된
+지갑에서 비밀키를 가져오는 지갑 애플리케이션이 그렇습니다. 새 지갑이 블록체인에서
+옛 P2PKH 출력과 입력을 훑을 때, 65바이트 키(와 그 키에 대한 커밋먼트)를 찾아야
+할지 33바이트 키(와 그 커밋먼트)를 찾아야 할지 알아야 합니다. 올바른 유형을 훑지
+못하면 사용자가 잔액 전부를 사용하지 못하는 상황이 생길 수 있습니다. 이 문제를
+해결하기 위해, 지갑에서 비밀키를 내보낼 때 그것을 나타내는 데 쓰이는 WIF가 최신
+비트코인 지갑에서는 조금 다르게 구현되어, 그 비밀키가 압축 공개키를 만드는 데
+쓰였음을((("public key cryptography", "compressed public keys", startref="pub-key-compress")))((("compressed public keys", startref="compress-pub-key")))((("uncompressed public keys", startref="uncompress-pub-key")))
+나타냅니다.
 
 [[addresses_for_p2sh]]
-=== Legacy Pay to Script Hash (P2SH)
+=== 레거시 스크립트 해시로 지불(P2SH)
 
-As we've ((("public key cryptography", "hash functions and", id="pub-key-hash2")))((("hash functions", "Bitcoin payments and", id="hash-payment2")))((("payments", "with hash functions", secondary-sortas="hash functions", id="payment-hash2")))((("P2SH (pay to script hash)", id="p2sh-ch4")))((("addresses", "P2SH (pay to script hash)", id="address-p2sh-ch4")))seen in preceding sections, someone receiving bitcoins (like
-Bob) can require that payments to him contain certain constraints in their
-output script.  Bob will need to fulfill those constraints using an
-input script when he spends those bitcoins.  In <<p2pk>>, the constraint
-was simply that the input script needed to provide an appropriate
-signature.  In <<addresses_for_p2pkh>>, an appropriate public key also needed to be
-provided.
+앞 절들에서 ((("public key cryptography", "hash functions and", id="pub-key-hash2")))((("hash functions", "Bitcoin payments and", id="hash-payment2")))((("payments", "with hash functions", secondary-sortas="hash functions", id="payment-hash2")))((("P2SH (pay to script hash)", id="p2sh-ch4")))((("addresses", "P2SH (pay to script hash)", id="address-p2sh-ch4")))보았듯이, 밥처럼 비트코인을 받는 쪽은 자신에게 오는 지불의
+출력 스크립트에 특정 제약 조건이 담기도록 요구할 수 있습니다. 밥은 그 비트코인을
+사용할 때 입력 스크립트로 그 제약 조건을 충족해야 합니다. <<p2pk>>에서 제약
+조건은 단순히 입력 스크립트가 알맞은 서명을 제공해야 한다는 것이었습니다.
+<<addresses_for_p2pkh>>에서는 알맞은 공개키도 함께 제공해야 했습니다.
 
 ++++
 <p class="fix_tracking3">
-For a spender (like Alice) to place the constraints Bob wants
-in the output script she uses to pay him, Bob needs to communicate those
-constraints to her.  This is similar to the problem of Bob needing to
-communicate his public key to her.  Like that problem, where
-public keys can be fairly large, the constraints Bob uses can also be
-quite large—potentially thousands of bytes.  That's not only thousands
-of bytes that need to be communicated to Alice, but thousands of bytes
-for which she needs to pay transaction fees every time she wants to spend money to Bob.  However, the solution of using hash functions to create
-small commitments to large amounts of data also applies here.
+앨리스 같은 지불자가 밥에게 지불하는 출력 스크립트에 밥이 원하는 제약 조건을
+넣으려면, 밥이 그 조건을 앨리스에게 전달해야 합니다. 이는 밥이 자기 공개키를
+앨리스에게 전달해야 했던 문제와 비슷합니다. 공개키가 꽤 클 수 있었던 그 문제처럼,
+밥이 쓰는 제약 조건도 상당히 클 수 있습니다. 잠재적으로 수천 바이트에 이르기도
+합니다. 그러면 앨리스에게 전달해야 할 데이터가 수천 바이트일 뿐 아니라, 앨리스가
+밥에게 돈을 보낼 때마다 그 수천 바이트에 대한 트랜잭션 수수료를 내야 합니다.
+하지만 큰 데이터에 대해 작은 커밋먼트를 만드는 해시 함수라는 해법이 여기에도
+그대로 적용됩니다.
 </p>
 ++++
 
-The BIP16 upgrade to the Bitcoin protocol in 2012 allows an
-output script to ((("redeem scripts", id="redeem-script")))commit to a _redemption script_ (_redeem script_).  When
-Bob spends his bitcoins, his input script needs to provide a redeem script
-that matches the commitment and also any data necessary to satisfy the
-redeem script (such as signatures).  Let's start by imagining Bob wants
-to require two signatures to spend his bitcoins, one signature from his
-desktop wallet and one from a hardware signing device.  He puts those
-conditions into a redeem script:
+2012년 비트코인 프로토콜의 BIP16 업그레이드는 출력 스크립트가
+((("redeem scripts", id="redeem-script")))_상환 스크립트(리딤 스크립트)_ 에 커밋할 수 있게 했습니다. 밥이
+자기 비트코인을 사용할 때, 그의 입력 스크립트는 커밋먼트와 일치하는 리딤 스크립트와
+그 리딤 스크립트를 충족하는 데 필요한 데이터(서명 등)를 함께 제공해야 합니다.
+밥이 자기 비트코인을 사용하는 데 서명 두 개, 즉 데스크톱 지갑의 서명 하나와
+하드웨어 서명 장치의 서명 하나를 요구하고 싶어 한다고 해봅시다. 밥은 그 조건을
+리딤 스크립트에 담습니다.
 
 ----
 <public key 1> OP_CHECKSIGVERIFY <public key 2> OP_CHECKSIG
 ----
 
-He then creates a commitment to the redeem script using the same
-HASH160 mechanism used for P2PKH commitments, +RIPEMD160(SHA256(script))+.
-That commitment is placed into the output script using a special
-template:
+그다음 P2PKH 커밋먼트에 쓰인 것과 같은 HASH160 방식
+(+RIPEMD160(SHA256(script))+)으로 리딤 스크립트에 대한 커밋먼트를 만듭니다. 그
+커밋먼트는 특별한 형판을 사용해 출력 스크립트에 들어갑니다.
 
 ----
 OP_HASH160 <commitment> OP_EQUAL
@@ -919,246 +780,207 @@ OP_HASH160 <commitment> OP_EQUAL
 
 [WARNING]
 ====
-When using pay to script hash (P2SH), you must use the specific P2SH template
-with no extra data or conditions in the output script.  If the
-output script is not exactly +OP_HASH160 <20 bytes> OP_EQUAL+, the
-redeem script will not be used and any bitcoins may either be unspendable
-or spendable by anyone (meaning anyone can take them).
+스크립트 해시로 지불(P2SH)을 쓸 때는 출력 스크립트에 추가 데이터나 조건 없이
+정해진 P2SH 형판을 그대로 사용해야 합니다. 출력 스크립트가 정확히
++OP_HASH160 <20 bytes> OP_EQUAL+ 이 아니면 리딤 스크립트가 사용되지 않으며,
+비트코인은 아예 사용할 수 없게 되거나 누구나 사용할 수 있게(즉 누구나 가져갈 수
+있게) 됩니다.
 ====
 
-When Bob goes to spend the payment he received to the commitment for his
-script, he uses an input script that includes the redeem script, with it
-serialized as a single data element.  He also provides the signatures
-he needs to satisfy the redeem script, putting them in the order that
-they will be consumed by the opcodes:
+밥이 자기 스크립트에 대한 커밋먼트로 받은 지불을 사용하려 할 때는, 리딤 스크립트를
+하나의 데이터 요소로 직렬화해 포함한 입력 스크립트를 사용합니다. 또한 리딤
+스크립트를 충족하는 데 필요한 서명들을, 옵코드가 소비할 순서대로 넣어 제공합니다.
 
 ----
 <signature2> <signature1> <redeem script>
 ----
 
-When Bitcoin full nodes receive Bob's spend, they'll verify that the
-serialized redeem script will hash to the same value as the commitment.
-Then they'll replace it on the stack with its deserialized value:
+비트코인 풀 노드는 밥의 지출을 받으면, 직렬화된 리딤 스크립트를 해시한 값이
+커밋먼트와 같은지 검증합니다. 그런 다음 스택에서 그것을 역직렬화한 값으로
+바꿔 놓습니다.
 
 ----
 <signature2> <signature1> <pubkey1> OP_CHECKSIGVERIFY <pubkey2> OP_CHECKSIG
 ----
 
-The script is executed and, if it passes and all of the other
-transaction details are correct, the transaction is valid.
+스크립트가 실행되고, 통과하면서 트랜잭션의 다른 세부 사항도 모두 올바르면 그
+트랜잭션은 유효합니다.
 
-Addresses for P2SH are also created with
-base58check.  The version prefix is set to 5, which results in an
-encoded address starting with a +3+. An example of a P2SH address is
-+3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+.
+P2SH 주소 역시 base58check로 만듭니다. 버전 접두사는 5로 설정되며, 그 결과
+인코딩된 주소는 +3+ 으로 시작합니다. P2SH 주소의 예로
++3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+ 이 있습니다.
 
 [TIP]
 ====
-P2SH is not necessarily the same as a multisignature
-transaction. A P2SH address _most often_ represents a multisignature
-script, but it might also represent a script encoding other types of
-transactions.
+P2SH가 반드시 다중서명 트랜잭션과 같은 것은 아닙니다. P2SH 주소는 _대개_
+다중서명 스크립트를 나타내지만, 다른 유형의 트랜잭션을 인코딩한 스크립트를
+나타낼 수도 있습니다.
 ====
 
-P2PKH and P2SH are the only two script templates used with base58check
-encoding.  They are now known as legacy addresses and have become less
-common over time.
-Legacy addresses were supplanted by the bech32 family of ((("redeem scripts", startref="redeem-script")))addresses.
+P2PKH와 P2SH는 base58check 인코딩과 함께 쓰이는 단 두 가지 스크립트 형판입니다.
+이제 이들은 레거시 주소로 불리며 시간이 지나면서 점점 덜 쓰이게 되었습니다. 레거시
+주소는 bech32 계열 ((("redeem scripts", startref="redeem-script")))주소로 대체되었습니다.
 
 [[p2sh_collision_attacks]]
-.P2SH Collision Attacks
+.P2SH 충돌 공격
 ****
-All addresses ((("collision attacks", id="collision")))based on hash functions are theoretically vulnerable to an
-attacker independently finding the same input that produced the hash
-function output (commitment).  In the case of Bitcoin, if they find the
-input the same way the original user did, they'll know the user's private
-key and be able to spend that user's bitcoins.  The chance of an attacker
-independently generating the input for an existing commitment is
-proportional to the strength of the hash algorithm.  For a secure
-160-bit algorithm like HASH160, the probability is 1-in-2^160^.  This ((("preimage attacks")))is
-a _preimage attack_.
+해시 함수에 ((("collision attacks", id="collision")))기반한 모든 주소는 이론적으로, 공격자가 그 해시 함수
+출력(커밋먼트)을 만들어낸 것과 같은 입력을 독자적으로 찾아내는 공격에 취약합니다.
+비트코인의 경우 공격자가 원래 사용자와 같은 방식으로 그 입력을 찾아낸다면 사용자의
+비밀키를 알게 되어 그 사용자의 비트코인을 사용할 수 있습니다. 공격자가 기존
+커밋먼트에 대한 입력을 독자적으로 생성할 확률은 해시 알고리즘의 강도에 비례합니다.
+HASH160 같은 안전한 160비트 알고리즘이라면 그 확률은 2^160^ 분의 1입니다. 이것이
+((("preimage attacks")))_역상 공격(preimage attack)_ 입니다.
 
-An attacker can also try to generate two different inputs (e.g., redeem
-scripts) that produce the same commitment.  For addresses created
-entirely by a single party, the chance of an attacker generating a
-different input for an existing commitment is also about 1-in-2^160^ for
-the HASH160 algorithm.  This is((("second preimage attacks"))) a _second preimage attack_.
+공격자는 같은 커밋먼트를 만들어내는 서로 다른 두 입력(예: 리딤 스크립트)을
+생성하려 시도할 수도 있습니다. 한 당사자가 전적으로 만든 주소라면, 공격자가 기존
+커밋먼트에 대해 다른 입력을 생성할 확률 역시 HASH160 알고리즘에서 대략 2^160^
+분의 1입니다. 이것이 ((("second preimage attacks")))_제2 역상 공격_ 입니다.
 
-However, this changes when an attacker is able to influence the original input
-value. For example, an attacker participates in the creation of a
-multisignature script where they don't need to submit their public key until after they learn all of the other partys' public keys.
-In that case, the strength of hash algorithm is reduced to its square
-root.  For HASH160, the probability becomes 1-in-2^80^.  This is a
-_collision attack_.
+그러나 공격자가 원래 입력값에 영향을 미칠 수 있으면 이야기가 달라집니다. 예를
+들어 공격자가 다중서명 스크립트를 만드는 데 참여하면서, 다른 모든 당사자의 공개키를
+알게 된 뒤에야 자기 공개키를 제출해도 되는 경우입니다. 그런 경우 해시 알고리즘의
+강도는 그 제곱근으로 줄어듭니다. HASH160이라면 확률이 2^80^ 분의 1이 됩니다.
+이것이 _충돌 공격_ 입니다.
 
 // bits80=$( echo '2^80' | bc )
 // seconds_per_hour="$(( 60 * 60))"
 // bitcoin-cli getmininginfo | jq "(.networkhashps / $bits80 * $seconds_per_hour)"
 // 0.8899382363032076
 
-To put those numbers in context, as of early 2023, all Bitcoin miners
-combined execute about 2^80^ hash functions every hour.  They run a
-different hash function than HASH160, so their existing hardware can't
-create collision attacks for it, but the existence of the Bitcoin
-network proves that collision attacks against 160-bit functions like
-HASH160 are ((("HASH160")))practical.  Bitcoin miners have spent the equivalent of
-billions of US dollars on special hardware, so creating a collision
-attack wouldn't be cheap, but there are organizations that expect to
-receive billions of dollars in bitcoins to addresses generated by
-processes involving multiple parties, which could make the attack
-profitable.
+이 숫자들을 맥락 속에서 보자면, 2023년 초 기준으로 모든 비트코인 채굴자를 합치면
+매시간 약 2^80^ 번의 해시 함수를 실행합니다. 이들이 돌리는 것은 HASH160과 다른
+해시 함수이므로 기존 하드웨어로 HASH160에 대한 충돌 공격을 만들어낼 수는 없지만,
+비트코인 네트워크의 존재 자체가 HASH160 같은 160비트 함수에 대한 충돌 공격이
+현실적으로 가능함을 ((("HASH160")))보여줍니다. 비트코인 채굴자들은 특수 하드웨어에
+수십억 달러에 해당하는 돈을 써왔으므로 충돌 공격을 만들어내는 일이 값싸지는
+않겠지만, 여러 당사자가 참여하는 과정으로 생성된 주소로 수십억 달러어치 비트코인을
+받으리라 예상하는 조직들이 있으니 그런 공격이 수익성을 가질 수도 있습니다.
 
-There are well-established cryptographic protocols for preventing
-collision attacks, but a simple solution that doesn't require any
-special knowledge on the part of wallet developers is to simply use
-a stronger hash function.  Later upgrades to Bitcoin made that possible,
-and newer Bitcoin addresses provide at least 128 bits of collision
-resistance.  To perform 2^128^ hash operations would take all current
-Bitcoin miners about 32 billion years.
+충돌 공격을 막는 잘 확립된 암호 프로토콜들이 있지만, 지갑 개발자에게 특별한 지식을
+요구하지 않는 단순한 해법은 그냥 더 강한 해시 함수를 쓰는 것입니다. 이후 비트코인
+업그레이드로 그것이 가능해졌고, 최신 비트코인 주소는 최소 128비트의 충돌 저항성을
+제공합니다. 2^128^ 번의 해시 연산을 수행하려면 현재의 모든 비트코인 채굴자가 약
+320억 년이 걸립니다.
 
-Although we do not believe there is any immediate threat to anyone
-creating new P2SH addresses, we recommend all new wallets use newer
-types of addresses to eliminate address collision attacks((("public key cryptography", "hash functions and", startref="pub-key-hash2")))((("hash functions", "Bitcoin payments and", startref="hash-payment2")))((("payments", "with hash functions", secondary-sortas="hash functions", startref="payment-hash2")))((("P2SH (pay to script hash)", startref="p2sh-ch4")))((("addresses", "P2SH (pay to script hash)", startref="address-p2sh-ch4"))) as a concern.
+새 P2SH 주소를 만드는 사람에게 당장 위협이 있다고 보지는 않지만, 주소 충돌 공격을
+걱정거리에서 아예 지우기 위해 모든 새 지갑은 더 새로운 유형의 주소를 쓰기를((("public key cryptography", "hash functions and", startref="pub-key-hash2")))((("hash functions", "Bitcoin payments and", startref="hash-payment2")))((("payments", "with hash functions", secondary-sortas="hash functions", startref="payment-hash2")))((("P2SH (pay to script hash)", startref="p2sh-ch4")))((("addresses", "P2SH (pay to script hash)", startref="address-p2sh-ch4"))) 권합니다.
 ****
+=== Bech32 주소
 
-=== Bech32 Addresses
+2017년 ((("public key cryptography", "bech32 addresses", "advantages of", id="pub-key-bech32-adv")))((("addresses", "bech32", "advantages of", id="address-bech32-adv")))((("bech32 addresses", "advantages of", id="bech32-adv")))비트코인 프로토콜이 업그레이드되었습니다. 이 업그레이드를 사용하면,
+비트코인을 사용하는 사용자의 동의(또는 서명이 여럿 필요한 경우 서명자 정족수의
+동의) 없이는 트랜잭션 식별자(txid)가 바뀌지 않습니다. ((("segregated witness (segwit)", id="segwit-bech32")))_분리된 증인
+(segregated witness, 줄여서 세그윗)_ 이라 불리는 이 업그레이드는 블록 안 트랜잭션
+데이터를 위한 용량도 추가로 제공했고 그 밖에 여러 이점도 가져왔습니다. 다만
+세그윗의 이점을 직접 누리려면 사용자가 새로운 출력 스크립트로 지불을 받아야
+했습니다.
 
-In 2017, the ((("public key cryptography", "bech32 addresses", "advantages of", id="pub-key-bech32-adv")))((("addresses", "bech32", "advantages of", id="address-bech32-adv")))((("bech32 addresses", "advantages of", id="bech32-adv")))Bitcoin protocol was upgraded.  When the upgrade is used,
-it prevents transaction
-identifiers (txids) from being changed without the consent of a spending
-user (or a quorum of signers when multiple signatures are required).
-The upgrade, ((("segregated witness (segwit)", id="segwit-bech32")))called _segregated witness_ (or _segwit_ for short),  also
-provided additional capacity for transaction data in blocks and several
-other benefits.  However, users wanting direct access to segwit's
-benefits had to accept payments to new output scripts.
+<<p2sh>>에서 언급했듯이 P2SH 출력 유형의 장점 하나는, 지불하는 쪽(앨리스 같은)이
+받는 쪽(밥 같은)이 쓰는 스크립트의 세부 내용을 알 필요가 없다는 것이었습니다.
+세그윗 업그레이드는 이 방식을 활용하도록 설계되어, 사용자가 P2SH 주소를 쓰는 것만으로
+새 이점의 상당수를 곧바로 누릴 수 있게 했습니다. 하지만 밥이 모든 이점을 누리려면
+앨리스의 지갑이 다른 유형의 스크립트로 지불해 주어야 했습니다. 그러려면 앨리스의
+지갑이 새 스크립트를 지원하도록 업그레이드해야 했습니다.
 
-As mentioned in <<p2sh>>, one of the advantages of the P2SH output type
-was that a spender (such as Alice) didn't need to know the details of
-the script the receiver (such as Bob) used.  The segwit upgrade was
-designed to use this mechanism, allowing users to
-immediately begin accessing many of the new benefits by using a P2SH
-address.  But for Bob to gain access to all of the benefits, he would
-need Alice's wallet to pay him using a different type of script.  That
-would require Alice's wallet to upgrade to support the new scripts.
+처음에 비트코인 개발자들은 BIP142를 제안했는데, P2SH 업그레이드와 비슷하게 새
+버전 바이트를 쓰면서 base58check를 계속 사용하는 방식이었습니다. 그런데 모든
+지갑이 새 base58check 버전의 새 스크립트를 지원하도록 업그레이드하게 하는 일은
+아예 완전히 새로운 주소 형식으로 업그레이드하게 하는 것과 거의 비슷한 수고가
+들 것으로 보였습니다. 그래서 여러 비트코인 기여자가 가능한 한 최선의 주소 형식을
+설계하는 일에 나섰습니다. 이들은 base58check의 ((("public key cryptography", "base58check encoding")))((("base58check encoding")))((("encoding", "base58check")))문제점 몇 가지를 찾아냈습니다.
 
-At first, Bitcoin developers proposed BIP142, which would continue using
-base58check with a new version byte, similar to the P2SH upgrade.  But
-getting all wallets to upgrade to new scripts with a new base58check
-version was expected to require almost as much work as getting them to
-upgrade to an entirely new address format, so several Bitcoin
-contributors set out to design the best possible address format.  They
-identified several problems((("public key cryptography", "base58check encoding")))((("base58check encoding")))((("encoding", "base58check"))) with base58check:
+- 대소문자가 섞여 있어 소리 내어 읽거나 옮겨 적기가 불편합니다. 이 장에 나오는
+  레거시 주소 하나를 친구에게 읽어주고 받아 적게 해보세요. 글자마다 앞에
+  "대문자", "소문자"라고 붙여야 한다는 것을 알게 될 겁니다. 또 친구가 적은 것을
+  살펴보면, 사람에 따라 손글씨에서 어떤 글자들의 대문자와 소문자가 비슷해 보인다는
+  점도 눈에 띌 것입니다.
 
-- Its mixed-case presentation made it inconvenient to read aloud or
-  transcribe.  Try reading one of the legacy addresses in this chapter
-  to a friend who you have transcribe it.  Notice how you have to prefix
-  every letter with the words "uppercase" and "lowercase."  Also, note
-  when you review their writing that the uppercase and lowercase
-  versions of some letters can look similar in many people's
-  handwriting.
+- 오류를 발견할 수는 있지만 사용자가 그 오류를 고치도록 도와주지는 못합니다.
+  예를 들어 주소를 직접 입력하다가 실수로 두 글자의 순서를 바꿨다면, 지갑은 거의
+  틀림없이 실수가 있다고 경고하겠지만 그 오류가 어디에 있는지는 알려주지 않습니다.
+  결국 실수를 찾아내기까지 답답한 몇 분을 보내야 할 수도 있습니다.
 
-- It can detect errors, but it can't help users correct those errors.
-  For example, if you accidentally transpose two characters when manually
-  entering an address, your wallet will almost certainly warn that a
-  mistake exists, but it won't help you figure out where the error is
-  located.  It might take you several frustrating minutes to eventually
-  discover the mistake.
-
-- A mixed-case alphabet also requires extra space to encode in QR codes,
-  which are commonly used to share addresses and invoices
-  between wallets.  That extra space means QR codes need to be larger at
-  the same resolution or they become harder to scan quickly.
+- 대소문자가 섞인 알파벳은 QR 코드로 인코딩할 때 공간도 더 많이 필요합니다. QR
+  코드는 지갑끼리 주소와 청구서를 주고받는 데 흔히 쓰입니다. 공간이 더 든다는 것은
+  같은 해상도에서 QR 코드가 더 커져야 하거나, 그렇지 않으면 빠르게 스캔하기
+  어려워진다는 뜻입니다.
 
 [role="less_space pagebreak-before"]
-- It requires every spender wallet upgrade to support new protocol
-  features like P2SH and segwit.  Although the upgrades themselves might
-  not require much code, experience shows that many wallet authors are
-  busy with other work and can sometimes delay upgrading for years.
-  This adversely affects everyone who wants to use the new features.
+- P2SH나 세그윗 같은 새 프로토콜 기능을 지원하려면 지불하는 쪽의 지갑이 모두
+  업그레이드해야 합니다. 업그레이드 자체는 코드가 많이 필요하지 않을 수 있지만,
+  경험상 많은 지갑 개발자가 다른 일로 바빠 업그레이드를 몇 년씩 미루기도 합니다.
+  이는 새 기능을 쓰고 싶어 하는 모든 사람에게 나쁜 영향을 줍니다.
 
-The developers working on an address format for segwit found solutions
-for each of these problems in a new address format called
-bech32 (pronounced with a soft "ch", as in "besh thirty-two").  The
-"bech" stands for BCH, the initials of the three individuals who
-discovered the cyclic code in 1959 and 1960 upon which bech32 is based.
-The "32" stands for the number of characters in the bech32 alphabet
-(similar to the 58 in base58check):
+세그윗용 주소 형식을 작업하던 개발자들은 이 문제들 각각에 대한 해법을 bech32라는
+새 주소 형식에서 찾았습니다(부드러운 "ch" 발음으로 "베시 서티투"처럼 읽습니다).
+"bech"는 BCH를 뜻하는데, bech32가 기반으로 삼은 순환 부호를 1959년과 1960년에
+발견한 세 사람의 머리글자입니다. "32"는 bech32 알파벳의 글자 수를 뜻합니다
+(base58check의 58과 비슷합니다).
 
-- Bech32 uses only numbers and a single case of letters (preferably
-  rendered in lowercase).  Despite its alphabet being almost half the
-  size of the base58check alphabet, a bech32 address for a pay to witness public key hash (P2WPKH) script
-  is only slightly longer than a legacy address for an equivalent P2PKH
-  script.
+- Bech32는 숫자와 한 가지 대소문자의 글자만 사용합니다(되도록 소문자로 표기).
+  알파벳 크기가 base58check의 거의 절반인데도, 위트니스 공개키 해시로
+  지불(P2WPKH) 스크립트를 위한 bech32 주소는 그에 대응하는 P2PKH 스크립트의 레거시
+  주소보다 아주 조금 길 뿐입니다.
 
-- Bech32 can both detect and help correct errors.  In an address of an
-  expected length, it is mathematically guaranteed to detect any error
-  affecting four characters or less; that's more reliable than
-  base58check.  For longer errors, it will fail to detect them less than
-  one time in a billion, which is roughly the same reliability as
-  base58check.  Even better, for an address typed with just a few
-  errors, it can tell the user where those errors occurred, allowing them to
-  quickly correct minor transcription mistakes.  See <<bech32_typo_detection>>
-  for an example of an address entered with errors.
+- Bech32는 오류를 발견할 수도, 고치도록 도울 수도 있습니다. 예상된 길이의 주소에서는
+  네 글자 이하에 영향을 주는 어떤 오류든 수학적으로 반드시 발견하도록 보장됩니다.
+  base58check보다 더 믿음직합니다. 그보다 긴 오류의 경우 발견하지 못할 확률이
+  10억 분의 1 미만인데, 이는 base58check와 대략 같은 수준의 신뢰도입니다. 더 좋은
+  점은, 오류가 몇 개뿐인 주소를 입력했을 때 그 오류가 어디서 났는지 사용자에게
+  알려줄 수 있어 사소한 오기를 빠르게 고칠 수 있다는 것입니다. 오류가 포함된 채
+  입력된 주소의 예는 <<bech32_typo_detection>>을 참고하세요.
 +
 [[bech32_typo_detection]]
-.Bech32 typo detection
+.Bech32 오타 발견
 ====
-Address:
+주소:
   bc1p9nh05ha8wrljf7ru236awpass:[<u><strong>n</strong></u>]4t2x0d5ctkkywmpass:[<u><strong>v</strong></u>]9sclnm4t0av2vgs4k3au7
 
-Detected errors shown in bold and underlined.  Generated using the
-https://oreil.ly/paWIx[bech32 address decoder demo].
+발견된 오류는 굵은 글씨와 밑줄로 표시했습니다.
+https://oreil.ly/paWIx[bech32 주소 디코더 데모]로 생성했습니다.
 ====
 
-- Bech32 is preferably written with only lowercase characters, but those
-  lowercase characters can be replaced with uppercase characters before
-  encoding an address in a QR code.  This allows the use of a special QR
-  encoding mode that uses less space.  Notice the difference in size and
-  complexity of the two QR codes for the same address in
-  <<bech32_qrcode_uc_lc>>.
+- Bech32는 소문자로만 쓰는 편이 좋지만, 주소를 QR 코드로 인코딩하기 전에 그
+  소문자를 대문자로 바꿀 수 있습니다. 그러면 공간을 덜 쓰는 특별한 QR 인코딩
+  모드를 사용할 수 있습니다. <<bech32_qrcode_uc_lc>>에서 같은 주소에 대한 두 QR
+  코드의 크기와 복잡도 차이를 살펴보세요.
 +
 [[bech32_qrcode_uc_lc]]
-.The same bech32 address QR encoded in lowercase and uppercase.
+.같은 bech32 주소를 소문자와 대문자로 QR 인코딩한 모습.
 image::images/mbc3_0409.png["The same bech32 address QR encoded in lowercase and uppercase"]
 
-- Bech32 takes advantage of an upgrade mechanism designed as part of
-  segwit to make it possible for spender wallets to be able to pay
-  output types that aren't in use yet.  The goal was to allow developers
-  to build a wallet today that allows spending to a bech32 address
-  and have that wallet remain able to spend to bech32 addresses for
-  users of new features added in future protocol upgrades.  It was
-  hoped that we might never again need to go through the system-wide
-  upgrade cycles necessary to allow people to fully use P2SH and((("public key cryptography", "bech32 addresses", "advantages of", startref="pub-key-bech32-adv")))((("addresses", "bech32", "advantages of", startref="address-bech32-adv")))((("bech32 addresses", "advantages of", startref="bech32-adv")))((("segregated witness (segwit)", startref="segwit-bech32"))) segwit.
+- Bech32는 세그윗의 일부로 설계된 업그레이드 방식을 활용해, 지불하는 쪽의 지갑이
+  아직 쓰이지 않는 출력 유형에도 지불할 수 있게 합니다. 목표는 오늘 만든 지갑이
+  bech32 주소로 지불할 수 있게 해두면, 앞으로의 프로토콜 업그레이드로 추가될 새
+  기능을 쓰는 사용자의 bech32 주소로도 계속 지불할 수 있도록 하는 것이었습니다.
+  P2SH와 세그윗을 온전히 쓰기 위해 거쳐야 했던 시스템 전반의 업그레이드 주기를
+  다시는 겪지 않아도 되기를((("public key cryptography", "bech32 addresses", "advantages of", startref="pub-key-bech32-adv")))((("addresses", "bech32", "advantages of", startref="address-bech32-adv")))((("bech32 addresses", "advantages of", startref="bech32-adv")))((("segregated witness (segwit)", startref="segwit-bech32")))바랐습니다.
 
-==== Problems with Bech32 Addresses
+==== Bech32 주소의 문제점
 
-Bech32 addresses((("public key cryptography", "bech32 addresses", "problems with", id="pub-key-bech32-prob")))((("addresses", "bech32", "problems with", id="address-bech32-prob")))((("bech32 addresses", "problems with", id="bech32-prob"))) would have been a success in every area except for one
-problem.  The mathematical guarantees about their ability to detect
-errors only apply if the length of the address you enter into a wallet
-is the same length of the original address.  If you add or remove any
-characters during transcription, the guarantee doesn't apply and your
-wallet may spend funds to a wrong address.  However, even without the
-guarantee, it was thought that it would be very unlikely that a user adding
-or removing characters would produce a string with a valid checksum, ensuring
-users' funds were safe.
+Bech32 주소는((("public key cryptography", "bech32 addresses", "problems with", id="pub-key-bech32-prob")))((("addresses", "bech32", "problems with", id="address-bech32-prob")))((("bech32 addresses", "problems with", id="bech32-prob"))) 한 가지 문제만 아니었다면 모든 면에서 성공이었을
+것입니다. 오류 발견 능력에 대한 수학적 보장은, 지갑에 입력한 주소의 길이가 원래
+주소의 길이와 같을 때만 적용됩니다. 옮겨 적는 과정에서 글자를 더하거나 빼면 그
+보장이 적용되지 않고, 지갑이 엉뚱한 주소로 자금을 보낼 수 있습니다. 다만 그런
+보장이 없더라도, 사용자가 글자를 더하거나 빼서 유효한 체크섬을 가진 문자열이
+나올 가능성은 매우 낮아 사용자의 자금은 안전하리라고 여겨졌습니다.
 
-Unfortunately, the choice for one of the constants in the bech32
-algorithm just happened to make it very easy to add or remove the letter
-"q" in the penultimate position of an address that ends with the letter
-"p."  In those cases, you can also add or remove the letter "q" multiple
-times.  This will be caught by the checksum some of the time, but it
-will be missed far more often than the one-in-a-billion expectations for
-bech32's substitution errors.  For an example, see <<bech32_length_extension_example>>.
+안타깝게도 bech32 알고리즘의 상수 중 하나를 고른 방식이 하필, 글자 "p"로 끝나는
+주소의 끝에서 두 번째 자리에 글자 "q"를 더하거나 빼기 아주 쉽게 만들었습니다.
+그런 경우에는 "q"를 여러 번 더하거나 뺄 수도 있습니다. 체크섬이 이를 잡아내는
+경우도 있지만, bech32의 치환 오류에 기대하는 10억 분의 1보다 훨씬 자주 놓치게
+됩니다. 예는 <<bech32_length_extension_example>>을 참고하세요.
 
 [role="less_space pagebreak-before"]
 [[bech32_length_extension_example]]
-.Extending the length of bech32 address without invalidating its checksum
+.체크섬을 무효로 만들지 않으면서 bech32 주소의 길이를 늘리기
 ====
 ----
-Intended bech32 address:
+의도한 bech32 주소:
 bc1pqqqsq9txsqp
 
-Incorrect addresses with a valid checksum:
+유효한 체크섬을 가진 잘못된 주소들:
 bc1pqqqsq9txsqqqqp
 bc1pqqqsq9txsqqqqqqp
 bc1pqqqsq9txsqqqqqqqqp
@@ -1174,117 +996,100 @@ bc1pqqqsq9txsqqqqqqqqqqqp
 
 
 
-For the initial version of segwit (version 0), this wasn't a practical
-concern.  Only two valid lengths were defined for v0 segwit outputs: 22
-bytes and 34 bytes.  Those correspond to bech32 addresses that are 42 characters
-or 62 characters long, so someone would need to add or remove the letter "q"
-from the penultimate position of a bech32 address 20 times in order to
-send money to an invalid address without a wallet being able to detect
-it.  However, it would become a problem for users in the future if
-a segwit-based upgrade were ever to be ((("public key cryptography", "bech32 addresses", "problems with", startref="pub-key-bech32-prob")))((("addresses", "bech32", "problems with", startref="address-bech32-prob")))((("bech32 addresses", "problems with", startref="bech32-prob")))implemented.
+세그윗의 최초 버전(버전 0)에서는 이것이 현실적인 문제가 아니었습니다. v0 세그윗
+출력에는 22바이트와 34바이트, 두 가지 유효한 길이만 정의되어 있었습니다. 이는
+길이가 42자 또는 62자인 bech32 주소에 해당하므로, 지갑이 발견하지 못한 채 유효하지
+않은 주소로 돈을 보내려면 bech32 주소의 끝에서 두 번째 자리에서 글자 "q"를 스무
+번 더하거나 빼야 합니다. 하지만 세그윗 기반 업그레이드가 언젠가 구현된다면
+앞으로 사용자에게 ((("public key cryptography", "bech32 addresses", "problems with", startref="pub-key-bech32-prob")))((("addresses", "bech32", "problems with", startref="address-bech32-prob")))((("bech32 addresses", "problems with", startref="bech32-prob")))문제가 될 수 있었습니다.
 
 ==== Bech32m
 
-Although((("public key cryptography", "bech32 addresses", "bech32m", id="pub-key-bech32-bech32m")))((("bech32 addresses", "bech32m", id="bech32-bech32m")))((("addresses", "bech32m", id="address-bech32m")))((("bech32m addresses", id="bech32m"))) bech32 worked well for segwit v0, developers didn't want to
-unnecessarily constrain output sizes in later versions of segwit.
-Without constraints, adding or removing a single "q" in a bech32 address
-could result in a user accidentally sending their money to an
-output that was either unspendable or spendable by anyone (allowing
-those bitcoins to be taken by anyone).  Developers exhaustively analyzed the bech32
-problem and found that changing a single constant in their algorithm
-would eliminate the problem, ensuring that any insertion or deletion of
-up to five characters will only fail to be detected less often than one
-time in a billion.
+((("public key cryptography", "bech32 addresses", "bech32m", id="pub-key-bech32-bech32m")))((("bech32 addresses", "bech32m", id="bech32-bech32m")))((("addresses", "bech32m", id="address-bech32m")))((("bech32m addresses", id="bech32m")))bech32는 세그윗 v0에서 잘 작동했지만, 개발자들은 이후 세그윗
+버전에서 출력 크기를 불필요하게 제약하고 싶지 않았습니다. 제약이 없으면 bech32
+주소에서 "q" 하나를 더하거나 빼는 것만으로 사용자가 실수로 자기 돈을, 사용할 수
+없거나 누구나 사용할 수 있는(즉 누구나 그 비트코인을 가져갈 수 있는) 출력으로
+보내는 일이 생길 수 있었습니다. 개발자들은 bech32 문제를 철저히 분석한 끝에,
+알고리즘의 상수 하나만 바꾸면 문제가 사라지고 다섯 글자까지의 삽입이나 삭제를
+발견하지 못할 확률이 10억 분의 1 미만이 된다는 것을 알아냈습니다.
 
 //https://gist.github.com/sipa/a9845b37c1b298a7301c33a04090b2eb
 
-The version of bech32 with a single different constant is known as
-bech32 modified (bech32m).  All of the characters in bech32 and bech32m
-addresses for the same underlying data will be identical except for the
-last six (the checksum).  That means a wallet will need to know which
-version is in use in order to validate the checksum, but both address
-types contain an internal version byte that makes determining that easy.
+상수 하나만 다른 이 bech32 버전을 수정된 bech32(bech32 modified, bech32m)라고
+합니다. 같은 기반 데이터에 대한 bech32 주소와 bech32m 주소는 마지막 여섯
+글자(체크섬)를 빼고는 모든 글자가 동일합니다. 즉 체크섬을 검증하려면 지갑이 어느
+버전이 쓰였는지 알아야 하지만, 두 주소 유형 모두 내부에 버전 바이트를 담고 있어
+이를 쉽게 판별할 수 있습니다.
 
 
 
-To work with both bech32 and((("encoding", "bech32m addresses", id="encode-bech32m")))((("decoding", "addresses", see="addresses"))) bech32m, we'll look at the encoding and parsing rules for
-bech32m Bitcoin addresses since they encompass the ability to parse
-bech32 addresses and are the current recommended address format for
-Bitcoin wallets.
+bech32와 bech32m을((("encoding", "bech32m addresses", id="encode-bech32m")))((("decoding", "addresses", see="addresses"))) 함께 다루기 위해, bech32m 비트코인 주소의
+인코딩 및 파싱 규칙을 살펴보겠습니다. 이 규칙에 bech32 주소를 파싱하는 능력도
+포함되어 있고, bech32m이 현재 비트코인 지갑에 권장되는 주소 형식이기 때문입니다.
 
-Bech32m addresses start with a human readable part (HRP).  There are
-rules in BIP173 for creating your own HRPs, but for Bitcoin you only
-need to know about the HRPs already chosen, shown in
-<<bech32_hrps_for_bitcoin>>.
+Bech32m 주소는 사람이 읽을 수 있는 부분(human readable part, HRP)으로 시작합니다.
+직접 HRP를 만드는 규칙은 BIP173에 있지만, 비트코인에서는 이미 정해진 HRP만 알면
+됩니다. <<bech32_hrps_for_bitcoin>>에 나타냈습니다.
 
 ++++
 <table id="bech32_hrps_for_bitcoin">
-<caption>Bech32 HRPs for Bitcoin</caption>
+<caption>비트코인의 Bech32 HRP</caption>
 <thead>
 <tr>
-<th>HRPs</th>
-<th>Network</th>
+<th>HRP</th>
+<th>네트워크</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><p>bc</p></td>
-<td><p>Bitcoin mainnet</p></td>
+<td><p>비트코인 메인넷</p></td>
 </tr>
 <tr>
 <td><p>tb</p></td>
-<td><p>Bitcoin testnet</p></td>
+<td><p>비트코인 테스트넷</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-The HRP is followed by a separator, the number "1."  Earlier proposals
-for a protocol separator used a colon but some operating systems and
-applications that allow a user to double-click a word to highlight
-it for copy and pasting won't extend the highlighting to and past a
-colon.  A number ensured double-click highlighting would work with any
-program that supports bech32m strings in general (which include other
-numbers).  The number "1" was chosen because bech32 strings don't
-otherwise use it in order to prevent accidental transliteration between
-the number "1" and the lowercase letter "l."
+HRP 다음에는 구분자인 숫자 "1"이 옵니다. 프로토콜 구분자에 대한 초기 제안들은
+콜론을 썼지만, 일부 운영체제와 애플리케이션에서는 사용자가 단어를 더블클릭해
+복사·붙여넣기용으로 선택할 때 콜론까지 또는 그 너머로 선택이 확장되지 않습니다.
+숫자를 쓰면 bech32m 문자열 전반을 지원하는(다른 숫자도 포함하는) 어떤 프로그램에서든
+더블클릭 선택이 제대로 동작합니다. 숫자 "1"이 선택된 것은 숫자 "1"과 소문자 "l"이
+실수로 뒤바뀌는 것을 막기 위해 bech32 문자열이 다른 곳에서는 "1"을 쓰지 않기
+때문입니다.
 
-The other part of a bech32m address is called the "data part."  There
-are three elements to this part:
+bech32m 주소의 나머지 부분을 "데이터 부분"이라고 합니다. 이 부분에는 세 가지
+요소가 있습니다.
 
-Witness version::
-  A single byte that encodes as a single character
-  in a bech32m Bitcoin address immediately following the separator.
-  This letter represents the segwit version.  The letter "q" is the
-  encoding of "0" for segwit v0, the initial version of segwit where
-  bech32 addresses were introduced.  The letter "p" is the encoding of
-  "1" for segwit v1 (also called taproot) where bech32m began to be
-  used.  There are seventeen possible versions of segwit and it's
-  required for Bitcoin that the first byte of a bech32m data part decode
-  to the number 0 through 16 (inclusive).
+위트니스 버전::
+  구분자 바로 뒤에 bech32m 비트코인 주소에서 한 글자로 인코딩되는 1바이트입니다.
+  이 글자는 세그윗 버전을 나타냅니다. 글자 "q"는 세그윗 v0, 즉 bech32 주소가
+  도입된 세그윗의 최초 버전인 "0"을 인코딩한 것입니다. 글자 "p"는 bech32m이 쓰이기
+  시작한 세그윗 v1(탭루트라고도 합니다)인 "1"을 인코딩한 것입니다. 세그윗 버전은
+  열일곱 가지가 가능하며, 비트코인에서는 bech32m 데이터 부분의 첫 바이트가 0부터
+  16까지(양 끝 포함)의 수로 디코딩되어야 합니다.
 
-Witness program::
-  From 2 to 40 bytes.  For segwit v0, this witness program
-  must be either 20 or 32 bytes; no other length is valid.  For segwit
-  v1, the only defined length as of this writing is 32 bytes but other
-  lengths may be defined later.
+위트니스 프로그램::
+  2바이트에서 40바이트까지입니다. 세그윗 v0에서는 이 위트니스 프로그램이 반드시
+  20바이트 또는 32바이트여야 하며, 다른 길이는 유효하지 않습니다. 세그윗 v1에서는
+  이 글을 쓰는 시점에 정의된 길이가 32바이트뿐이지만, 나중에 다른 길이가 정의될
+  수 있습니다.
 
-Checksum::
-  Exactly 6 characters.  This is created using a BCH code, a type of
-  error correction code (although for Bitcoin addresses, we'll see later
-  that it's essential to use the checksum only for error detection--not
-  correction).
+체크섬::
+  정확히 6글자입니다. 오류 정정 부호의 한 종류인 BCH 부호로 만듭니다(다만 비트코인
+  주소에서는 체크섬을 오류 정정이 아니라 오류 발견에만 쓰는 것이 필수적이라는
+  점을 뒤에서 보게 됩니다).
 //TODO
 
-Let's illustrate these rules by walking through an example of creating
-bech32 and bech32m addresses.  For all of the following examples, we'll use the
-https://oreil.ly/gpTT6[bech32m reference code
-for Python].
+bech32와 bech32m 주소를 만드는 예제를 따라가며 이 규칙들을 살펴봅시다. 아래 모든
+예제에서는 https://oreil.ly/gpTT6[파이썬용 bech32m 참조 코드]를 사용합니다.
 
-We'll start by generating four output scripts, one for each of the
-different segwit outputs in use at the time of publication, plus one for
-a future segwit version that doesn't yet have a defined meaning.  The
-scripts are listed in <<scripts_for_diff_segwit_outputs>>.
+먼저 출력 스크립트 네 개를 만들겠습니다. 출간 시점에 쓰이던 서로 다른 세그윗
+출력마다 하나씩, 그리고 아직 의미가 정의되지 않은 미래의 세그윗 버전용으로 하나
+더입니다. 스크립트 목록은 <<scripts_for_diff_segwit_outputs>>에 있습니다.
 
 // bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee
 // 2b626ed108ad00a944bb2922a309844611d25468
@@ -1300,11 +1105,11 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 
 ++++
 <table id="scripts_for_diff_segwit_outputs">
-<caption>Scripts for different types of segwit outputs</caption>
+<caption>세그윗 출력 유형별 스크립트</caption>
 <thead>
 <tr>
-<th>Output type</th>
-<th>Example script</th>
+<th>출력 유형</th>
+<th>스크립트 예</th>
 </tr>
 </thead>
 <tbody>
@@ -1321,7 +1126,7 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 <td><p><code>OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311</code></p></td>
 </tr>
 <tr>
-<td><p>Future Example</p></td>
+<td><p>미래 예시</p></td>
 <td><p><code>OP_16 0000</code></p></td>
 </tr>
 </tbody>
@@ -1329,37 +1134,31 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 ++++
 
 
-For the P2WPKH output, the witness program contains a commitment constructed in exactly the same
-way as the commitment for a P2PKH output seen in <<addresses_for_p2pkh>>.  A public key is passed into a SHA256 hash
-function.  The resultant 32-byte digest is then passed into a RIPEMD-160
-hash function.  The digest of that function (the commitment) is placed
-in the witness program.
+P2WPKH 출력에서 위트니스 프로그램은 <<addresses_for_p2pkh>>에서 본 P2PKH 출력의
+커밋먼트와 정확히 같은 방식으로 만든 커밋먼트를 담습니다. 공개키를 SHA256 해시
+함수에 넣습니다. 그렇게 나온 32바이트 다이제스트를 다시 RIPEMD-160 해시 함수에
+넣습니다. 그 함수의 다이제스트(커밋먼트)를 위트니스 프로그램에 넣습니다.
 
-For the pay to witness script hash (P2WSH) output, we don't use the P2SH algorithm.  Instead we take
-the script, pass it into a SHA256 hash function, and use the 32-byte
-digest of that function in the witness program.  For P2SH, the SHA256
-digest was hashed again with RIPEMD-160, but that may not be secure in
-some cases; for details, see <<p2sh_collision_attacks>>.  A result of
-using SHA256 without RIPEMD-160 is that P2WSH commitments are 32 bytes
-(256 bits) instead of 20 bytes (160 bits).
+위트니스 스크립트 해시로 지불(P2WSH) 출력에서는 P2SH 알고리즘을 쓰지 않습니다.
+대신 스크립트를 SHA256 해시 함수에 넣고, 그 함수의 32바이트 다이제스트를 위트니스
+프로그램에 사용합니다. P2SH에서는 SHA256 다이제스트를 RIPEMD-160으로 한 번 더
+해시했지만, 어떤 경우에는 그것이 안전하지 않을 수 있습니다. 자세한 내용은
+<<p2sh_collision_attacks>>를 참고하세요. RIPEMD-160 없이 SHA256만 쓴 결과, P2WSH
+커밋먼트는 20바이트(160비트)가 아니라 32바이트(256비트)가 됩니다.
 
-For the pay-to-taproot (P2TR) output, the witness program is a point on
-the secp256k1 curve.  It may be a simple public key, but in most cases
-it should be a public key that commits to some additional data.  We'll
-learn more about that commitment in <<taproot>>.
+탭루트로 지불(P2TR) 출력에서 위트니스 프로그램은 secp256k1 곡선 위의 점입니다.
+단순한 공개키일 수도 있지만, 대부분의 경우 추가 데이터에 커밋하는 공개키여야
+합니다. 그 커밋먼트에 대해서는 <<taproot>>에서 더 자세히 배웁니다.
 
 ++++
 <p class="fix_tracking2">
-For the example of a future segwit version, we simply use the highest
-possible segwit version number (16) and the smallest allowed witness
-program (2 bytes) with a null value.</p>
+미래의 세그윗 버전 예시로는, 가능한 가장 높은 세그윗 버전 번호(16)와 허용되는
+가장 작은 위트니스 프로그램(2바이트)에 널 값을 넣어 사용합니다.</p>
 ++++
 
-Now that we know the version number and the witness program, we can
-convert each of them into a bech32 address.  Let's use the bech32m reference
-library for Python to quickly generate those addresses, and then take a
-deeper look at what's happening:
-
+이제 버전 번호와 위트니스 프로그램을 알았으니, 각각을 bech32 주소로 변환할 수
+있습니다. 파이썬용 bech32m 참조 라이브러리로 이 주소들을 빠르게 만들어 본 다음,
+안에서 무슨 일이 일어나는지 더 자세히 들여다봅시다.
 ----
 $ github="https://raw.githubusercontent.com"
 $ wget $github/sipa/bech32/master/ref/python/segwit_addr.py
@@ -1384,27 +1183,24 @@ unhexlify('2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311'))
 'bc1sqqqqkfw08p'
 ----
 
-If we open the file __segwit_addr.py__ and look at what the code is doing,
-the first thing we will notice
-is the sole difference between bech32 (used for segwit v0) and bech32m
-(used for later segwit versions) is the constant:
+__segwit_addr.py__ 파일을 열어 코드가 무엇을 하는지 보면, 가장 먼저 눈에 띄는
+것은 bech32(세그윗 v0에 사용)와 bech32m(이후 세그윗 버전에 사용)의 유일한 차이가
+상수라는 점입니다.
 
 ----
 BECH32_CONSTANT = 1
 BECH32M_CONSTANT = 0x2bc830a3
 ----
 
-Next we notice the code that produces the checksum.  In the final step of the
-checksum, the appropriate constant is merged into the value using an xor
-operation.  That single value is the only difference between bech32 and
-bech32m.
+다음으로 체크섬을 만들어내는 코드가 눈에 들어옵니다. 체크섬의 마지막 단계에서
+해당 상수를 xor 연산으로 값에 섞어 넣습니다. 이 값 하나가 bech32와 bech32m의
+유일한 차이입니다.
 
-With the checksum created, each 5-bit character in the data part
-(including the witness version, witness program, and checksum) is
-converted to alphanumeric characters.
+체크섬이 만들어지면, 데이터 부분(위트니스 버전, 위트니스 프로그램, 체크섬 포함)의
+각 5비트 문자가 영숫자 문자로 변환됩니다.
 
-For decoding back into an output script, we work in reverse.  First let's
-use the reference library to decode two of our addresses:
+출력 스크립트로 되돌리는 디코딩은 반대로 진행합니다. 먼저 참조 라이브러리로 앞의
+주소 중 두 개를 디코딩해 봅시다.
 
 ----
 >>> help(decode)
@@ -1420,14 +1216,14 @@ decode(hrp, addr)
 (1, '2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311')
 ----
 
-We get back both the witness version and the witness program.  Those can
-be inserted into the template for our output script:
+위트니스 버전과 위트니스 프로그램을 모두 돌려받았습니다. 이들을 출력 스크립트
+형판에 넣을 수 있습니다.
 
 ----
 <version> <program>
 ----
 
-For example:
+예를 들면 다음과 같습니다.
 
 ----
 OP_0 2b626ed108ad00a944bb2922a309844611d25468
@@ -1436,96 +1232,85 @@ OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311
 
 [WARNING]
 ====
-One
-possible mistake here to be aware of is that a witness version of `0` is
-for `OP_0`, which uses the byte 0x00--but a witness version of `1` uses
-`OP_1`, which is byte 0x51.  Witness versions `2` through `16` use 0x52
-through 0x60, respectively.
+여기서 저지르기 쉬운 실수 하나를 알아두어야 합니다. 위트니스 버전 `0` 은 바이트
+0x00을 쓰는 `OP_0` 에 해당하지만, 위트니스 버전 `1` 은 바이트 0x51인 `OP_1` 을
+씁니다. 위트니스 버전 `2` 부터 `16` 까지는 각각 0x52부터 0x60까지를 사용합니다.
 ====
 
-When implementing bech32m encoding or decoding, we very strongly
-recommend that you use the test vectors provided in BIP350.  We also ask
-that you ensure your code passes the test vectors related to paying future segwit
-versions that haven't been defined yet.  This will help make your
-software usable for many years to come even if you aren't able to add
-support for new Bitcoin features as soon as they become ((("public key cryptography", "bech32 addresses", "bech32m", startref="pub-key-bech32-bech32m")))((("bech32 addresses", "bech32m", startref="bech32-bech32m")))((("addresses", "bech32m", startref="address-bech32m")))((("bech32m addresses", startref="bech32m")))((("encoding", "bech32m addresses", startref="encode-bech32m")))available.
+bech32m 인코딩이나 디코딩을 구현할 때는 BIP350에 제공된 테스트 벡터를 꼭 사용하기를
+강력히 권합니다. 또한 아직 정의되지 않은 미래의 세그윗 버전으로 지불하는 것과
+관련된 테스트 벡터도 통과하는지 확인해 주세요. 그러면 새 비트코인 기능이 나올
+때마다 곧바로 지원을 추가하지 못하더라도 여러분의 소프트웨어가 오랫동안 쓸모
+있게 ((("public key cryptography", "bech32 addresses", "bech32m", startref="pub-key-bech32-bech32m")))((("bech32 addresses", "bech32m", startref="bech32-bech32m")))((("addresses", "bech32m", startref="address-bech32m")))((("bech32m addresses", startref="bech32m")))((("encoding", "bech32m addresses", startref="encode-bech32m")))남습니다.
 
 [[priv_formats]]
-==== Private Key Formats
+==== 비밀키 형식
 
-The ((("private keys", "formats", id="private-key-format")))private key
-can be represented in a number of different formats, all of which
-correspond to the same 256-bit number. <<table_4-2>> shows several common
-formats used to represent private keys. Different formats are used in
-different circumstances. Hexadecimal and raw binary formats are used
-internally in software and rarely shown to users. The WIF is used for
-import/export of keys between wallets and often used in QR code
-(barcode) representations of private keys.
+((("private keys", "formats", id="private-key-format")))비밀키는 여러 가지 형식으로 나타낼 수 있으며, 모두 같은 256비트
+수에 대응합니다. <<table_4-2>>에 비밀키를 나타내는 데 흔히 쓰이는 형식 몇 가지를
+정리했습니다. 상황에 따라 서로 다른 형식이 쓰입니다. 16진수와 원시 이진 형식은
+소프트웨어 내부에서 쓰이며 사용자에게 보여지는 일은 드뭅니다. WIF는 지갑 사이에
+키를 주고받는 데 쓰이며, 비밀키를 QR 코드(바코드)로 나타낼 때도 자주 쓰입니다.
 
-.Modern Relevancy of Private Key Formats
+.비밀키 형식이 오늘날 갖는 의미
 ****
-Early Bitcoin ((("wallets", "private key formats")))wallet software generated one or more independent private
-keys when a new user wallet was initialized.  When the initial set of
-keys had all been used, the wallet might generate additional private
-keys.  Individual private keys could be exported or imported.  Any time
-new private keys were generated or imported, a new backup of the wallet
-needed to be created.
+초기 비트코인 ((("wallets", "private key formats")))지갑 소프트웨어는 새 사용자 지갑을 초기화할 때 독립적인
+비밀키를 하나 이상 생성했습니다. 처음 만든 키를 모두 쓰고 나면 지갑이 비밀키를
+더 생성하기도 했습니다. 개별 비밀키를 내보내거나 가져올 수 있었습니다. 새 비밀키를
+생성하거나 가져올 때마다 지갑을 새로 백업해야 했습니다.
 
-Later Bitcoin wallets began using deterministic wallets where all
-private keys are generated from a single seed value.  These wallets only
-ever need to be backed up once for typical onchain use.  However, if a
-user exports a single private key from one of these wallets and an
-attacker acquires that key plus some nonprivate data about the wallet,
-they can potentially derive any private key in the wallet--allowing the
-attacker to steal all of the wallet funds.  Additionally, keys cannot be
-imported into deterministic wallets.  This means almost no modern
-wallets support the ability to export or import an individual key.  The
-information in this section is mainly of interest to anyone needing
-compatibility with early Bitcoin wallets.
+이후의 비트코인 지갑은 모든 비밀키를 하나의 시드 값에서 생성하는 결정적 지갑을
+쓰기 시작했습니다. 이런 지갑은 일반적인 온체인 용도라면 백업을 딱 한 번만 하면
+됩니다. 하지만 사용자가 이런 지갑에서 비밀키 하나를 내보냈고 공격자가 그 키와
+지갑에 대한 비공개가 아닌 정보를 손에 넣는다면, 공격자는 그 지갑의 어떤 비밀키든
+유도해낼 수 있어 지갑의 자금 전부를 훔칠 수 있습니다. 게다가 결정적 지갑에는 키를
+가져올 수 없습니다. 그래서 요즘 지갑 중에 개별 키를 내보내거나 가져오는 기능을
+지원하는 것은 거의 없습니다. 이 절의 내용은 주로 초기 비트코인 지갑과의 호환성이
+필요한 사람에게 의미가 있습니다.
 
-See <<hd_wallets>> for more information.
+더 자세한 내용은 <<hd_wallets>>를 참고하세요.
 
 ****
 
 ++++
 <table id="table_4-2">
-<caption>Private key representations (encoding formats)</caption>
+<caption>비밀키 표현(인코딩 형식)</caption>
 <thead>
 <tr>
-<th>Type</th>
-<th>Prefix</th>
-<th>Description</th>
+<th>유형</th>
+<th>접두사</th>
+<th>설명</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><p>Hex</p></td>
-<td><p>None</p></td>
-<td><p>64 hexadecimal digits</p></td>
+<td><p>없음</p></td>
+<td><p>16진수 64자리</p></td>
 </tr>
 <tr>
 <td><p>WIF</p></td>
 <td><p>5</p></td>
-<td><p>Base58check encoding: base58 with version prefix of 128 and 32-bit checksum</p></td>
+<td><p>Base58check 인코딩: 버전 접두사 128과 32비트 체크섬을 붙인 base58</p></td>
 </tr>
 <tr>
 <td><p>WIF-compressed</p></td>
-<td><p>K or L</p></td>
-<td><p>As above, with added suffix 0x01 before encoding</p></td>
+<td><p>K 또는 L</p></td>
+<td><p>위와 같되, 인코딩 전에 접미사 0x01을 덧붙임</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-<<table_4-3>> shows the private key generated in several different formats.
+<<table_4-3>>은 앞서 생성한 비밀키를 여러 형식으로 나타낸 것입니다.
 
 ++++
 <table id="table_4-3">
-<caption>Example: Same key, different formats</caption>
+<caption>예시: 같은 키, 다른 형식</caption>
 <thead>
 <tr>
-<th>Format</th>
-<th>Private key</th>
+<th>형식</th>
+<th>비밀키</th>
 </tr>
 </thead>
 <tbody>
@@ -1545,36 +1330,31 @@ See <<hd_wallets>> for more information.
 </table>
 ++++
 
-All of these representations are different ways of showing the same
-number, the same private key. They look different, but any one format
-can easily be converted to any other((("private keys", "formats", startref="private-key-format"))) format.
+이 표현들은 모두 같은 수, 같은 비밀키를 다르게 보여주는 방식일 뿐입니다. 서로
+달라 보이지만 어느 형식이든 다른 형식으로 쉽게 ((("private keys", "formats", startref="private-key-format")))변환할 수 있습니다.
 
 [[comp_priv]]
-==== Compressed Private Keys
+==== 압축 비밀키
 
-The commonly((("private keys", "compressed", id="private-key-compress")))((("compressed private keys", id="compress-private-key"))) used term "compressed private key" is a misnomer, because when a private
-key is exported as WIF-compressed, it is actually one byte _longer_ than
-an "uncompressed" private key. That is because the private key has an
-added one-byte suffix (shown as 01 in hex in <<table_4-4>>), which
-signifies that the private key is from a newer wallet and should only be
-used to produce compressed public keys. Private keys are not themselves
-compressed and cannot be compressed. The term _compressed private key_
-really means "private key from which only compressed public keys should
-be derived," whereas _uncompressed private key_ really means "private
-key from which only uncompressed public keys should be derived." You
-should only refer to the export format as "WIF-compressed" or "WIF" and
-not refer to the private key itself as "compressed" to avoid further
-confusion
+흔히 쓰는((("private keys", "compressed", id="private-key-compress")))((("compressed private keys", id="compress-private-key"))) "압축 비밀키"라는 말은 잘못된 이름입니다. 비밀키를
+WIF-compressed로 내보내면 실제로는 "비압축" 비밀키보다 1바이트 _더 깁니다_.
+비밀키에 1바이트 접미사(<<table_4-4>>에 16진수 01로 표시)가 덧붙기 때문인데, 이는
+그 비밀키가 더 새로운 지갑에서 왔으며 압축 공개키를 만드는 데만 써야 한다는 것을
+나타냅니다. 비밀키 자체는 압축되지 않으며 압축할 수도 없습니다. _압축 비밀키_ 라는
+말은 사실 "압축 공개키만 유도해야 하는 비밀키"라는 뜻이고, _비압축 비밀키_ 는
+"비압축 공개키만 유도해야 하는 비밀키"라는 뜻입니다. 더 큰 혼란을 피하려면
+내보내기 형식을 "WIF-compressed" 또는 "WIF"라고 부르고, 비밀키 자체를 "압축되었다"고
+말하지 않는 것이 좋습니다.
 
-<<table_4-4>> shows the same key, encoded in WIF and WIF-compressed formats.
+<<table_4-4>>는 같은 키를 WIF와 WIF-compressed 형식으로 인코딩한 것입니다.
 
 ++++
 <table id="table_4-4">
-<caption>Example: Same key, different formats</caption>
+<caption>예시: 같은 키, 다른 형식</caption>
 <thead>
 <tr>
-<th>Format</th>
-<th>Private key</th>
+<th>형식</th>
+<th>비밀키</th>
 </tr>
 </thead>
 <tbody>
@@ -1598,91 +1378,71 @@ confusion
 </table>
 ++++
 
-Notice that the hex-compressed private key format has one extra byte at
-the end (01 in hex). While the base58 encoding version prefix is the
-same (0x80) for both WIF and WIF-compressed formats, the addition of one
-byte on the end of the number causes the first character of the base58
-encoding to change from a 5 to either a _K_ or _L_. Think of this as the
-base58 equivalent of the decimal encoding difference between the number
-100 and the number 99. While 100 is one digit longer than 99, it also
-has a prefix of 1 instead of a prefix of 9. As the length changes, it
-affects the prefix. In base58, the prefix 5 changes to a _K_ or _L_ as
-the length of the number increases by one byte.
+16진수 압축 비밀키 형식이 끝에 1바이트(16진수 01)를 더 가지고 있다는 점에
+주목하세요. WIF와 WIF-compressed 형식 모두 base58 인코딩의 버전 접두사는
+같지만(0x80), 수 끝에 1바이트가 더해지면서 base58 인코딩의 첫 글자가 5에서 _K_
+또는 _L_ 로 바뀝니다. 10진수로 100과 99를 인코딩할 때의 차이에 해당하는 base58
+버전이라고 생각하면 됩니다. 100은 99보다 자릿수가 하나 길고, 앞자리도 9가 아니라
+1입니다. 길이가 달라지면 앞자리도 달라지는 것입니다. base58에서는 수의 길이가
+1바이트 늘어나면서 접두사 5가 _K_ 또는 _L_ 로 바뀝니다.
 
-Remember, these formats are _not_ used interchangeably. In a newer
-wallet that implements compressed public keys, the private keys will
-only ever be exported as WIF-compressed (with a _K_ or _L_ prefix). If
-the wallet is an older implementation and does not use compressed public
-keys, the private keys will only ever be exported as WIF (with a 5
-prefix). The goal here is to signal to the wallet importing these
-private keys whether it must search the blockchain for compressed or
-uncompressed public keys and addresses.
+이 형식들은 서로 바꿔 쓸 수 _없다_ 는 점을 기억하세요. 압축 공개키를 구현한 더
+새로운 지갑에서는 비밀키가 항상 WIF-compressed(_K_ 또는 _L_ 접두사)로만
+내보내집니다. 오래된 구현이어서 압축 공개키를 쓰지 않는 지갑이라면 비밀키가 항상
+WIF(5 접두사)로만 내보내집니다. 여기서 목적은, 이 비밀키를 가져오는 지갑에게
+블록체인에서 압축 공개키와 주소를 찾아야 하는지 비압축을 찾아야 하는지 알려주는
+것입니다.
 
-If a Bitcoin wallet is able to implement compressed public keys, it will
-use those in all transactions. The private keys in the wallet will be
-used to derive the public key points on the curve, which will be
-compressed. The compressed public keys will be used to produce Bitcoin
-addresses and those will be used in transactions. When exporting private
-keys from a new wallet that implements compressed public keys, the WIF
-is modified, with the addition of a one-byte suffix +01+ to the private
-key. The resulting base58check-encoded private key is called a
-"compressed WIF" and starts with the letter _K_ or _L_ instead of
-starting with "5," as is the case with WIF-encoded (uncompressed) keys
-from((("private keys", "compressed", startref="private-key-compress")))((("compressed private keys", startref="compress-private-key"))) older wallets.
+비트코인 지갑이 압축 공개키를 구현할 수 있다면 모든 트랜잭션에서 그것을 사용합니다.
+지갑의 비밀키는 곡선 위의 공개키 점을 유도하는 데 쓰이고, 그 점은 압축됩니다. 그
+압축 공개키로 비트코인 주소를 만들고, 그 주소를 트랜잭션에 사용합니다. 압축
+공개키를 구현한 새 지갑에서 비밀키를 내보낼 때는 WIF가 수정되어 비밀키에 1바이트
+접미사 +01+ 이 덧붙습니다. 그렇게 나온 base58check 인코딩 비밀키를 "압축 WIF"라고
+부르며, 오래된 지갑의 WIF 인코딩(비압축) 키가 "5"로 시작하는 것과 달리 글자 _K_
+또는 _L_ 로((("private keys", "compressed", startref="private-key-compress")))((("compressed private keys", startref="compress-private-key"))) 시작합니다.
+=== 고급 키와 주소
 
-=== Advanced Keys and Addresses
+이어지는 절들에서는 배니티 주소와 종이 지갑처럼 좀 더 특수한 형태의 키와 주소를
+살펴봅니다.
 
-In the
-following sections we will look at advanced forms of keys and addresses,
-such as vanity addresses and paper wallets.
+==== 배니티 주소
 
-==== Vanity Addresses
+배니티((("public key cryptography", "vanity addresses", id="pub-key-vanity")))((("vanity addresses", id="vanity-addr")))((("addresses", "vanity", id="address-vanity"))) 주소는 사람이 읽을 수 있는 메시지를 담은 유효한 비트코인
+주소입니다. 예를 들어 +1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33+ 은 base58 앞 네 글자가
+"Love"라는 단어를 이루는 유효한 주소입니다. 배니티 주소를 만들려면 원하는 패턴의
+비트코인 주소가 나올 때까지 수십억 개의 후보 비밀키를 생성하고 시험해야 합니다.
+배니티 생성 알고리즘에 몇 가지 최적화가 있긴 하지만, 과정은 본질적으로 비밀키를
+무작위로 고르고, 공개키를 유도하고, 비트코인 주소를 유도한 뒤, 원하는 배니티
+패턴과 맞는지 확인하는 일을 맞는 것이 나올 때까지 수십억 번 반복하는 것입니다.
 
-Vanity((("public key cryptography", "vanity addresses", id="pub-key-vanity")))((("vanity addresses", id="vanity-addr")))((("addresses", "vanity", id="address-vanity"))) addresses are valid Bitcoin
-addresses that contain human-readable messages. For example,
-+1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33+ is a valid address that contains
-the letters forming the word "Love" as the first four base58 letters.
-Vanity addresses require generating and testing billions of candidate
-private keys until a Bitcoin address with the desired pattern is found.
-Although there are some optimizations in the vanity generation
-algorithm, the process essentially involves picking a private key at
-random, deriving the public key, deriving the Bitcoin address, and
-checking to see if it matches the desired vanity pattern, repeating
-billions of times until a match is found.
+원하는 패턴과 맞는 배니티 주소를 찾고 나면, 그 주소를 유도한 비밀키로 소유자는
+다른 어떤 주소와도 똑같은 방식으로 비트코인을 사용할 수 있습니다. 배니티 주소는
+다른 주소보다 덜 안전하지도 더 안전하지도 않습니다. 다른 주소와 마찬가지로 같은
+타원곡선 암호(ECC)와 보안 해시 알고리즘(SHA)에 의존합니다. 배니티 패턴으로
+시작하는 주소의 비밀키를 찾는 일이 다른 주소보다 더 쉽지도 않습니다.
 
-Once a vanity address matching the desired pattern is found, the private
-key from which it was derived can be used by the owner to spend bitcoins
-in exactly the same way as any other address. Vanity addresses are no
-less or more secure than any other address. They depend on the same
-elliptic curve cryptography (ECC) and secure hash algorithm (SHA) as any other address. You can
-no more easily find the private key of an address starting with a vanity
-pattern than you can any other address.
+유지니아는 필리핀에서 활동하는 어린이 자선단체 대표입니다. 유지니아가 모금 운동을
+준비하면서 그 홍보에 배니티 비트코인 주소를 쓰고 싶어 한다고 해봅시다. 유지니아는
+어린이 자선 모금을 알리기 위해 "1Kids"로 시작하는 배니티 주소를 만들려고 합니다.
+이 배니티 주소가 어떻게 만들어지는지, 그리고 유지니아의 자선단체 보안에 어떤
+의미가 있는지 살펴봅시다.
 
-Eugenia is a children's
-charity director operating in the Philippines. Let's say that Eugenia is
-organizing a fundraising drive and wants to use a vanity Bitcoin
-address to publicize the fundraising. Eugenia will create a vanity
-address that starts with "1Kids" to promote the children's charity
-fundraiser. Let's see how this vanity address will be created and what
-it means for the security of Eugenia's charity.
+===== 배니티 주소 생성하기
 
-===== Generating vanity addresses
-
-It's important to realize that a Bitcoin address is simply a number
-represented by symbols in the base58 alphabet. The search for a pattern
-like "1Kids" can be seen as searching for an address in the range from
-+1Kids11111111111111111111111111111+ to
-+1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz+. There are approximately 58^29^
-(approximately 1.4 × 10^51^) addresses in that range, all starting with
-"1Kids." <<table_4-11>> shows the range of addresses that have the
-prefix 1Kids.
+비트코인 주소는 그저 base58 알파벳의 기호로 표현된 수일 뿐이라는 점을 이해하는
+것이 중요합니다. "1Kids" 같은 패턴을 찾는 일은
++1Kids11111111111111111111111111111+ 부터
++1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz+ 까지의 범위에서 주소를 찾는 것으로 볼 수
+있습니다. 그 범위에는 모두 "1Kids"로 시작하는 주소가 대략 58^29^ 개(약
+1.4 × 10^51^ 개) 있습니다. <<table_4-11>>에 접두사가 1Kids인 주소의 범위를
+나타냈습니다.
 
 ++++
 <table id="table_4-11">
-<caption>The range of vanity addresses starting with “1Kids”</caption>
+<caption>“1Kids”로 시작하는 배니티 주소의 범위</caption>
 <tbody>
 <tr>
-<td><p><strong>From</strong></p></td>
+<td><p><strong>시작</strong></p></td>
 <td><p><code>1Kids11111111111111111111111111111</code></p></td>
 </tr>
 <tr>
@@ -1698,192 +1458,172 @@ prefix 1Kids.
 <td><p><code>…​</code></p></td>
 </tr>
 <tr>
-<td><p><strong>To</strong></p></td>
+<td><p><strong>끝</strong></p></td>
 <td><p><code>1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz</code></p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-Let's look at the pattern "1Kids" as a number and see how frequently we
-might find this pattern in a Bitcoin address (see <<table_4-12>>). An
-average desktop computer PC, without any specialized hardware, can
-search approximately 100,000 keys per second.
+"1Kids"라는 패턴을 수로 보고, 비트코인 주소에서 이 패턴을 얼마나 자주 만날 수
+있을지 살펴봅시다(<<table_4-12>> 참고). 특수 하드웨어가 없는 평범한 데스크톱
+PC는 초당 약 100,000개의 키를 탐색할 수 있습니다.
 
 ++++
 <table id="table_4-12">
-<caption>The frequency of a vanity pattern (1KidsCharity) and average search time on a desktop PC</caption>
+<caption>배니티 패턴(1KidsCharity)의 빈도와 데스크톱 PC에서의 평균 탐색 시간</caption>
 <thead>
 <tr>
-<th>Length</th>
-<th>Pattern</th>
-<th>Frequency</th>
-<th>Average search time</th>
+<th>길이</th>
+<th>패턴</th>
+<th>빈도</th>
+<th>평균 탐색 시간</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><p>1</p></td>
 <td><p>1K</p></td>
-<td><p>1 in 58 keys</p></td>
-<td><p>&lt; 1 milliseconds</p></td>
+<td><p>58개 키 중 1개</p></td>
+<td><p>&lt; 1밀리초</p></td>
 </tr>
 <tr>
 <td><p>2</p></td>
 <td><p>1Ki</p></td>
-<td><p>1 in 3,364</p></td>
-<td><p>50 milliseconds</p></td>
+<td><p>3,364개 중 1개</p></td>
+<td><p>50밀리초</p></td>
 </tr>
 <tr>
 <td><p>3</p></td>
 <td><p>1Kid</p></td>
-<td><p>1 in 195,000</p></td>
-<td><p>&lt; 2 seconds</p></td>
+<td><p>195,000개 중 1개</p></td>
+<td><p>&lt; 2초</p></td>
 </tr>
 <tr>
 <td><p>4</p></td>
 <td><p>1Kids</p></td>
-<td><p>1 in 11 million</p></td>
-<td><p>1 minute</p></td>
+<td><p>1,100만 개 중 1개</p></td>
+<td><p>1분</p></td>
 </tr>
 <tr>
 <td><p>5</p></td>
 <td><p>1KidsC</p></td>
-<td><p>1 in 656 million</p></td>
-<td><p>1 hour</p></td>
+<td><p>6억 5,600만 개 중 1개</p></td>
+<td><p>1시간</p></td>
 </tr>
 <tr>
 <td><p>6</p></td>
 <td><p>1KidsCh</p></td>
-<td><p>1 in 38 billion</p></td>
-<td><p>2 days</p></td>
+<td><p>380억 개 중 1개</p></td>
+<td><p>2일</p></td>
 </tr>
 <tr>
 <td><p>7</p></td>
 <td><p>1KidsCha</p></td>
-<td><p>1 in 2.2 trillion</p></td>
-<td><p>3–4 months</p></td>
+<td><p>2조 2,000억 개 중 1개</p></td>
+<td><p>3~4개월</p></td>
 </tr>
 <tr>
 <td><p>8</p></td>
 <td><p>1KidsChar</p></td>
-<td><p>1 in 128 trillion</p></td>
-<td><p>13–18 years</p></td>
+<td><p>128조 개 중 1개</p></td>
+<td><p>13~18년</p></td>
 </tr>
 <tr>
 <td><p>9</p></td>
 <td><p>1KidsChari</p></td>
-<td><p>1 in 7 quadrillion</p></td>
-<td><p>800 years</p></td>
+<td><p>7,000조 개 중 1개</p></td>
+<td><p>800년</p></td>
 </tr>
 <tr>
 <td><p>10</p></td>
 <td><p>1KidsCharit</p></td>
-<td><p>1 in 400 quadrillion</p></td>
-<td><p>46,000 years</p></td>
+<td><p>40경 개 중 1개</p></td>
+<td><p>46,000년</p></td>
 </tr>
 <tr>
 <td><p>11</p></td>
 <td><p>1KidsCharity</p></td>
-<td><p>1 in 23 quintillion</p></td>
-<td><p>2.5 million years</p></td>
+<td><p>2,300경 개 중 1개</p></td>
+<td><p>250만 년</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-As you can see, Eugenia won't be creating the vanity address
-"1KidsCharity" anytime soon, even if she had access to several thousand
-computers. Each additional character increases the difficulty by a
-factor of 58. Patterns with more than seven characters are usually found
-by specialized hardware, such as custom-built desktops with multiple
-graphics processing units (GPUs).
-Vanity searches on GPU systems are many orders of magnitude
-faster than on a general-purpose CPU.
+보다시피 유지니아는 컴퓨터 수천 대를 동원하더라도 "1KidsCharity" 배니티 주소를
+가까운 시일 안에 만들지 못합니다. 글자가 하나 늘 때마다 난이도가 58배씩 올라갑니다.
+일곱 글자가 넘는 패턴은 보통 그래픽 처리 장치(GPU)를 여러 개 단 맞춤형 데스크톱
+같은 특수 하드웨어로 찾습니다. GPU 시스템에서의 배니티 탐색은 범용 CPU보다 몇
+자릿수나 빠릅니다.
 
-Another((("vanity pools"))) way to find a vanity address is to outsource the work to a pool
-of vanity miners. A https://oreil.ly/99K81[vanity pool] is a service that
-allows those with fast hardware to earn bitcoin searching for vanity
-addresses for others. For a fee, Eugenia can outsource the search for a
-seven-character pattern vanity address and get results in a few hours
-instead of having to run a CPU search for months.
+배니티 주소를 찾는 ((("vanity pools")))또 다른 방법은 그 작업을 배니티 채굴자 풀에
+맡기는 것입니다. https://oreil.ly/99K81[배니티 풀]은 빠른 하드웨어를 가진 사람들이
+다른 사람을 대신해 배니티 주소를 찾아주고 비트코인을 벌 수 있게 해주는
+서비스입니다. 유지니아는 수수료를 내고 일곱 글자 패턴의 배니티 주소 탐색을
+맡겨서, 몇 달 동안 CPU로 탐색하는 대신 몇 시간 만에 결과를 받을 수 있습니다.
 
-Generating a vanity address is a brute-force exercise: try a random key,
-check the resulting address to see if it matches the desired pattern,
-repeat until successful.
+배니티 주소를 만드는 일은 무차별 대입 작업입니다. 무작위 키를 시도하고, 그 결과
+나온 주소가 원하는 패턴과 맞는지 확인하고, 성공할 때까지 반복합니다.
 
-===== Vanity address security and privacy
+===== 배니티 주소의 보안과 프라이버시
 
-Vanity addresses((("privacy", "vanity addresses", id="privacy-vanity"))) were popular in the
-early years of Bitcoin but have almost entirely disappeared from use as
-of 2023.  There are two likely causes for this trend:
+배니티 주소는((("privacy", "vanity addresses", id="privacy-vanity"))) 비트코인 초창기에 인기가 있었지만 2023년 기준으로
+거의 완전히 쓰이지 않게 되었습니다. 이런 흐름에는 두 가지 이유가 있을 것입니다.
 
-Deterministic wallets:: As we saw in <<recovery_code_intro>>, it's possible to
-back up every key in most modern wallets by simply writing down a few
-words or characters.  This is achieved by deriving every key in the
-wallet from those words or characters using a deterministic algorithm.
-It's not possible to use vanity addresses with a deterministic wallet
-unless the user backs up additional data for every vanity address they
-create.  More practically, most wallets using deterministic key
-generation simply don't allow importing a private key or key tweak from
-a vanity generator.
+결정적 지갑:: <<recovery_code_intro>>에서 보았듯이, 요즘 대부분의 지갑은 단어나
+문자 몇 개만 적어두면 모든 키를 백업할 수 있습니다. 결정적 알고리즘으로 그 단어나
+문자에서 지갑의 모든 키를 유도하기 때문입니다. 결정적 지갑에서는 사용자가 만드는
+배니티 주소마다 추가 데이터를 백업하지 않는 한 배니티 주소를 쓸 수 없습니다. 더
+현실적으로는, 결정적 키 생성을 쓰는 대부분의 지갑이 배니티 생성기에서 나온 비밀키나
+키 조정값을 가져오는 것 자체를 허용하지 않습니다.
 
-Avoiding address reuse:: Using a vanity address to receive multiple
-payments to the same address creates a link between all of those
-payments.  This might be acceptable to Eugenia if her nonprofit needs
-to report its income and expenditures to a tax authority anyway.
-However, it also reduces the privacy of people who either pay Eugenia or
-receive payments from her.  For example, Alice may want to donate
-anonymously and Bob may not want his other customers to know that he
-gives discount pricing to Eugenia.
+주소 재사용 피하기:: 배니티 주소를 써서 같은 주소로 여러 번 지불을 받으면 그
+지불들이 모두 서로 연결됩니다. 유지니아의 비영리단체가 어차피 수입과 지출을
+세무 당국에 보고해야 한다면 이를 받아들일 수도 있습니다. 하지만 이는 유지니아에게
+지불하거나 유지니아에게서 지불받는 사람들의 프라이버시도 떨어뜨립니다. 예를 들어
+앨리스는 익명으로 기부하고 싶을 수 있고, 밥은 자신이 유지니아에게 할인가를
+준다는 사실을 다른 고객들이 알기를 원하지 않을 수 있습니다.
 
 // https://github.com/MakisChristou/vanitybech
 
-We don't expect to see many vanity addresses in
-the future unless the preceding problems are((("addresses", "vanity", startref="address-vanity")))((("vanity addresses", startref="vanity-addr")))((("public key cryptography", "vanity addresses", startref="pub-key-vanity"))) solved.
+앞의 문제들이 해결되지 않는 한 앞으로 배니티 주소를 많이 보게 될 것 같지는((("addresses", "vanity", startref="address-vanity")))((("vanity addresses", startref="vanity-addr")))((("public key cryptography", "vanity addresses", startref="pub-key-vanity"))) 않습니다.
 
 [[paper_wallets]]
-==== Paper Wallets
+==== 종이 지갑
 
-Paper wallets((("public key cryptography", "paper wallets", id="pub-key-paper")))((("paper wallets", id="paper-wallet")))((("wallets", "paper", id="wallet-paper"))) are private keys printed on paper.
-Often the paper wallet also includes the corresponding Bitcoin address
-for convenience, but this is not necessary because it can be derived
-from the private key.
+종이 지갑은((("public key cryptography", "paper wallets", id="pub-key-paper")))((("paper wallets", id="paper-wallet")))((("wallets", "paper", id="wallet-paper"))) 종이에 인쇄한 비밀키입니다. 편의를 위해 대응하는
+비트코인 주소도 함께 인쇄하는 경우가 많지만, 주소는 비밀키에서 유도할 수 있으므로
+꼭 필요하지는 않습니다.
 
 [WARNING]
 ====
-Paper wallets are an OBSOLETE technology and are dangerous for most
-users. There are many subtle pitfalls involved in generating them, not least of which is the possibility that the generating code is compromised
-with a "back door." Many bitcoins have been stolen this way. Paper
-wallets are shown here for informational purposes only and should not be
-used for storing bitcoin. Use a recovery code to back up your
-keys, possibly with a hardware signing device to store keys and sign transactions. DO NOT
-USE PAPER [.keep-together]#WALLETS.#
+종이 지갑은 이미 낡은 기술이며 대부분의 사용자에게 위험합니다. 종이 지갑을
+만드는 데는 미묘한 함정이 많은데, 그중에서도 생성 코드에 "백도어"가 심어져 있을
+가능성이 특히 큰 문제입니다. 이런 식으로 많은 비트코인이 도난당했습니다. 여기서
+종이 지갑을 소개하는 것은 정보 제공 목적일 뿐이며, 비트코인 보관에 사용해서는 안
+됩니다. 키 백업에는 복구 코드를 사용하고, 필요하다면 하드웨어 서명 장치로 키를
+보관하고 트랜잭션에 서명하세요. 종이 지갑은 [.keep-together]#사용하지 마세요.#
 ====
 
 
-Paper wallets come in many designs and sizes, with many different
-features. <<paper_wallet_simple>> shows a sample paper wallet.
+종이 지갑에는 여러 디자인과 크기가 있고 기능도 다양합니다.
+<<paper_wallet_simple>>에 종이 지갑의 예를 나타냈습니다.
 
 [[paper_wallet_simple]]
-.An example of a simple paper wallet.
+.단순한 종이 지갑의 예.
 image::images/mbc3_0410.png[]
 
-Some are intended to be given as gifts and have seasonal themes, such as
-Christmas and New Year's. Others are designed for storage in a
-bank vault or safe with the private key hidden in some way, either with
-opaque scratch-off stickers or folded and sealed with tamper-proof
-adhesive foil.  Other designs feature additional copies of the key and
-address, in the form of detachable stubs similar to ticket stubs,
-allowing you to store multiple copies to protect against fire, flood, or
-other natural disasters.
+선물용으로 만들어져 크리스마스나 새해 같은 계절 테마를 담은 것도 있습니다. 다른
+것들은 은행 금고나 안전 금고에 보관하도록 설계되어, 불투명한 긁는 스티커로
+가리거나 접은 뒤 위조 방지 접착 포일로 봉하는 식으로 비밀키를 숨깁니다. 또 어떤
+디자인은 티켓 부본처럼 떼어낼 수 있는 형태로 키와 주소의 사본을 더 담아, 화재나
+홍수 같은 자연재해에 대비해 여러 벌을 나눠 보관할 수 있게 합니다.
 
-From the original public-key focused design of Bitcoin to modern addresses
-and scripts like bech32m and pay to taproot--and even addresses for
-future Bitcoin upgrades--you've learned how the Bitcoin protocol allows
-spenders to identify the wallets that should receive their payments.
-But when it's actually your wallet receiving the payments, you're going
-to want the assurance that you'll still have access to that money even
-if something happens to your wallet data.  In the next chapter, we'll
-look at how Bitcoin wallets are designed to protect their funds ((("public key cryptography", "paper wallets", startref="pub-key-paper")))((("paper wallets", startref="paper-wallet")))((("wallets", "paper", startref="wallet-paper")))from a
-variety of threats.
+비트코인의 원래 공개키 중심 설계에서부터 bech32m이나 탭루트로 지불 같은 현대적인
+주소와 스크립트, 나아가 앞으로의 비트코인 업그레이드를 위한 주소까지, 여러분은
+비트코인 프로토콜이 지불하는 쪽으로 하여금 지불을 받아야 할 지갑을 어떻게
+식별하게 하는지 배웠습니다. 그런데 실제로 지불을 받는 것이 여러분의 지갑이라면,
+지갑 데이터에 무슨 일이 생기더라도 그 돈에 계속 접근할 수 있다는 보증을 원하게
+될 것입니다. 다음 장에서는 비트코인 지갑이 여러 위협으로부터 자금을 지키도록
+((("public key cryptography", "paper wallets", startref="pub-key-paper")))((("paper wallets", startref="paper-wallet")))((("wallets", "paper", startref="wallet-paper")))어떻게 설계되어 있는지 살펴봅니다.
