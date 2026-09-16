@@ -1,291 +1,256 @@
 [[ch11]]
-== Bitcoin Security
+== 비트코인 보안
 
-Securing your bitcoins is challenging because bitcoins are
-are not like a balance in a bank account. Your bitcoins are very
-much like digital cash or gold. You've probably heard the expression,
-"Possession is nine-tenths of the law." Well, in Bitcoin, possession is
-ten-tenths of the law. Possession of the keys to spend certain bitcoins is
-equivalent to possession of cash or a chunk of precious metal. You can
-lose it, misplace it, have it stolen, or accidentally give the wrong
-amount to someone. In every one of these cases, users have no recourse
-within the protocol, just as if they dropped cash on a public sidewalk.
+비트코인을 안전하게 지키는 일은 쉽지 않습니다. 비트코인은 은행 계좌의
+잔고와 달라서, 오히려 디지털 형태의 현금이나 금에 훨씬 가깝기 때문입니다.
+"점유는 소유의 아홉 할"이라는 표현을 들어보셨을 텐데, 비트코인에서 점유는
+소유의 열 할입니다. 특정 비트코인을 사용할 수 있는 키를 가졌다는 것은
+현금 뭉치나 귀금속 덩어리를 손에 쥔 것과 같습니다. 잃어버릴 수도, 어디에
+두었는지 잊어버릴 수도, 도둑맞을 수도, 실수로 엉뚱한 금액을 남에게 보낼
+수도 있습니다. 이 모든 경우에 사용자는 프로토콜 안에서 되돌릴 방법이
+없습니다. 길바닥에 현금을 떨어뜨린 것과 똑같습니다.
 
-However, the Bitcoin system has capabilities that cash, gold, and bank accounts do
-not. A Bitcoin wallet, containing your keys, can be backed up like any
-file. It can be stored in multiple copies, even printed on paper for
-hard-copy backup. You can't "back up" cash, gold, or bank accounts.
-Bitcoin is different enough from anything that has come before that we
-need to think about securing our bitcoins in a novel way too.
+하지만 비트코인 시스템에는 현금과 금과 은행 계좌에 없는 능력도 있습니다.
+키가 담긴 비트코인 지갑은 다른 파일과 마찬가지로 백업할 수 있습니다.
+여러 벌로 보관할 수 있고, 하드카피 백업을 위해 종이에 인쇄할 수도
+있습니다. 현금이나 금이나 은행 계좌는 "백업"할 수 없습니다. 비트코인은
+이전에 존재한 그 무엇과도 충분히 다르기 때문에, 비트코인을 지키는
+방법 역시 새로운 방식으로 생각해야 합니다.
 
-=== Security Principles
+=== 보안 원칙
 
-The ((("Bitcoin", "security", "principles of", id="bitcoin-security-principle")))((("security", "principles of", id="security-principle")))((("decentralized consensus", "as security principle", secondary-sortas="security principle", id="decentral-consensus-principle")))core principle in Bitcoin is
-decentralization and it has important implications for security. A
-centralized model, such as a traditional bank or payment network,
-depends on access control and vetting to keep bad actors out of the
-system. By comparison, a decentralized system like Bitcoin pushes the
-responsibility and control to the users. Because the security of the network
-is based on independent verification, the network can be open
-and no encryption is required for Bitcoin traffic (although encryption
-can still be useful).
+((("Bitcoin", "security", "principles of", id="bitcoin-security-principle")))((("security", "principles of", id="security-principle")))((("decentralized consensus", "as security principle", secondary-sortas="security principle", id="decentral-consensus-principle")))비트코인의
+핵심 원칙은 탈중앙화이며, 이는 보안에 중요한 함의를 갖습니다. 전통적인
+은행이나 결제 네트워크 같은 중앙집중형 모델은 접근 통제와 심사를 통해
+악의적 행위자를 시스템 밖으로 몰아내는 데 의존합니다. 이에 비해
+비트코인 같은 탈중앙 시스템은 책임과 통제권을 사용자에게 넘깁니다.
+네트워크의 보안이 각자의 독립적인 검증에 기반하므로 네트워크는 개방적일
+수 있고, 비트코인 트래픽에 암호화가 필요하지 않습니다(물론 암호화가
+여전히 유용할 수는 있습니다).
 
-On a traditional payment network, such as a credit card system, the
-payment is open-ended because it contains the user's private identifier
-(the credit card number). After the initial charge, anyone with access
-to the identifier can "pull" funds and charge the owner again and again.
-Thus, the payment network has to be secured end-to-end with encryption
-and must ensure that no eavesdroppers or intermediaries can compromise
-the payment traffic in transit or when it is stored (at rest). If a bad
-actor gains access to the system, he can compromise current transactions
-_and_ payment tokens that can be used to create new transactions. Worse,
-when customer data is compromised, the customers are exposed to identity
-theft and must take action to prevent fraudulent use of the compromised
-accounts.
+신용카드 시스템 같은 전통적인 결제 네트워크에서 결제는 사용자의 비공개
+식별자(카드 번호)를 포함하기 때문에 열려 있는 상태로 남습니다. 최초
+청구 이후에도 그 식별자에 접근할 수 있는 사람은 누구든 자금을 "당겨올"
+수 있고, 소유자에게 몇 번이고 다시 청구할 수 있습니다. 그래서 결제
+네트워크는 암호화로 종단 간 보호를 해야 하고, 전송 중이든 저장 상태든
+도청자나 중개자가 결제 트래픽을 훼손하지 못하도록 보장해야 합니다.
+악의적 행위자가 시스템에 접근하면 현재 진행 중인 거래뿐 아니라 새로운
+거래를 만들어낼 수 있는 결제 토큰_까지_ 함께 뚫립니다. 더 나쁜 것은
+고객 데이터가 유출되면 고객들이 신원 도용에 노출되며, 유출된 계정이
+부정 사용되는 것을 막기 위해 직접 조치를 취해야 한다는 점입니다.
 
-Bitcoin is dramatically different. A Bitcoin transaction authorizes only
-a specific value to a specific recipient and cannot be forged.
-It does not reveal any private information, such as the
-identities of the parties, and cannot be used to authorize additional
-payments. Therefore, a Bitcoin payment network does not need to be
-encrypted or protected from eavesdropping. In fact, you can broadcast
-Bitcoin transactions over an open public channel, such as unsecured WiFi
-or Bluetooth, with no loss of security.
+비트코인은 완전히 다릅니다. 비트코인 트랜잭션은 특정 수취인에게 특정
+금액만을 승인하며 위조할 수 없습니다. 당사자의 신원 같은 비공개 정보를
+전혀 드러내지 않고, 추가 결제를 승인하는 데 쓰일 수도 없습니다. 따라서
+비트코인 결제 네트워크는 암호화하거나 도청으로부터 보호할 필요가
+없습니다. 실제로 보안이 걸려 있지 않은 와이파이나 블루투스 같은 열린
+공개 채널로 비트코인 트랜잭션을 전파해도 보안이 전혀 약해지지 않습니다.
 
-Bitcoin's decentralized security model puts a lot of power in the hands
-of the users. With that power comes responsibility for maintaining the
-secrecy of their keys. For most users that is not easy to do, especially
-on general-purpose computing devices such as internet-connected
-smartphones or laptops. Although Bitcoin's decentralized model prevents
-the type of mass compromise seen with credit cards, many users are not
-able to adequately secure their keys and get hacked, one by one.
+비트코인의 탈중앙 보안 모델은 많은 권한을 사용자 손에 쥐여 줍니다.
+그리고 그 권한에는 자기 키의 비밀을 지킬 책임이 따라옵니다. 대부분의
+사용자에게 이는 쉬운 일이 아닙니다. 특히 인터넷에 상시 연결된
+스마트폰이나 노트북 같은 범용 컴퓨팅 기기에서는 더욱 그렇습니다.
+비트코인의 탈중앙 모델은 신용카드에서 보던 식의 대규모 동시 유출은
+막아주지만, 많은 사용자가 자기 키를 충분히 지키지 못해 한 사람씩
+차례로 해킹당하고 있습니다.
 
-==== Developing Bitcoin Systems Securely
+==== 비트코인 시스템을 안전하게 개발하기
 
-A critical principle
-for Bitcoin developers is decentralization. Most developers will be
-familiar with centralized security models and might be tempted to apply
-these models to their Bitcoin applications, with disastrous results.
+비트코인 개발자에게 결정적으로 중요한 원칙은 탈중앙화입니다. 대부분의
+개발자는 중앙집중형 보안 모델에 익숙하며, 그 모델을 자신의 비트코인
+애플리케이션에 그대로 적용하고 싶은 유혹을 느낄 수 있습니다. 결과는
+참담합니다.
 
-Bitcoin's security relies on decentralized control over keys and on
-independent transaction validation by users. If you want to leverage
-Bitcoin's security, you need to ensure that you remain within the
-Bitcoin security model. In simple terms: don't take control of keys away
-from users and don't outsource validation.
+비트코인의 보안은 키에 대한 탈중앙적 통제와 사용자의 독립적인 트랜잭션
+검증에 기대고 있습니다. 비트코인의 보안을 활용하고 싶다면 비트코인
+보안 모델 안에 머물러야 합니다. 간단히 말해, 사용자에게서 키의 통제권을
+빼앗지 말고, 검증을 외부에 맡기지 마세요.
 
-For example, many early Bitcoin exchanges concentrated all user funds in
-a single "hot" wallet with keys stored on a single server. Such a design
-removes control from users and centralizes control over keys in a single
-system. Many such systems have been hacked, with disastrous consequences
-for their customers.
+예를 들어 초기 비트코인 거래소 상당수는 모든 사용자 자금을 단일 "핫"
+지갑에 몰아넣고 그 키를 서버 한 대에 보관했습니다. 이런 설계는 사용자의
+통제권을 없애고 키에 대한 통제를 단일 시스템에 집중시킵니다. 그런
+시스템 다수가 해킹당했고, 그 고객들에게는 참담한 결과가 돌아갔습니다.
 
-Unless you are prepared to invest heavily in operational security,
-multiple layers of access control, and audits (as the traditional banks
-do), you should think very carefully before taking funds outside of
-Bitcoin's decentralized security context. Even if you have the funds and
-discipline to implement a robust security model, such a design merely
-replicates the fragile model of traditional financial networks, plagued
-by identity theft, corruption, and embezzlement. To take advantage of
-Bitcoin's unique decentralized security model, you have to avoid the
-temptation of centralized architectures that might feel familiar but
-ultimately subvert Bitcoin's ((("decentralized consensus", "as security principle", secondary-sortas="security principle", startref="decentral-consensus-principle")))security.
+전통적인 은행이 하듯 운영 보안과 다층 접근 통제, 감사에 막대한 투자를
+할 준비가 되어 있지 않다면, 비트코인의 탈중앙 보안 맥락 밖으로 자금을
+꺼내기 전에 아주 신중히 생각해야 합니다. 설령 견고한 보안 모델을 구현할
+자금과 기강이 있다 해도, 그런 설계는 결국 신원 도용과 부패와 횡령에
+시달려온 전통 금융 네트워크의 취약한 모델을 그대로 복제하는 것에
+지나지 않습니다. 비트코인 고유의 탈중앙 보안 모델을 온전히 누리려면,
+익숙하게 느껴지지만 끝내는 비트코인의 보안을 무너뜨리는 중앙집중형
+아키텍처의 ((("decentralized consensus", "as security principle", secondary-sortas="security principle", startref="decentral-consensus-principle")))유혹을 피해야 합니다.
 
-==== The Root of Trust
+==== 신뢰의 뿌리
 
-Traditional ((("root of trust", id="root-trust")))security architecture is based
-upon a concept called the _root of trust_, which is a trusted core used
-as the foundation for the security of the overall system or application.
-Security architecture is developed around the root of trust as a series
-of concentric circles, like layers in an onion, extending trust outward
-from the center. Each layer builds upon the more-trusted inner layer
-using access controls, digital signatures, encryption, and other
-security primitives. As software systems become more complex, they are
-more likely to contain bugs, which make them vulnerable to security
-compromise. As a result, the more complex a software system becomes, the
-harder it is to secure. The root of trust concept ensures that most of
-the trust is placed within the least complex part of the system, and
-therefore the least vulnerable parts of the system, while more complex
-software is layered around it. This security architecture is repeated at
-different scales, first establishing a root of trust within the hardware
-of a single system, then extending that root of trust through the
-operating system to higher-level system services, and finally across
-many servers layered in concentric circles of diminishing trust.
+전통적인 ((("root of trust", id="root-trust")))보안 아키텍처는 _신뢰의
+뿌리(root of trust)_ 라는 개념 위에 세워집니다. 시스템이나 애플리케이션
+전체의 보안을 떠받치는 토대로 쓰이는, 신뢰받는 핵심을 가리킵니다. 보안
+아키텍처는 이 신뢰의 뿌리를 중심으로 양파 껍질처럼 여러 겹의 동심원을
+이루며 발전하고, 중심에서 바깥으로 신뢰를 넓혀 나갑니다. 각 층은 접근
+통제, 디지털 서명, 암호화를 비롯한 여러 보안 기본 요소를 사용해 더
+신뢰받는 안쪽 층 위에 쌓입니다. 소프트웨어 시스템은 복잡해질수록 버그를
+품을 가능성이 커지고, 그만큼 보안이 뚫릴 여지도 커집니다. 즉 소프트웨어
+시스템이 복잡해질수록 안전하게 만들기는 어려워집니다. 신뢰의 뿌리라는
+개념은 신뢰의 대부분을 시스템에서 가장 덜 복잡한 부분, 그래서 가장 덜
+취약한 부분에 두고, 더 복잡한 소프트웨어는 그 주위에 층층이 쌓이도록
+보장합니다. 이 보안 아키텍처는 여러 규모에서 반복됩니다. 먼저 단일
+시스템의 하드웨어 안에 신뢰의 뿌리를 세우고, 그 뿌리를 운영체제를 거쳐
+상위 시스템 서비스로 확장하며, 마지막으로 신뢰가 점점 옅어지는 동심원
+형태로 여러 서버에 걸쳐 펼칩니다.
 
-Bitcoin security
-architecture is different. In Bitcoin, the consensus system creates a
-trusted blockchain that is completely decentralized. A correctly
-validated blockchain uses the genesis block as the root of trust,
-building a chain of trust up to the current block. Bitcoin systems can
-and should use the blockchain as their root of trust. When designing a
-complex Bitcoin application that consists of services on many different
-systems, you should carefully examine the security architecture in order
-to ascertain where trust is being placed. Ultimately, the only thing
-that should be explicitly trusted is a fully validated blockchain. If
-your application explicitly or implicitly vests trust in anything but
-the blockchain, that should be a source of concern because it introduces
-vulnerability. A good method to evaluate the security architecture of
-your application is to consider each individual component and evaluate a
-hypothetical scenario where that component is completely compromised and
-under the control of a malicious actor. Take each component of your
-application, in turn, and assess the impacts on the overall security if
-that component is compromised. If your application is no longer secure
-when components are compromised, that shows you have misplaced trust in
-those components. A Bitcoin application without vulnerabilities should
-be vulnerable only to a compromise of the Bitcoin consensus mechanism,
-meaning that its root of trust is based on the strongest part of the
-Bitcoin security architecture.
+비트코인의 보안 아키텍처는 다릅니다. 비트코인에서는 합의 시스템이 완전히
+탈중앙화된 신뢰할 수 있는 블록체인을 만들어냅니다. 올바르게 검증된
+블록체인은 제네시스 블록을 신뢰의 뿌리로 삼아 현재 블록까지 신뢰의
+사슬을 쌓아 올립니다. 비트코인 시스템은 블록체인을 신뢰의 뿌리로 쓸 수
+있으며, 또 그래야 합니다. 여러 시스템에 흩어진 서비스로 이루어진 복잡한
+비트코인 애플리케이션을 설계할 때는, 신뢰가 어디에 놓이고 있는지 알아내기
+위해 보안 아키텍처를 꼼꼼히 살펴야 합니다. 궁극적으로 명시적으로 신뢰해야
+할 대상은 완전히 검증된 블록체인 하나뿐입니다. 애플리케이션이 블록체인이
+아닌 다른 무언가에 명시적으로든 암묵적으로든 신뢰를 걸고 있다면, 그것은
+취약점을 끌어들이는 일이므로 우려해야 할 지점입니다. 애플리케이션의 보안
+아키텍처를 평가하는 좋은 방법은 구성 요소를 하나씩 놓고, 그 요소가 완전히
+뚫려 악의적 행위자의 통제 아래 들어간 가상의 상황을 따져 보는 것입니다.
+애플리케이션의 각 구성 요소를 차례로 짚어가며, 그 요소가 뚫렸을 때 전체
+보안에 어떤 영향이 있는지 평가하세요. 구성 요소가 뚫렸을 때 애플리케이션이
+더 이상 안전하지 않다면, 그 구성 요소에 신뢰를 잘못 두고 있었다는
+뜻입니다. 취약점이 없는 비트코인 애플리케이션이라면 오직 비트코인 합의
+메커니즘이 무너질 때만 취약해야 합니다. 곧 그 신뢰의 뿌리가 비트코인
+보안 아키텍처에서 가장 강한 부분 위에 놓여 있다는 뜻입니다.
 
-The numerous examples of hacked Bitcoin exchanges serve to underscore
-this point because their security architecture and design fails even
-under the most casual scrutiny. These centralized implementations had
-invested trust explicitly in numerous components outside the Bitcoin
-blockchain, such as hot wallets, centralized databases,
-vulnerable encryption keys, and ((("Bitcoin", "security", "principles of", startref="bitcoin-security-principle")))((("security", "principles of", startref="security-principle")))((("root of trust", startref="root-trust")))similar schemes.
+해킹당한 비트코인 거래소의 수많은 사례가 이 점을 잘 보여줍니다. 그들의
+보안 아키텍처와 설계는 아주 가볍게 들여다보기만 해도 무너집니다. 이런
+중앙집중형 구현은 핫 지갑, 중앙집중형 데이터베이스, 취약한 암호화 키
+등 비트코인 블록체인 바깥의 수많은 구성 요소에 명시적으로 신뢰를
+((("Bitcoin", "security", "principles of", startref="bitcoin-security-principle")))((("security", "principles of", startref="security-principle")))((("root of trust", startref="root-trust")))걸어 두었습니다.
 
-=== User Security Best Practices
+=== 사용자 보안 모범 사례
 
-Humans ((("Bitcoin", "security", "best practices", id="bitcoin-security-best-practice")))((("security", "best practices", id="security-best-practice")))((("best practices, security", id="best-practice-security")))have
-used physical security controls for thousands of years. By comparison,
-our experience with digital security is less than 50 years old. Modern
-general-purpose operating systems are not very secure and not
-particularly suited to storing digital money. Our computers are
-constantly exposed to external threats via always-on internet
-connections. They run thousands of software components from hundreds of
-authors, often with unconstrained access to the user's files. A single
-piece of rogue software, among the many thousands installed on your
-computer, can compromise your keyboard and files, stealing any bitcoins
-stored in wallet applications. The level of computer maintenance
-required to keep a computer virus-free and trojan-free is beyond the
-skill level of all but a tiny minority of computer users.
+인류는 ((("Bitcoin", "security", "best practices", id="bitcoin-security-best-practice")))((("security", "best practices", id="security-best-practice")))((("best practices, security", id="best-practice-security")))수천
+년 동안 물리적 보안 수단을 사용해 왔습니다. 그에 비하면 디지털 보안
+경험은 50년도 되지 않았습니다. 현대의 범용 운영체제는 그다지 안전하지
+않고, 디지털 화폐를 보관하기에 특별히 적합하지도 않습니다. 우리 컴퓨터는
+상시 인터넷 연결을 통해 외부 위협에 끊임없이 노출됩니다. 수백 명의
+제작자가 만든 수천 개의 소프트웨어 구성 요소가 돌아가며, 그중 상당수는
+사용자 파일에 제한 없이 접근합니다. 컴퓨터에 설치된 수천 개 중 악성
+소프트웨어 하나만 있어도 키보드와 파일이 뚫리고, 지갑 애플리케이션에
+보관된 비트코인이 도난당할 수 있습니다. 컴퓨터를 바이러스와 트로이
+목마로부터 깨끗하게 유지하는 데 필요한 관리 수준은 극소수를 제외한
+대부분의 컴퓨터 사용자의 역량을 넘어섭니다.
 
-Despite decades of research and advancements in information security,
-digital assets are still woefully vulnerable to a determined adversary.
-Even the most highly protected and restricted systems, in financial
-services companies, intelligence agencies, and defense contractors, are
-frequently breached. Bitcoin creates digital assets that have intrinsic
-value and can be stolen and diverted to new owners instantly and
-irrevocably. This creates a massive incentive for hackers. Until now,
-hackers had to convert identity information or account tokens—such as
-credit cards and bank accounts—into value after compromising them.
-Despite the difficulty of fencing and laundering financial information,
-we have seen ever-escalating thefts. Bitcoin escalates this problem
-because it doesn't need to be fenced or laundered; bitcoins are valuable
-by themselves.
+수십 년에 걸친 정보보안 연구와 발전에도 불구하고, 디지털 자산은 작정하고
+덤비는 공격자 앞에서 여전히 참담할 만큼 취약합니다. 금융 서비스 회사,
+정보 기관, 방위 산업체처럼 가장 삼엄하게 보호되고 통제되는 시스템조차
+자주 뚫립니다. 비트코인은 그 자체로 가치를 지니면서 즉시, 그리고
+되돌릴 수 없게 새로운 소유자에게 옮겨질 수 있는 디지털 자산을 만들어
+냅니다. 이는 해커에게 엄청난 유인이 됩니다. 지금까지 해커는 신용카드나
+은행 계좌 같은 신원 정보나 계정 토큰을 탈취한 뒤 그것을 가치로
+바꿔야 했습니다. 금융 정보를 처분하고 세탁하기가 어려운데도 도난 규모는
+계속 커져 왔습니다. 비트코인은 이 문제를 한 단계 더 키웁니다. 처분하거나
+세탁할 필요 없이, 비트코인 자체가 곧 가치이기 때문입니다.
 
-Bitcoin also creates the incentives to improve computer
-security. Whereas previously the risk of computer compromise was vague
-and indirect, Bitcoin makes these risks clear and obvious. Holding
-bitcoins on a computer serves to focus the user's mind on the need for
-improved computer security. As a direct result of the proliferation and
-increased adoption of Bitcoin and other digital currencies, we have seen
-an escalation in both hacking techniques and security solutions. In
-simple terms, hackers now have a very juicy target and users have a
-clear incentive to defend themselves.
+한편 비트코인은 컴퓨터 보안을 개선할 유인도 만들어 냅니다. 예전에는
+컴퓨터가 뚫릴 위험이 막연하고 간접적이었지만, 비트코인은 그 위험을
+분명하고 눈에 보이게 만듭니다. 컴퓨터에 비트코인을 보관하고 있으면
+사용자는 컴퓨터 보안을 개선해야 할 필요에 자연히 집중하게 됩니다.
+비트코인을 비롯한 디지털 화폐가 널리 퍼지고 채택이 늘어난 직접적인
+결과로, 우리는 해킹 기법과 보안 해법이 나란히 고도화되는 모습을 보고
+있습니다. 간단히 말해 해커에게는 아주 먹음직스러운 표적이 생겼고,
+사용자에게는 스스로를 지킬 분명한 동기가 생겼습니다.
 
-Over the past three years, as a direct result of Bitcoin adoption, we
-have seen tremendous innovation in the realm of information security in
-the form of hardware encryption, key storage and hardware signing devices,
-multisignature technology, and digital escrow. In the following sections
-we will examine various best practices for practical user security.
+지난 3년 동안 비트코인 채택의 직접적인 결과로, 하드웨어 암호화, 키
+보관과 하드웨어 서명 장치, 다중서명 기술, 디지털 에스크로 같은 형태로
+정보보안 영역에서 엄청난 혁신이 일어났습니다. 이어지는 절에서는 실무적인
+사용자 보안을 위한 여러 모범 사례를 살펴봅니다.
 
-==== Physical Bitcoin Storage
+==== 비트코인의 물리적 보관
 
-Because most ((("bitcoins", "physical storage")))((("physical bitcoin storage")))((("storing bitcoins", id="storing-bitcoin")))users are far more
-comfortable with physical security than information security, a very
-effective method for protecting bitcoins is to convert them into physical
-form. Bitcoin keys, and the seeds used to create them, are nothing more than long numbers. This means that
-they can be stored in a physical form, such as printed on paper or
-etched on a metal plate. Securing the keys then becomes as simple as
-physically securing a printed copy of the key seed. A seed
-that is printed on paper is called a "paper backup," and
-many wallets can create them.
-Keeping bitcoins
-offline is ((("cold storage")))called _cold storage_ and it is one of the most effective
-security techniques. A cold storage system is one where the keys are
-generated on an offline system (one never connected to the internet) and
-stored offline either on paper or on digital media, such as a USB memory
-stick.
+((("bitcoins", "physical storage")))((("physical bitcoin storage")))((("storing bitcoins", id="storing-bitcoin")))대부분의
+사용자는 정보 보안보다 물리적 보안을 훨씬 편하게 느끼기 때문에, 비트코인을
+물리적 형태로 바꿔 두는 것은 아주 효과적인 보호 방법입니다. 비트코인 키와
+그 키를 만드는 데 쓰인 시드는 결국 긴 숫자에 지나지 않습니다. 따라서
+종이에 인쇄하거나 금속판에 새기는 식으로 물리적 형태로 보관할 수 있습니다.
+그러면 키를 지키는 일은 인쇄된 키 시드 사본을 물리적으로 안전하게 보관하는
+단순한 문제가 됩니다. 종이에 인쇄한 시드를 "종이 백업"이라고 부르며, 많은
+지갑이 이를 만들어 줍니다. 비트코인을 오프라인에 두는 것을
+((("cold storage")))_콜드 스토리지_ 라고 하며, 가장 효과적인 보안 기법 가운데
+하나입니다. 콜드 스토리지 시스템이란 키를 오프라인 시스템(인터넷에 한
+번도 연결된 적 없는 시스템)에서 생성하고, 종이나 USB 메모리 스틱 같은
+디지털 매체에 오프라인으로 보관하는 방식을 말합니다.
 
-==== Hardware Signing Devices
+==== 하드웨어 서명 장치
 
-In the ((("hardware signing devices")))long term, Bitcoin security may increasingly take the
-form of tamper-proof hardware signing devices. Unlike a smartphone or desktop
-computer, a Bitcoin hardware signing device only needs to hold keys and
-use them to generate signatures.  Without general-purpose software to
-compromise and
-with limited interfaces, hardware signing devices can deliver strong
-security to nonexpert users. Hardware
-signing devices may become the predominant method of storing bitcoins.
+장기적으로 ((("hardware signing devices")))비트코인 보안은 점점 더 변조 방지
+하드웨어 서명 장치의 형태를 띠게 될 것입니다. 스마트폰이나 데스크톱
+컴퓨터와 달리, 비트코인 하드웨어 서명 장치는 키를 보관하고 그 키로
+서명을 만들기만 하면 됩니다. 뚫고 들어갈 범용 소프트웨어가 없고 인터페이스도
+제한되어 있어, 하드웨어 서명 장치는 전문가가 아닌 사용자에게도 강력한
+보안을 제공할 수 있습니다. 하드웨어 서명 장치는 비트코인을 보관하는
+주된 방법이 될지도 모릅니다.
 
-==== Ensuring Your Access
+==== 접근 수단 확보하기
 
-Although
-most users ((("backing up", "importance of")))are rightly concerned about theft of their bitcoins, there is an even
-bigger risk. Data files get lost all the time. If they contain Bitcoin keys,
-the loss is much more painful. In the effort to secure their Bitcoin
-wallets, users must be very careful not to go too far and end up losing
-their bitcoins. In July 2011, a well-known Bitcoin awareness and education
-project lost almost 7,000 bitcoin. In their effort to prevent theft, the
-owners had implemented a complex series of encrypted backups. In the end
-they accidentally lost the encryption keys, making the backups worthless
-and losing a fortune. Like hiding money by burying it in the desert, if
-you secure your bitcoins too well you might not be able to find them again.
+대부분의
+사용자는 ((("backing up", "importance of")))자신의 비트코인을 도둑맞을까 걱정하고, 그것은 당연한
+일입니다. 하지만 그보다 더 큰 위험이 있습니다. 데이터 파일은 늘 사라집니다.
+그 안에 비트코인 키가 들어 있다면 그 손실은 훨씬 더 뼈아픕니다. 비트코인
+지갑을 지키려다 너무 멀리 가서 결국 비트코인을 잃어버리는 일이 없도록
+아주 조심해야 합니다. 2011년 7월, 잘 알려진 비트코인 인식 제고 및 교육
+프로젝트가 비트코인 7,000개 가까이를 잃었습니다. 도난을 막으려고 운영진이
+복잡한 암호화 백업 체계를 여러 겹으로 구축했는데, 결국 암호화 키를
+실수로 잃어버려 백업은 쓸모없어졌고 큰 재산이 사라졌습니다. 사막에 돈을
+묻어 숨기는 것과 마찬가지로, 비트코인을 너무 잘 지키면 다시 찾지 못할
+수도 있습니다.
 
 [WARNING]
 ====
-To spend bitcoins, you may((("wallets", "recovery codes")))((("recovery codes"))) need to back up more than just your private
-keys or the BIP32 seed used to derive them.  This is especially the case
-when multisignatures or complex scripts are being used.  Most output
-scripts commit to the actual conditions that must be fulfilled to spend
-the bitcoins in that output, and it's not possible to fulfill that
-commitment unless your wallet software can reveal those conditions to
-the network.  Wallet recovery codes must include this information.  For
-more details, see <<ch05_wallets>>.
+비트코인을 사용하려면((("wallets", "recovery codes")))((("recovery codes"))) 비밀키나 그것을 파생하는 데 쓴 BIP32 시드
+말고도 더 많은 것을 백업해야 할 수 있습니다. 다중서명이나 복잡한 스크립트를
+쓰고 있다면 특히 그렇습니다. 대부분의 출력 스크립트는 그 출력의 비트코인을
+사용하기 위해 충족해야 할 실제 조건에 대한 커밋먼트를 담고 있으며, 지갑
+소프트웨어가 그 조건을 네트워크에 드러낼 수 없다면 커밋먼트를 충족할 수도
+없습니다. 지갑 복구 코드에는 이 정보가 반드시 포함되어야 합니다. 자세한
+내용은 <<ch05_wallets>>를 참고하세요.
 ====
 
-==== Diversifying Risk
+==== 위험 분산하기
 
-Would you((("risk diversification")))((("storing bitcoins", startref="storing-bitcoin"))) carry your entire net worth in cash in your wallet? Most
-people would consider that reckless, yet Bitcoin users often keep all
-their bitcoins using a single wallet application. Instead, users should spread the risk
-among multiple and diverse Bitcoin applications. Prudent users will keep only
-a small fraction, perhaps less than 5%, of their bitcoins in an online or
-mobile wallet as "pocket change." The rest should be split between a few
-different storage mechanisms, such as a desktop wallet and offline (cold
-storage).
+전 재산을((("risk diversification")))((("storing bitcoins", startref="storing-bitcoin"))) 현금으로 바꿔 지갑에 넣고 다니시겠습니까? 대부분은
+무모하다고 여길 텐데, 비트코인 사용자는 종종 자기 비트코인 전부를 지갑
+애플리케이션 하나에 넣어 둡니다. 그러지 말고 여러 종류의 비트코인
+애플리케이션에 위험을 나눠 두어야 합니다. 신중한 사용자라면 온라인이나
+모바일 지갑에는 "잔돈" 삼아 전체의 아주 일부, 아마도 5% 미만만 둘
+것입니다. 나머지는 데스크톱 지갑과 오프라인(콜드 스토리지)처럼 서로 다른
+보관 수단 몇 가지에 나눠 두어야 합니다.
 
-==== Multisig and Governance
+==== 다중서명과 거버넌스
 
-Whenever a ((("multisignature addresses")))((("addresses", "multisignature")))company or individual stores large amounts of
-bitcoins, they should consider using a multisignature Bitcoin address.
-Multisignature addresses secure funds by requiring more than one
-signature to make a payment. The signing keys should be stored in a
-number of different locations and under the control of different people.
-In a corporate environment, for example, the keys should be generated
-independently and held by several company executives to ensure that no
-single person can compromise the funds. Multisignature addresses can
-also offer redundancy, where a single person holds several keys that are
-stored in different locations.
+((("multisignature addresses")))((("addresses", "multisignature")))기업이든 개인이든 많은 양의 비트코인을 보관할 때는 다중서명
+비트코인 주소를 쓰는 것을 고려해야 합니다. 다중서명 주소는 결제를 하려면
+둘 이상의 서명이 필요하도록 만들어 자금을 지킵니다. 서명 키는 여러
+다른 장소에 나누어, 서로 다른 사람들의 통제 아래 보관해야 합니다. 예를
+들어 기업 환경이라면 키를 각각 독립적으로 생성해 여러 임원이 나눠 보관함으로써,
+어느 한 사람도 혼자서는 자금을 건드릴 수 없게 해야 합니다. 다중서명
+주소는 한 사람이 서로 다른 장소에 보관한 여러 개의 키를 갖는 식으로
+이중화 수단이 되어 주기도 합니다.
 
 
-==== Survivability
+==== 존속성
 
-One important
-security ((("survivability (of bitcoin access)")))((("estate planning")))consideration that is often overlooked is availability,
-especially in the context of incapacity or death of the key holder.
-Bitcoin users are told to use complex passwords and keep their keys
-secure and private, not sharing them with anyone. Unfortunately, that
-practice makes it almost impossible for the user's family to recover any
-funds if the user is not available to unlock them. In most cases, in
-fact, the families of Bitcoin users might be completely unaware of the
-existence of the bitcoin funds.
+자주 간과되는
+중요한 ((("survivability (of bitcoin access)")))((("estate planning")))보안 고려 사항 하나는 가용성입니다. 특히 키
+보유자가 의사 능력을 잃거나 사망한 상황에서 그렇습니다. 비트코인
+사용자는 복잡한 암호를 쓰고 키를 안전하고 비밀스럽게, 누구와도 공유하지
+말라는 이야기를 듣습니다. 안타깝게도 그런 관행 때문에, 사용자가 직접
+잠금을 풀어 줄 수 없는 상황이 되면 가족이 자금을 되찾기란 거의 불가능해집니다.
+심지어 대부분의 경우, 비트코인 사용자의 가족은 그 비트코인 자금이
+존재한다는 사실조차 모릅니다.
 
-If you have a lot of bitcoins, you should consider sharing access details
-with a trusted relative or lawyer. A more complex survivability scheme
-can be set up with multisignature access and estate planning through a
-lawyer specialized as a "digital asset executor."
+비트코인을 많이 갖고 있다면 믿을 만한 친족이나 변호사와 접근 정보를
+공유하는 것을 고려해야 합니다. 더 정교한 존속성 체계를 원한다면 다중서명
+접근과 함께, "디지털 자산 유언집행자"를 전문으로 하는 변호사를 통해 상속
+계획을 세울 수 있습니다.
 
-Bitcoin is a complex new technology that is still being explored by developers. Over
-time we will develop better security tools and practices that are easier
-to use by nonexperts. For now, Bitcoin users can use many of the tips
-discussed here to enjoy a secure and trouble-free Bitcoin ((("Bitcoin", "security", "best practices", startref="bitcoin-security-best-practice")))((("security", "best practices", startref="security-best-practice")))((("best practices, security", startref="best-practice-security")))experience.
+비트코인은 개발자들이 여전히 탐구해 나가고 있는 복잡한 신기술입니다.
+시간이 지나면 전문가가 아니어도 쓰기 쉬운, 더 나은 보안 도구와 관행이
+만들어질 것입니다. 지금으로서는 여기서 다룬 여러 조언을 활용해 안전하고
+탈 없는 비트코인 ((("Bitcoin", "security", "best practices", startref="bitcoin-security-best-practice")))((("security", "best practices", startref="security-best-practice")))((("best practices, security", startref="best-practice-security")))경험을 누리시기 바랍니다.

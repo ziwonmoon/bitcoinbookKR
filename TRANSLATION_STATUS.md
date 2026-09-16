@@ -34,7 +34,7 @@
 - [x] `ch10_network.adoc`
 - [x] `ch11_blockchain.adoc`
 - [x] `ch12_mining.adoc`
-- [ ] `ch13_security.adoc`
+- [x] `ch13_security.adoc`
 - [ ] `ch14_applications.adoc`
 
 ## 5단계 — 부록
