@@ -31,7 +31,7 @@
 - [x] `ch07_authorization-authentication.adoc`
 - [x] `ch08_signatures.adoc`
 - [x] `ch09_fees.adoc`
-- [ ] `ch10_network.adoc`
+- [x] `ch10_network.adoc`
 - [ ] `ch11_blockchain.adoc`
 - [ ] `ch12_mining.adoc`
 - [ ] `ch13_security.adoc`

@@ -1,345 +1,248 @@
 [[bitcoin_network_ch08]]
-== The Bitcoin Network
+== 비트코인 네트워크
 
-Bitcoin is ((("Bitcoin", "as peer-to-peer network", secondary-sortas="peer-to-peer network", seealso="Bitcoin network")))((("peer-to-peer networks, Bitcoin as", seealso="Bitcoin network")))((("networks (Bitcoin)", see="Bitcoin network")))((("Bitcoin network")))structured as a peer-to-peer network architecture on
-top of the internet. The term peer-to-peer, or P2P, means that the
-full nodes that participate in the network are peers to each other, that
-they can all perform the same functions, and that there are no "special" nodes.
-The network nodes
-interconnect in a mesh network with a "flat" topology. There is no
-server, no centralized service, and no hierarchy within the network.
-Nodes in a P2P network both provide and consume services at the same
-time. P2P
-networks are inherently resilient, decentralized, and open. A preeminent
-example of a P2P network architecture was the early internet itself,
-where nodes on the IP network were equal. Today's internet architecture
-is more hierarchical, but the Internet Protocol still retains its
-flat-topology essence. Beyond Bitcoin and the internet, the largest and most successful
-application of P2P technologies is file sharing, with Napster as the
-pioneer and BitTorrent as the most recent evolution of the architecture.
+비트코인은 ((("Bitcoin", "as peer-to-peer network", secondary-sortas="peer-to-peer network", seealso="Bitcoin network")))((("peer-to-peer networks, Bitcoin as", seealso="Bitcoin network")))((("networks (Bitcoin)", see="Bitcoin network")))((("Bitcoin network")))인터넷 위에 P2P 네트워크 구조로 짜여 있습니다. P2P라는 말은
+네트워크에 참여하는 풀 노드들이 서로 대등하고, 모두 같은 기능을 수행할 수 있으며, "특별한" 노드가
+없다는 뜻입니다. 네트워크 노드들은 "평평한" 토폴로지의 메시 네트워크로 서로 연결됩니다. 네트워크
+안에 서버도, 중앙화된 서비스도, 위계도 없습니다. P2P 네트워크의 노드는 서비스를 제공하는 동시에
+소비합니다. P2P 네트워크는 본질적으로 회복력이 있고 탈중앙화되어 있으며 개방적입니다. P2P 네트워크
+구조의 대표적인 예는 초기 인터넷 자체였습니다. IP 네트워크의 노드들이 대등했던 시절이죠. 오늘날의
+인터넷 구조는 더 위계적이지만, 인터넷 프로토콜은 여전히 평평한 토폴로지라는 본질을 간직하고 있습니다.
+비트코인과 인터넷을 빼면 P2P 기술의 가장 크고 성공적인 응용은 파일 공유이며, 냅스터가 개척자이고
+비트토렌트가 이 구조의 가장 최근 진화형입니다.
 
-Bitcoin's P2P network architecture is much more than a topology choice.
-Bitcoin is a P2P digital cash system by design, and the network
-architecture is both a reflection and a foundation of that core
-characteristic. Decentralization of control is a core design principle
-that can only be achieved and maintained by a flat and decentralized P2P
-consensus network.
+비트코인의 P2P 네트워크 구조는 단순한 토폴로지 선택 그 이상입니다. 비트코인은 설계상 P2P 디지털 현금
+시스템이며, 네트워크 구조는 그 핵심 성격의 반영이자 토대입니다. 통제의 탈중앙화는 평평하고 탈중앙화된
+P2P 합의 네트워크로만 달성하고 유지할 수 있는 핵심 설계 원칙입니다.
 
-The term "Bitcoin network" refers to
-the collection of nodes running the Bitcoin P2P protocol. In addition to
-the Bitcoin P2P protocol, there are other protocols that
-are used for mining and lightweight wallets. These additional
-protocols are provided by gateway routing servers that access the
-Bitcoin network using the Bitcoin P2P protocol and then extend that
-network to nodes running other protocols. For example, Stratum servers
-connect Stratum mining nodes via the Stratum protocol to the main
-Bitcoin network and bridge the Stratum protocol to the Bitcoin P2P
-protocol. We will describe some of the most commonly used of those
-protocols in this chapter in addition to the base Bitcoin P2P protocol.
+"비트코인 네트워크"라는 말은 비트코인 P2P 프로토콜을 실행하는 노드들의 집합을 가리킵니다. 비트코인
+P2P 프로토콜 외에도 채굴과 경량 지갑에 쓰이는 다른 프로토콜들이 있습니다. 이런 추가 프로토콜은
+비트코인 P2P 프로토콜로 비트코인 네트워크에 접근한 뒤 그 네트워크를 다른 프로토콜을 쓰는 노드로
+확장해 주는 게이트웨이 라우팅 서버가 제공합니다. 예를 들어 스트라텀 서버는 스트라텀 프로토콜로 스트라텀
+채굴 노드를 주 비트코인 네트워크에 연결하고 스트라텀 프로토콜과 비트코인 P2P 프로토콜을 이어줍니다.
+이 장에서는 기본이 되는 비트코인 P2P 프로토콜과 함께 그중 가장 널리 쓰이는 프로토콜 몇 가지를
+설명합니다.
 
-=== Node Types and Roles
+=== 노드의 유형과 역할
 
-Although((("Bitcoin network", "nodes", "types of")))((("nodes", "types of")))((("full nodes", "purpose of")))((("peers"))) full nodes (peers) in the Bitcoin P2P network are equal to each other,
-they may take on different roles depending on the functionality they are
-supporting. A Bitcoin full node validates blocks and may contain other
-functions, such as routing, mining, and wallet services.
+비트코인((("Bitcoin network", "nodes", "types of")))((("nodes", "types of")))((("full nodes", "purpose of")))((("peers"))) P2P 네트워크의 풀 노드(피어)들은 서로 대등하지만, 자신이 지원하는
+기능에 따라 서로 다른 역할을 맡을 수 있습니다. 비트코인 풀 노드는 블록을 검증하며, 라우팅과 채굴,
+지갑 서비스 같은 다른 기능을 함께 갖출 수도 있습니다.
 
-Some nodes, called _archival full nodes_, also ((("archival full nodes")))maintain a
-complete and up-to-date copy of the blockchain.
-Those nodes can
-serve data to clients that store
-only a subset of the blockchain and partly verify transactions using a method
-((("SPV (simplified-payment-verification) clients")))((("lightweight clients")))called _simplified payment verification_, or SPV. These clients are known as lightweight clients.
+_아카이브 풀 노드_ 라고 불리는 일부 노드는 ((("archival full nodes")))블록체인의 완전하고 최신인 사본도
+보관합니다. 이런 노드는 블록체인의 일부만 저장하고 _단순 지불 검증_, 즉 SPV라는 방법으로 트랜잭션을
+부분적으로 검증하는 클라이언트에 데이터를 제공할 수 있습니다. 이런
+((("SPV (simplified-payment-verification) clients")))((("lightweight clients")))클라이언트를 경량 클라이언트라고 합니다.
 
-Miners compete to create new blocks by
-running specialized hardware to solve the proof-of-work algorithm. Some
-miners operate full nodes, validating every block on the
-blockchain, while others are clients participating in pool
-mining and depending on a pool server to provide them with work.
+채굴자들은 작업증명 알고리즘을 푸는 전용 하드웨어를 돌리며 새 블록을 만들기 위해 경쟁합니다. 어떤
+채굴자는 풀 노드를 운영하며 블록체인의 모든 블록을 검증하고, 다른 채굴자는 풀 채굴에 참여하는
+클라이언트로서 작업을 받아오는 풀 서버에 의존합니다.
 
-User wallets might connect to the user's own full node, as is sometimes the case with
-desktop Bitcoin clients, but many user wallets, especially
-those running on resource-constrained devices such as smartphones, are
-lightweight nodes.
+사용자 지갑은 데스크톱 비트코인 클라이언트가 그렇듯 사용자 자신의 풀 노드에 연결되기도 하지만, 많은
+사용자 지갑, 특히 스마트폰처럼 자원이 제한된 기기에서 돌아가는 지갑은 경량 노드입니다.
 
-In addition to the main node types on the Bitcoin P2P protocol, there
-are servers and nodes running other protocols, such as specialized
-mining pool protocols and lightweight client-access protocols.
+비트코인 P2P 프로토콜의 주요 노드 유형 외에, 전용 채굴 풀 프로토콜이나 경량 클라이언트 접근 프로토콜처럼
+다른 프로토콜을 실행하는 서버와 노드도 있습니다.
 
-=== The Network
+=== 네트워크
 
-As ((("Bitcoin network", "nodes", "number of")))((("nodes", "number of")))of this writing, the main Bitcoin network,
-running the Bitcoin P2P protocol, consists of about 10,000
-listening nodes running various versions of Bitcoin Core and a few
-hundred nodes running various other implementations of the Bitcoin P2P
-protocol such as BitcoinJ, btcd, and bcoin. A small
-percentage of the nodes on the Bitcoin P2P network are also mining
-nodes. Various individuals and companies interface with the Bitcoin
-network by running archival full nodes,
-with full copies of the blockchain and a network node, but without
-mining or wallet functions. These nodes act as network edge routers,
-allowing various other services (exchanges, wallets, block explorers,
-merchant payment processing) to be built on top.
+((("Bitcoin network", "nodes", "number of")))((("nodes", "number of")))이 글을 쓰는 시점에 비트코인 P2P 프로토콜을 실행하는 주 비트코인
+네트워크는 여러 버전의 비트코인 코어를 돌리는 약 10,000개의 수신 대기 노드와, BitcoinJ나 btcd,
+bcoin처럼 비트코인 P2P 프로토콜의 다른 구현을 돌리는 수백 개의 노드로 이루어져 있습니다. 비트코인 P2P
+네트워크의 노드 중 일부는 채굴 노드이기도 합니다. 여러 개인과 기업이 블록체인 전체 사본과 네트워크
+노드를 갖추되 채굴이나 지갑 기능은 두지 않은 아카이브 풀 노드를 운영하며 비트코인 네트워크와
+연결됩니다. 이런 노드는 네트워크 경계 라우터 역할을 해, 그 위에 다른 여러 서비스(거래소, 지갑, 블록
+탐색기, 상점 결제 처리)가 세워질 수 있게 합니다.
 
 
 [role="less_space pagebreak-before"]
-=== Compact Block Relay
+=== 컴팩트 블록 중계
 
-When a ((("Bitcoin network", "nodes", "compact block relay", id="bitcoin-network-node-compact-relay")))((("nodes", "compact block relay", id="node-compact-relay")))((("blocks", "compact block relay", id="block-compact-relay")))((("compact block relay", id="compact-block-relay")))((("mining", "blocks", "compact block relay", id="mining-block-compact-relay")))miner finds a new block, they announce it to the Bitcoin network
-(which includes other miners).  The miner who found that block can start
-building on top of it immediately; all other miners who haven't learned
-about the block yet will continue building on top of the previous block
-until they do learn about it.
+((("Bitcoin network", "nodes", "compact block relay", id="bitcoin-network-node-compact-relay")))((("nodes", "compact block relay", id="node-compact-relay")))((("blocks", "compact block relay", id="block-compact-relay")))((("compact block relay", id="compact-block-relay")))((("mining", "blocks", "compact block relay", id="mining-block-compact-relay")))채굴자가 새 블록을 찾으면 그것을 (다른 채굴자를 포함한) 비트코인
+네트워크에 알립니다. 그 블록을 찾은 채굴자는 곧바로 그 위에 쌓아 올리기 시작할 수 있습니다. 아직 그
+블록을 알지 못하는 다른 모든 채굴자는 그것을 알게 될 때까지 이전 블록 위에 계속 쌓아 올립니다.
 
-If, before they learn about the new block, one of those other
-miners creates a block, their block will be in competition with the
-first miner's new block.  Only one of the blocks will ever be included
-in the blockchain used by all full nodes, and miners only get paid for
-blocks that are widely accepted.
+새 블록을 알게 되기 전에 그 다른 채굴자 중 하나가 블록을 만들면, 그 블록은 첫 번째 채굴자의 새 블록과
+경쟁하게 됩니다. 두 블록 중 하나만 모든 풀 노드가 쓰는 블록체인에 포함되며, 채굴자는 널리 받아들여진
+블록에 대해서만 보상을 받습니다.
 
-Whichever block has a second block built on top of it first wins (unless
-there's another near-tie), which is ((("block-finding races")))called a _block-finding race_ and is
-illustrated in <<mining_race>>.
-Block-finding races give the advantage to the largest miners, so they
-act in opposition to Bitcoin's essential decentralization.  To prevent
-block-finding races and allow miners of any size to participate equally
-in the lottery that is Bitcoin mining, it's extremely useful to minimize
-the time between when one miner announces a new block and when other
-miners receive that block.
-
+(또 다른 아슬아슬한 동점이 없다면) 어느 블록 위에 두 번째 블록이 먼저 쌓이느냐로 승부가 갈리는데, 이를
+((("block-finding races")))_블록 찾기 경쟁_ 이라고 하며 <<mining_race>>에 나타냈습니다. 블록 찾기 경쟁은
+가장 큰 채굴자에게 유리하므로 비트코인의 본질인 탈중앙화에 역행합니다. 블록 찾기 경쟁을 막고 규모에
+상관없이 모든 채굴자가 비트코인 채굴이라는 추첨에 대등하게 참여할 수 있게 하려면, 한 채굴자가 새 블록을
+알린 시점과 다른 채굴자들이 그 블록을 받는 시점 사이의 시간을 최소로 줄이는 것이 대단히 유용합니다.
 [[mining_race]]
-.A blockchain fork requiring a mining race.
+.채굴 경쟁을 부르는 블록체인 포크.
 image::images/mbc3_1001.png["Mining race"]
 
-In 2015, a new version of Bitcoin Core added a feature called
-_compact block relay_ (specified in BIP152) that allows transferring new
-blocks both faster and with less bandwidth.
+2015년 비트코인 코어의 새 버전은 _컴팩트 블록 중계_ (BIP152에 규정)라는 기능을 추가했는데, 새 블록을
+더 빠르고 더 적은 대역폭으로 전송할 수 있게 해줍니다.
 
-As background, full nodes that relay unconfirmed transactions also store
-many of those transactions in their mempools (see <<mempool>>).  When
-some of those transactions are confirmed in a new block, the node
-doesn't need to receive a second copy of those transactions.
+배경을 설명하자면, 미확인 트랜잭션을 중계하는 풀 노드는 그 트랜잭션의 상당수를 자기 멤풀에도
+보관합니다(<<mempool>> 참고). 그 트랜잭션 중 일부가 새 블록에서 확인되면, 노드는 그 트랜잭션의 사본을
+다시 받을 필요가 없습니다.
 
-Instead of receiving redundant unconfirmed transactions, compact blocks
-allow a peer to instead send a short 6-byte identifier for each transaction.
-When your node receives a compact block with one or more identifiers, it
-checks its mempool for those transactions and uses them if they are
-found.  For any transaction that isn't found in your local node's
-mempool, your node can send a request to the peer for a copy.
+컴팩트 블록은 중복되는 미확인 트랜잭션을 받는 대신, 피어가 각 트랜잭션에 대해 6바이트짜리 짧은
+식별자를 보낼 수 있게 합니다. 여러분의 노드가 식별자 하나 이상이 담긴 컴팩트 블록을 받으면, 자기
+멤풀에서 그 트랜잭션들을 찾아 있으면 사용합니다. 로컬 노드의 멤풀에서 찾지 못한 트랜잭션은 피어에게
+사본을 요청할 수 있습니다.
 
-Conversely, if the remote peer believes your node's mempool doesn't have
-some of the transactions that appear in the block, it can include a copy of
-those transactions in the compact block.  For example, Bitcoin Core
-always sends a block's coinbase transaction.
+반대로 원격 피어가 여러분 노드의 멤풀에 그 블록에 든 트랜잭션 중 일부가 없다고 판단하면, 그 트랜잭션의
+사본을 컴팩트 블록에 함께 담을 수 있습니다. 예를 들어 비트코인 코어는 블록의 코인베이스 트랜잭션을
+언제나 함께 보냅니다.
 
-If the remote peer guesses correctly about what transactions your node
-has in its mempool, and which it does not, it will send a block nearly
-as efficiently as is theoretically possible (for a typical block, it'll
-be between 97% and 99% efficient).
+원격 피어가 여러분의 노드 멤풀에 어떤 트랜잭션이 있고 없는지 정확히 짐작한다면, 이론적으로 가능한
+수준에 거의 근접하게 효율적으로 블록을 보냅니다(전형적인 블록이라면 97%에서 99% 사이의 효율입니다).
 
 [TIP]
 ====
-Compact block relay does not decrease the size of blocks.  It just
-prevents the redundant transfer of information that a node already has.
-When a node doesn't previously have information about a block, for
-example when a node is first started, it must receive complete copies of
-each block.
+컴팩트 블록 중계가 블록의 크기를 줄이는 것은 아닙니다. 노드가 이미 가진 정보를 중복해서 전송하는 것을
+막을 뿐입니다. 노드가 어떤 블록에 대한 정보를 미리 가지고 있지 않을 때, 예를 들어 노드를 처음 시작할
+때는 각 블록의 완전한 사본을 받아야 합니다.
 ====
 
-There are two modes that Bitcoin Core currently implements for sending
-compact blocks, illustrated in <<bip152_illustration>>:
+비트코인 코어가 현재 컴팩트 블록을 보내는 데 구현한 모드는 두 가지이며 <<bip152_illustration>>에
+나타냈습니다.
 
-Low-bandwidth mode::
-  When your((("low-bandwidth mode (compact block relay)"))) node requests that a peer use low-bandwidth mode (the default),
-  that peer will tell your node the 32-byte identifier (header hash) of a
-  new block but will not send your node any details about it.  If your
-  node acquires that block first from another source, this avoids
-  wasting any more of your bandwidth acquiring a redundant copy of that
-  block.  If your node does need the block, it will request a compact
-  block.
+저대역폭 모드::
+  여러분의((("low-bandwidth mode (compact block relay)"))) 노드가 피어에게 저대역폭 모드(기본값)를 쓰라고 요청하면, 그 피어는 새
+  블록의 32바이트 식별자(헤더 해시)만 알려주고 그에 대한 세부 정보는 보내지 않습니다. 여러분의 노드가
+  그 블록을 다른 곳에서 먼저 얻는다면, 중복 사본을 받느라 대역폭을 더 낭비하지 않게 됩니다. 노드에 그
+  블록이 정말 필요하면 컴팩트 블록을 요청합니다.
 
-High-bandwidth mode::
-  When your node ((("high-bandwidth mode (compact block relay)")))requests that a peer use high-bandwidth mode, that peer
-  will send your node a compact block for a new block even before it has
-  fully verified that the block is valid.  The only validation the peer
-  will perform is ensuring that the block's header contains the correct
-  amount of proof of work.  Since proof of work is expensive to generate
-  (about $150,000 USD at the time of writing), it's unlikely that a
-  miner would fake it just to waste the bandwidth of relay nodes.
-  Skipping validation before relay allows new blocks to travel across
-  the network with minimal delays at each hop.
+고대역폭 모드::
+  여러분의 노드가 ((("high-bandwidth mode (compact block relay)")))피어에게 고대역폭 모드를 쓰라고 요청하면, 그 피어는 새 블록이
+  유효한지 완전히 검증하기도 전에 그 블록에 대한 컴팩트 블록을 보냅니다. 피어가 하는 유일한 검증은 그
+  블록의 헤더에 올바른 양의 작업증명이 들어 있는지 확인하는 것입니다. 작업증명을 만들어내는 데는 큰
+  비용이 들므로(이 글을 쓰는 시점에 약 15만 달러), 중계 노드의 대역폭을 낭비시키려고 채굴자가 그것을
+  위조할 가능성은 낮습니다. 중계 전에 검증을 건너뛰면 새 블록이 각 홉에서 지연을 최소로 하며 네트워크를
+  가로질러 퍼질 수 있습니다.
 +
-The downside of high-bandwidth mode is that your node is likely to
-receive redundant information from each high-bandwidth peer it chooses.
-As of this writing, Bitcoin Core currently only asks three peers to use
-high-bandwidth mode (and it tries to choose peers that have a history of
-quickly announcing blocks).
+고대역폭 모드의 단점은 여러분의 노드가 자신이 고른 고대역폭 피어마다 중복된 정보를 받게 될 가능성이
+크다는 것입니다. 이 글을 쓰는 시점에 비트코인 코어는 세 개의 피어에게만 고대역폭 모드를 요청합니다
+(그리고 블록을 빠르게 알려온 이력이 있는 피어를 고르려 합니다).
 
 // released into the public domain by Nicolas Dorier
 [[bip152_illustration]]
-.BIP152 modes compared (from BIP152).  The shaded bar indicates the time it takes the node to validate the block.
+.BIP152 모드 비교(BIP152에서 가져옴). 음영 막대는 노드가 블록을 검증하는 데 걸리는 시간을 나타낸다.
 image::images/mbc3_1002.png["BIP152"]
 
-The names of the two methods (which are taken from BIP152) can be a bit
-confusing.  Low-bandwidth mode saves bandwidth by not sending blocks in
-most cases.  High-bandwidth mode uses more bandwidth than low-bandwidth
-mode but, in most cases, much less bandwidth than was used for block
-relay before compact blocks were ((("Bitcoin network", "nodes", "compact block relay", startref="bitcoin-network-node-compact-relay")))((("nodes", "compact block relay", startref="node-compact-relay")))((("blocks", "compact block relay", startref="block-compact-relay")))((("compact block relay", startref="compact-block-relay")))((("mining", "blocks", "compact block relay", startref="mining-block-compact-relay")))implemented.
+(BIP152에서 가져온) 두 방식의 이름은 다소 헷갈릴 수 있습니다. 저대역폭 모드는 대부분의 경우 블록을
+보내지 않음으로써 대역폭을 아낍니다. 고대역폭 모드는 저대역폭 모드보다 대역폭을 더 쓰지만, 대부분의
+경우 컴팩트 블록이 구현되기 전에 블록 중계에 쓰이던 것보다는 훨씬 적게
+((("Bitcoin network", "nodes", "compact block relay", startref="bitcoin-network-node-compact-relay")))((("nodes", "compact block relay", startref="node-compact-relay")))((("blocks", "compact block relay", startref="block-compact-relay")))((("compact block relay", startref="compact-block-relay")))((("mining", "blocks", "compact block relay", startref="mining-block-compact-relay")))씁니다.
 
-=== Private Block Relay Networks
+=== 사설 블록 중계 네트워크
 
-Although((("Bitcoin network", "nodes", "private block relay", id="bitcoin-network-node-private-relay")))((("nodes", "private block relay", id="node-private-relay")))((("blocks", "private block relay", id="block-private-relay")))((("private block relay", id="private-block-relay")))((("mining", "blocks", "private block relay", id="mining-block-private-relay"))) compact blocks go a long way toward minimizing the time it
-takes for blocks to propagate across the network,
-it's possible to minimize latency further.  Unlike
-compact blocks, though, the other solutions involve trade-offs that
-make them unavailable or unsuitable for the public P2P relay network.
-For that reason, there has been experimentation with private relay
-networks for blocks.
+((("Bitcoin network", "nodes", "private block relay", id="bitcoin-network-node-private-relay")))((("nodes", "private block relay", id="node-private-relay")))((("blocks", "private block relay", id="block-private-relay")))((("private block relay", id="private-block-relay")))((("mining", "blocks", "private block relay", id="mining-block-private-relay")))컴팩트 블록이 블록이 네트워크를 가로질러 전파되는 시간을 줄이는 데
+크게 기여하지만, 지연을 더 줄이는 것도 가능합니다. 다만 컴팩트 블록과 달리 다른 해법들에는 공개 P2P
+중계 네트워크에서 쓸 수 없거나 적합하지 않게 만드는 절충이 따릅니다. 그래서 블록을 위한 사설 중계
+네트워크를 실험해 왔습니다.
 
-One simple technique is to preselect a route between endpoints.  For
-example, a relay network with servers running in datacenters near major
-trans-oceanic fiber optic lines might be able to forward new blocks
-faster than waiting for the block to arrive at the node run by some home
-user many kilometers away from the fiber optic line.
+간단한 기법 하나는 종단 사이의 경로를 미리 고르는 것입니다. 예를 들어 주요 대양 횡단 광케이블 근처의
+데이터센터에서 서버를 돌리는 중계 네트워크라면, 광케이블에서 수 킬로미터 떨어진 가정 사용자의 노드에
+블록이 도착하기를 기다리는 것보다 새 블록을 더 빨리 전달할 수 있습니다.
 
-Another, more complex technique, is((("FEC (Forward Error Correction)")))((("Forward Error Correction (FEC)"))) Forward Error Correction (FEC).
-This allows a compact block message to be split into several parts, with
-each part having extra data appended.  If any of the parts isn't
-received, that part can be reconstructed from the parts that are
-received.  Depending on the settings, up to several parts may be
-reconstructed if they are lost.
+더 복잡한 또 다른 기법은 ((("FEC (Forward Error Correction)")))((("Forward Error Correction (FEC)")))전진 오류 정정(Forward Error Correction, FEC)입니다.
+이는 컴팩트 블록 메시지를 여러 조각으로 나누고 각 조각에 추가 데이터를 덧붙이게 해줍니다. 어떤 조각이
+도착하지 않더라도 받은 조각들로 그 조각을 복원할 수 있습니다. 설정에 따라 잃어버린 조각을 여러 개까지
+복원할 수도 있습니다.
 
-FEC avoids the problem of a compact block (or some parts of it) not
-arriving due to problems with the underlying network connection.
-Those problems frequently occur but we don't often notice them
-because we mostly use protocols that automatically re-request the
-missing data.  However, requesting missing data triples the time to
-receive it.  For example:
+FEC는 기반 네트워크 연결에 문제가 생겨 컴팩트 블록(또는 그 일부)이 도착하지 않는 문제를 피하게
+해줍니다. 이런 문제는 자주 일어나지만, 우리는 대개 누락된 데이터를 자동으로 다시 요청하는 프로토콜을
+쓰기 때문에 잘 알아채지 못합니다. 그런데 누락된 데이터를 요청하면 받는 시간이 세 배로 늘어납니다.
+예를 들면 이렇습니다.
 
-1. Alice sends some data to Bob.
-2. Bob doesn't receive the data (or it is damaged).   Bob re-requests
-   the data from Alice.
-3. Alice sends the data again.
+1. 앨리스가 밥에게 어떤 데이터를 보냅니다.
+2. 밥이 그 데이터를 받지 못하거나 데이터가 손상됩니다. 밥은 앨리스에게 그 데이터를 다시 요청합니다.
+3. 앨리스가 데이터를 다시 보냅니다.
 
-A third technique is to assume all nodes receiving the data have
-almost all of the same transactions in their mempool, so they can all
-accept the same compact block.  That not only saves us time computing
-a compact block at each hop, but it means that each hop can simply
-relay the FEC packets to the next hop even before validating them.
+세 번째 기법은 데이터를 받는 모든 노드가 멤풀에 거의 같은 트랜잭션을 가지고 있다고 가정해, 모두가 같은
+컴팩트 블록을 받아들일 수 있게 하는 것입니다. 이는 각 홉에서 컴팩트 블록을 계산하는 시간을 아낄 뿐
+아니라, 각 홉이 FEC 패킷을 검증하기도 전에 다음 홉으로 그대로 중계할 수 있다는 뜻이기도 합니다.
 
-The trade-off for each of the preceding methods is that they work well with
-centralization but not in a decentralized network where individual nodes
-can't trust other nodes.  Servers in datacenters cost money and can
-often be accessed by operators of the datacenter, making them less
-trustworthy than a secure home computer.  Relaying data before
-validating makes it easy to waste bandwidth, so it can only reasonably
-be used on a private network where there's some level of trust and
-accountability between parties.
+앞의 각 방법에 따르는 절충은, 중앙화된 환경에서는 잘 작동하지만 개별 노드가 다른 노드를 신뢰할 수 없는
+탈중앙화 네트워크에서는 그렇지 않다는 점입니다. 데이터센터의 서버는 돈이 들고 데이터센터 운영자가
+접근할 수 있는 경우가 많아, 안전한 가정용 컴퓨터보다 신뢰도가 떨어집니다. 검증 전에 데이터를 중계하면
+대역폭을 낭비하기 쉬우므로, 당사자 사이에 어느 정도 신뢰와 책임이 있는 사설 네트워크에서만 합리적으로
+쓸 수 있습니다.
 
-The original
-https://oreil.ly/30ZKi[Bitcoin Relay Network] was((("Bitcoin Relay Network"))) created by
-developer Matt Corallo in 2015 to enable fast synchronization of
-blocks between miners with very low latency. The network consisted of
-several virtual private servers (VPSes) hosted on
-infrastructure around the world and served to connect the majority of
-miners and mining pools.
+최초의 https://oreil.ly/30ZKi[비트코인 중계 네트워크(Bitcoin Relay Network)]는((("Bitcoin Relay Network"))) 채굴자 사이에서
+아주 낮은 지연으로 블록을 빠르게 동기화하기 위해 개발자 맷 코랄로가 2015년에 만들었습니다. 이 네트워크는
+전 세계 인프라에 호스팅된 여러 가상 사설 서버(VPS)로 이루어져 대다수 채굴자와 채굴 풀을 연결하는 역할을
+했습니다.
 
-The original Bitcoin Relay Network was replaced in 2016
-with the introduction ((("FIBRE (Fast Internet Bitcoin Relay Engine)")))((("Fast Internet Bitcoin Relay Engine (FIBRE)")))of the _Fast Internet Bitcoin Relay Engine_ or
-https://bitcoinfibre.org[_FIBRE_], also created by developer Matt
-Corallo. FIBRE is software that allows operating a UDP-based relay network that relays blocks within a
-network of nodes. FIBRE implements FEC and the _compact block_ optimization to
-further reduce the amount of data transmitted and the ((("Bitcoin network", "nodes", "private block relay", startref="bitcoin-network-node-private-relay")))((("nodes", "private block relay", startref="node-private-relay")))((("blocks", "private block relay", startref="block-private-relay")))((("private block relay", startref="private-block-relay")))((("mining", "blocks", "private block relay", startref="mining-block-private-relay")))network latency.
+최초의 비트코인 중계 네트워크는 2016년 역시 개발자 맷 코랄로가 만든
+((("FIBRE (Fast Internet Bitcoin Relay Engine)")))((("Fast Internet Bitcoin Relay Engine (FIBRE)")))_고속 인터넷 비트코인 중계 엔진(Fast Internet Bitcoin Relay Engine)_,
+즉 https://bitcoinfibre.org[_FIBRE_] 의 도입으로 대체되었습니다. FIBRE는 노드들로 이루어진 네트워크
+안에서 블록을 중계하는 UDP 기반 중계 네트워크를 운영할 수 있게 해주는 소프트웨어입니다. FIBRE는 FEC와
+_컴팩트 블록_ 최적화를 구현해 전송되는 데이터의 양과 네트워크 지연을 더욱
+((("Bitcoin network", "nodes", "private block relay", startref="bitcoin-network-node-private-relay")))((("nodes", "private block relay", startref="node-private-relay")))((("blocks", "private block relay", startref="block-private-relay")))((("private block relay", startref="private-block-relay")))((("mining", "blocks", "private block relay", startref="mining-block-private-relay")))줄입니다.
+=== 네트워크 탐색
 
-=== Network Discovery
+((("Bitcoin network", "nodes", "network discovery", id="bitcoin-network-node-discovery")))((("nodes", "network discovery", id="node-discovery")))((("network discovery", id="network-discovery")))새 노드가 부팅되면 네트워크에 참여하기 위해 다른 비트코인 노드를
+찾아내야 합니다. 이 과정을 시작하려면 새 노드가 네트워크에 이미 있는 노드를 최소한 하나 찾아 연결해야
+합니다. 다른 노드의 지리적 위치는 상관없습니다. 비트코인 네트워크 토폴로지는 지리적으로 정해지지
+않습니다. 따라서 기존 비트코인 노드 아무거나 무작위로 고르면 됩니다.
 
-When a ((("Bitcoin network", "nodes", "network discovery", id="bitcoin-network-node-discovery")))((("nodes", "network discovery", id="node-discovery")))((("network discovery", id="network-discovery")))new node boots up, it must discover other
-Bitcoin nodes on the network in order to participate. To start this
-process, a new node must discover at least one existing node on the
-network and connect to it. The geographic location of other nodes is
-irrelevant; the Bitcoin network topology is not geographically defined.
-Therefore, any existing Bitcoin nodes can be selected at random.
+알려진 피어에 연결하기 위해 노드는 보통 8333 포트(일반적으로 비트코인이 쓰는 포트로 알려져 있습니다)
+또는 지정된 다른 포트로 TCP 연결을 맺습니다. 연결이 맺어지면 노드는 기본적인 식별 정보가 담긴
++version+ 메시지를 보내며 "핸드셰이크"를 시작합니다(<<network_handshake>> 참고). 여기에는 다음이
+포함됩니다.
 
-To connect to a known peer, nodes establish a TCP connection, usually to
-port 8333 (the port generally known as the one used by Bitcoin), or an
-alternative port if one is provided. Upon establishing a connection, the
-node will start a "handshake" (see <<network_handshake>>) by
-transmitting a  +version+ message, which contains basic identifying
-information, including:
++Version+:: 클라이언트가 "구사하는" 비트코인 P2P 프로토콜 버전(예: 70002)
++nLocalServices+:: 그 노드가 지원하는 로컬 서비스 목록
++nTime+:: 현재 시각
++addrYou+:: 이 노드에서 본 원격 노드의 IP 주소
++addrMe+:: 로컬 노드가 스스로 알아낸 로컬 노드의 IP 주소
++subver+:: 이 노드에서 돌아가는 소프트웨어의 종류를 나타내는 서브버전(예: [.keep-together]#+/Satoshi:0.9.2.1/+#)
++BestHeight+:: 이 노드가 가진 블록체인의 블록 높이
++fRelay+:: 미확인 트랜잭션을 받지 않겠다고 요청하기 위해 BIP37이 추가한 필드
 
-+Version+:: The Bitcoin P2P protocol version the client "speaks" (e.g., 70002)
-+nLocalServices+:: A list of local services supported by the node
-+nTime+:: The current time
-+addrYou+:: The IP address of the remote node, as seen from this node
-+addrMe+:: The IP address of the local node, as discovered by the local node
-+subver+:: A subversion showing the type of software running on this node (e.g., [.keep-together]#+/Satoshi:0.9.2.1/+#)
-+BestHeight+:: The block height of this node's blockchain
-+fRelay+:: A field added by BIP37 for requesting not to receive unconfirmed transactions
-
-The +version+ message is always the first message sent by any peer to
-another peer. The local peer receiving a +version+ message will examine
-the remote peer's reported +Version+ and decide if the remote peer is
-compatible. If the remote peer is compatible, the local peer will
-acknowledge the +version+ message and establish a connection by sending
-a +verack+.
++version+ 메시지는 어떤 피어가 다른 피어에게 보내는 언제나 첫 번째 메시지입니다. +version+ 메시지를
+받은 로컬 피어는 원격 피어가 알려온 +Version+ 을 살펴 그 피어가 호환되는지 판단합니다. 호환된다면
+로컬 피어는 +verack+ 을 보내 +version+ 메시지를 확인하고 연결을 맺습니다.
 
 [role="less_space pagebreak-before"]
-How does a new node find peers? The first method is to query DNS using a
-number of _DNS seeds_, which are((("DNS seeds"))) DNS servers that provide a list of IP
-addresses of Bitcoin nodes. Some of those DNS seeds provide a static
-list of IP addresses of stable Bitcoin listening nodes. Some of the DNS
-seeds are custom implementations of BIND (Berkeley Internet Name Daemon)
-that return a random subset from a list of Bitcoin node addresses
-collected by a crawler or a long-running Bitcoin node.  The Bitcoin Core
-client contains the names of several different DNS seeds. The diversity of
-ownership and diversity of implementation of the different DNS seeds
-offers a high level of reliability for the initial bootstrapping
-process. In the Bitcoin Core client, the option to use the DNS seeds is
-controlled by the option switch +-dnsseed+ (set to 1 by default, to use
-the DNS seed).
+새 노드는 어떻게 피어를 찾을까요? 첫 번째 방법은 여러 _DNS 시드_ 를 이용해 DNS에 질의하는 것입니다.
+DNS 시드는((("DNS seeds"))) 비트코인 노드의 IP 주소 목록을 제공하는 DNS 서버입니다. 어떤 DNS 시드는 안정적인
+비트코인 수신 대기 노드의 IP 주소를 정적인 목록으로 제공합니다. 어떤 DNS 시드는 BIND(Berkeley
+Internet Name Daemon)를 맞춤 구현한 것으로, 크롤러나 오래 실행된 비트코인 노드가 모은 비트코인 노드
+주소 목록에서 무작위 부분집합을 돌려줍니다. 비트코인 코어 클라이언트에는 여러 DNS 시드의 이름이 들어
+있습니다. DNS 시드마다 소유자와 구현이 다양하다는 점이 최초 부트스트랩 과정에 높은 신뢰성을 줍니다.
+비트코인 코어 클라이언트에서 DNS 시드 사용 여부는 +-dnsseed+ 옵션 스위치로 조절합니다(기본값은 1로,
+DNS 시드를 사용합니다).
 
-Alternatively, a bootstrapping node that knows nothing of the network
-must be given the IP address of at least one Bitcoin node, after which
-it can establish connections through further introductions. The
-command-line argument +-seednode+ can be used to connect to one node
-just for introductions using it as a seed. After the initial seed node
-is used to form introductions, the client will disconnect from it and
-use the newly discovered peers.
+그게 아니면, 네트워크에 대해 아무것도 모르는 부트스트랩 노드에 비트코인 노드의 IP 주소를 최소한 하나는
+알려주어야 합니다. 그 뒤로는 추가 소개를 통해 연결을 맺어갈 수 있습니다. 명령줄 인수 +-seednode+ 를
+쓰면 어떤 노드를 시드로 삼아 소개만 받기 위해 연결할 수 있습니다. 최초 시드 노드를 통해 소개를 받고
+나면 클라이언트는 그 노드와의 연결을 끊고 새로 찾아낸 피어들을 사용합니다.
 
 [[network_handshake]]
-.The initial handshake between peers.
+.피어 사이의 최초 핸드셰이크.
 image::images/mbc3_1003.png["NetworkHandshake"]
 
-Once one or more connections are established, the new node will send an
-+addr+ message containing its own IP address to its neighbors. The
-neighbors will, in turn, forward the +addr+ message to their neighbors,
-ensuring that the newly connected node becomes well known and better
-connected. Additionally, the newly connected node can send +getaddr+ to
-its neighbors, asking them to return a list of IP addresses of other
-peers. That way, a node can find peers to connect to and advertise its
-existence on the network for other nodes to find it.
-<<address_propagation>> shows the address discovery protocol.
+연결이 하나 이상 맺어지면, 새 노드는 자기 IP 주소가 담긴 +addr+ 메시지를 이웃들에게 보냅니다. 이웃들은
+다시 그 +addr+ 메시지를 자기 이웃들에게 전달해, 새로 연결된 노드가 널리 알려지고 더 잘 연결되도록
+합니다. 또한 새로 연결된 노드는 이웃들에게 +getaddr+ 을 보내 다른 피어들의 IP 주소 목록을 돌려달라고
+요청할 수 있습니다. 이렇게 해서 노드는 연결할 피어를 찾고, 다른 노드가 자신을 찾을 수 있도록 네트워크에
+자기 존재를 알립니다. <<address_propagation>>에 주소 탐색 프로토콜을 나타냈습니다.
 
 
 [[address_propagation]]
-.Address propagation and discovery.
+.주소 전파와 탐색.
 image::images/mbc3_1004.png["AddressPropagation"]
 
-A node must connect to a few different peers in order to establish
-diverse paths into the Bitcoin network. Paths are not reliable—nodes
-come and go—and so the node must continue to discover new nodes as it
-loses old connections as well as assist other nodes when they bootstrap.
-Only one connection is needed to bootstrap because the first node can
-offer introductions to its peer nodes and those peers can offer further
-introductions. It's also unnecessary and wasteful of network resources
-to connect to more than a handful of nodes. After bootstrapping, a node
-will remember its most recent successful peer connections so if it
-is rebooted, it can quickly reestablish connections with its former peer
-network. If none of the former peers respond to its connection request,
-the node can use the seed nodes to bootstrap again.
+노드는 비트코인 네트워크로 가는 다양한 경로를 확보하기 위해 서로 다른 피어 여럿에 연결해야 합니다.
+경로는 믿음직하지 않습니다. 노드는 들어오고 나가므로, 노드는 옛 연결을 잃는 대로 새 노드를 계속 찾아내야
+하고 다른 노드가 부트스트랩할 때 돕기도 해야 합니다. 부트스트랩에는 연결 하나면 충분합니다. 첫 노드가
+자기 피어 노드들을 소개해 줄 수 있고 그 피어들이 다시 더 소개해 줄 수 있기 때문입니다. 또한 몇 개
+남짓을 넘겨 많은 노드에 연결하는 것은 불필요하고 네트워크 자원을 낭비하는 일입니다. 부트스트랩을 마친
+노드는 가장 최근에 성공한 피어 연결을 기억해 두었다가, 재부팅되면 이전 피어 네트워크와 빠르게 연결을
+다시 맺을 수 있습니다. 이전 피어 중 어느 것도 연결 요청에 응답하지 않으면 시드 노드를 이용해 다시
+부트스트랩할 수 있습니다.
 
-On a node running the Bitcoin Core client, you can list the peer
-connections with the command +getpeerinfo+:
+비트코인 코어 클라이언트를 돌리는 노드에서는 +getpeerinfo+ 명령으로 피어 연결 목록을 볼 수 있습니다.
 
 [source,bash]
 ----
@@ -399,455 +302,321 @@ $ bitcoin-cli getpeerinfo
 ]
 ----
 
-To override the automatic management of peers and to specify a list of
-IP addresses, users can provide the option +-connect=<IPAddress>+ and
-specify one or more IP addresses. If this option is used, the node will
-only connect to the selected IP addresses instead of discovering and
-maintaining the peer connections automatically.
+피어 자동 관리를 무시하고 IP 주소 목록을 직접 지정하려면 +-connect=<IPAddress>+ 옵션에 IP 주소를 하나
+이상 지정하면 됩니다. 이 옵션을 쓰면 노드는 피어 연결을 자동으로 찾아 유지하는 대신 지정된 IP 주소에만
+연결합니다.
 
-If there is no traffic on a connection, nodes will periodically send a
-message to maintain the connection. If a node has not communicated on a
-connection for too long, it is assumed to be disconnected
-and a new peer will be sought. Thus, the network dynamically adjusts to
-transient nodes and network problems and can organically grow and
-shrink as needed without any ((("Bitcoin network", "nodes", "network discovery", startref="bitcoin-network-node-discovery")))((("nodes", "network discovery", startref="node-discovery")))((("network discovery", startref="network-discovery")))central control.
+연결에 트래픽이 없으면 노드는 주기적으로 메시지를 보내 연결을 유지합니다. 노드가 어떤 연결에서 너무 오래
+통신하지 않으면 연결이 끊긴 것으로 간주하고 새 피어를 찾습니다. 이렇게 네트워크는 일시적으로 드나드는
+노드와 네트워크 문제에 동적으로 적응하며, 어떤 중앙 통제도 없이 필요에 따라 유기적으로 커지고 줄어들 수
+((("Bitcoin network", "nodes", "network discovery", startref="bitcoin-network-node-discovery")))((("nodes", "network discovery", startref="node-discovery")))((("network discovery", startref="network-discovery")))있습니다.
+=== 풀 노드
 
-=== Full Nodes
+풀 노드는 ((("Bitcoin network", "full nodes, purpose of")))((("full nodes", "purpose of")))작업증명이 가장 많은 유효한 블록체인의 모든 블록에 담긴 모든
+트랜잭션을 검증하는 노드입니다.
 
-Full nodes ((("Bitcoin network", "full nodes, purpose of")))((("full nodes", "purpose of")))are nodes that verify every transaction in every block on the
-valid blockchain with the most proof of work.
+풀 노드는 맨 첫 블록(제네시스 블록) 다음부터 시작해 네트워크에 알려진 최신 블록까지 쌓아 올리며 모든
+블록을 독립적으로 처리합니다. 풀 노드는 어떤 트랜잭션이든 독립적으로, 그리고 권위 있게 검증할 수
+있습니다. 풀 노드는 새 트랜잭션 블록에 대한 갱신 정보를 받기 위해 네트워크에 의존하며, 그것을 검증해
+어떤 스크립트가 어떤 비트코인을 통제하는지에 대한 자기 로컬 관점에 반영합니다. 이 관점을
+((("UTXOs (unspent transaction outputs)")))_미사용 트랜잭션 출력_ (UTXO) 집합이라고 합니다.
 
-Full nodes
-independently process every block, starting after the very first
-block (genesis block) and building up to the latest known block in the
-network. A full node can independently and authoritatively
-verify any transaction.
-The full node relies on the network to
-receive updates about new blocks of transactions, which it then verifies
-and incorporates into its local view of which scripts control which
-bitcoins, called the set ((("UTXOs (unspent transaction outputs)")))of _unspent transaction outputs_ (UTXOs).
+풀 노드를 운영하면 순수한 비트코인 경험을 얻습니다. 다른 어떤 시스템에 의존하거나 그것을 신뢰할 필요
+없이 모든 트랜잭션을 독립적으로 검증하는 것입니다.
 
-Running a full node gives
-you the pure Bitcoin experience: independent verification of all
-transactions without the need to rely on, or trust, any other systems.
+서로 다른 프로그래밍 언어와 소프트웨어 구조로 만들어졌거나 설계 결정이 다른 풀 노드 구현이 몇 가지
+있습니다. 다만 가장 흔한 구현은 비트코인 코어입니다. 비트코인 네트워크 풀 노드의 95% 이상이 여러
+버전의 비트코인 코어를 돌립니다. 이는 +version+ 메시지로 보내는 서브버전 문자열에서 "Satoshi"로
+식별되며, 앞서 본 +getpeerinfo+ 명령으로도 볼 수 있습니다. 예를 들어
+[.keep-together]#+/Satoshi:24.0.1/+# 처럼요.
 
-There are a few alternative implementations of
-full nodes, built using different programming
-languages and software architectures, or which made different design
-decisions. However, the most common
-implementation is Bitcoin Core.
-More than 95% of full nodes on the Bitcoin network run
-various versions of Bitcoin Core. It is identified as "Satoshi" in the
-subversion string sent in the +version+ message and shown by the
-command +getpeerinfo+ as we saw earlier; for example, [.keep-together]#+/Satoshi:24.0.1/+#.
+=== "인벤토리" 교환하기
 
-=== Exchanging "Inventory"
+풀 노드가((("Bitcoin network", "nodes", "syncing blockchain", id="bitcoin-network-node-sync")))((("nodes", "syncing blockchain", id="node-sync")))((("full nodes", "syncing blockchain", id="full-node-sync")))((("blockchain", "syncing", id="blockchain-sync")))((("syncing blockchain", id="sync-blockchain"))) 피어에 연결한 뒤 가장 먼저 하는 일은 완전한 블록 헤더 사슬을
+구성하려는 것입니다. 갓 만들어진 노드라 블록체인이 전혀 없다면, 아는 블록은 클라이언트 소프트웨어에
+정적으로 박혀 있는 제네시스 블록 하나뿐입니다. 0번 블록(제네시스 블록) 다음부터 시작해, 새 노드는
+네트워크와 동기화하고 완전한 블록체인을 다시 갖추기 위해 수십만 개의 블록을 내려받아야 합니다.
 
-The first thing((("Bitcoin network", "nodes", "syncing blockchain", id="bitcoin-network-node-sync")))((("nodes", "syncing blockchain", id="node-sync")))((("full nodes", "syncing blockchain", id="full-node-sync")))((("blockchain", "syncing", id="blockchain-sync")))((("syncing blockchain", id="sync-blockchain"))) a full
-node will do once it connects to peers is try to construct a complete
-chain of block headers. If it is a brand-new node and has no blockchain at all, it
-only knows one block, the genesis block, which is statically embedded in
-the client software. Starting after block #0 (the genesis block), the new
-node will have to download hundreds of thousands of blocks to
-synchronize with the network and reestablish the full blockchain.
+블록체인 동기화 과정은 +version+ 메시지에서 시작합니다. 거기에 노드의 현재 블록체인 높이(블록 수)인
++BestHeight+ 가 담겨 있기 때문입니다. 노드는 피어들의 +version+ 메시지를 보고 각자 블록을 몇 개
+가졌는지 알게 되며, 자기 블록체인의 블록 수와 비교할 수 있습니다. 연결된 노드들은 자기 로컬 블록체인의
+맨 위 블록 해시가 담긴 +getheaders+ 메시지를 주고받습니다. 그러면 둘 중 한 피어는 받은 해시가 맨 위가
+아니라 더 오래된 블록의 것임을 알아보고, 자기 로컬 블록체인이 원격 노드의 블록체인보다 길다는 것을
+추론할 수 있습니다.
 
-The
-process of syncing the blockchain starts with the +version+ message
-because that contains +BestHeight+, a node's current blockchain height
-(number of blocks). A node will see the +version+ messages from its
-peers, know how many blocks they each have, and be able to compare to
-how many blocks it has in its own blockchain. Peered nodes will exchange
-a +getheaders+ message that contains the hash of the top
-block on their local blockchain. One of the peers will be able to
-identify the received hash as belonging to a block that is not at the
-top, but rather belongs to an older block, thus deducing that its own
-local blockchain is longer than the remote node's blockchain.
+블록체인이 더 긴 피어는 상대 노드보다 블록을 많이 가지고 있으므로, 상대가 "따라잡으려면" 어떤 헤더가
+필요한지 알아낼 수 있습니다. 그리고 +headers+ 메시지로 공유할 처음 2,000개의 헤더를 골라냅니다. 노드는
+원격 피어가 가지고 있다고 주장하는 모든 블록에 대한 헤더를 받을 때까지 헤더를 계속 요청합니다.
 
-The peer that has the longer blockchain has more blocks than the other
-node and can identify which headers the other node needs in order to
-"catch up." It will identify the first 2,000 headers to share using a
-+headers+ message.  The node will keep requesting additional headers
-until it has received one for every block the remote peer claims to
-have.
+이와 동시에 노드는 앞서 받은 각 헤더에 해당하는 블록을 +getdata+ 메시지로 요청하기 시작합니다. 노드는
+자신이 고른 피어마다 서로 다른 블록을 요청하는데, 그러면 평균보다 현저히 느린 피어와의 연결을 끊고 더
+새롭고 어쩌면 더 빠른 피어를 찾을 수 있습니다.
 
-In parallel, the node will begin requesting the blocks for each header
-it previously received using a +getdata+ message.  The node will request
-different blocks from each of its selected peers, which allows it to drop
-connections to peers that are significantly slower than the average in
-order to find newer (and possibly faster) peers.
+예를 들어 어떤 노드가 제네시스 블록만 가지고 있다고 해봅시다. 그러면 피어들에게서 사슬의 다음 2,000개
+블록 헤더가 담긴 +headers+ 메시지를 받습니다. 그리고 연결된 모든 피어에게 블록을 요청하기 시작하며 최대
+1,024개의 블록을 큐에 담아둡니다. 블록은 순서대로 검증해야 하므로, 큐에서 가장 오래된 블록, 즉 노드가
+다음에 검증해야 할 블록이 아직 도착하지 않았다면 노드는 그 블록을 주기로 되어 있던 피어와의 연결을
+끊습니다. 그런 다음 노드의 다른 모든 피어가 1,023개의 블록을 줄 수 있게 되기 전에 블록 하나를 줄 수 있을
+만한 새 피어를 찾습니다.
 
-Let's assume, for example, that a node only has the genesis block. It
-will then receive a +headers+ message from its peers containing the headers
-of the next 2,000 blocks in the chain. It will start requesting blocks
-from all of its connected peers, keeping a queue of up to 1,024 blocks.
-Blocks need to be validated in order, so if the oldest block in the
-queue--the block the node next needs to validate--hasn't been received
-yet, the node drops the connection to the peer that was supposed to
-provide that block.  It then finds a new peer that may be able to
-provide one block before all of the node's other peers are able to
-provide 1,023 blocks.
+블록을 받을 때마다 <<blockchain>>에서 보게 될 방식으로 블록체인에 추가합니다. 로컬 블록체인이 점차
+쌓여가면서 더 많은 블록을 요청하고 받으며, 노드가 나머지 네트워크를 따라잡을 때까지 이 과정이
+이어집니다.
 
-As each block is received, it is added to the
-blockchain, as we will see in <<blockchain>>. As the local blockchain is
-gradually built up, more blocks are requested and received, and the
-process continues until the node catches up to the rest of the network.
-
-This process of comparing the local blockchain with the peers and
-retrieving any missing blocks happens any time a node has been offline for
-an extended period((("Bitcoin network", "nodes", "syncing blockchain", startref="bitcoin-network-node-sync")))((("nodes", "syncing blockchain", startref="node-sync")))((("full nodes", "syncing blockchain", startref="full-node-sync")))((("blockchain", "syncing", startref="blockchain-sync")))((("syncing blockchain", startref="sync-blockchain"))) of time.
-
+로컬 블록체인을 피어들과 비교하고 빠진 블록을 가져오는 이 과정은, 노드가 오랜 기간 오프라인이었을 때
+((("Bitcoin network", "nodes", "syncing blockchain", startref="bitcoin-network-node-sync")))((("nodes", "syncing blockchain", startref="node-sync")))((("full nodes", "syncing blockchain", startref="full-node-sync")))((("blockchain", "syncing", startref="blockchain-sync")))((("syncing blockchain", startref="sync-blockchain")))언제든 일어납니다.
 [[spv_nodes]]
-=== Lightweight Clients
+=== 경량 클라이언트
 
-Many ((("Bitcoin network", "lightweight clients", id="bitcoin-network-lightweight")))((("lightweight clients", id="lightweight")))((("SPV (simplified-payment-verification) clients", id="spv-lightweight")))Bitcoin clients are designed to run on space- and
-power-constrained devices, such as smartphones, tablets, or embedded
-systems. For such devices, a _simplified payment verification_ (SPV)
-method is used to allow them to operate without validating the full
-blockchain. These types of clients are called lightweight
-clients.
+((("Bitcoin network", "lightweight clients", id="bitcoin-network-lightweight")))((("lightweight clients", id="lightweight")))((("SPV (simplified-payment-verification) clients", id="spv-lightweight")))많은 비트코인 클라이언트는 스마트폰이나 태블릿, 임베디드 시스템처럼
+공간과 전력이 제한된 기기에서 돌아가도록 설계되었습니다. 그런 기기에서는 블록체인 전체를 검증하지 않고도
+동작할 수 있도록 _단순 지불 검증_ (SPV) 방식을 씁니다. 이런 유형의 클라이언트를 경량 클라이언트라고
+합니다.
 
-Lightweight clients download only the block headers and do not download the
-transactions included in each block. The resulting chain of headers,
-without transactions, is about 10,000 times smaller than the full blockchain.
-Lightweight clients cannot construct a full picture of all the UTXOs that are
-available for spending because they do not know about all the
-transactions on the network. Instead, they verify transactions using a
-slightly different method that relies on peers to provide partial views
-of relevant parts of the blockchain on demand.
+경량 클라이언트는 블록 헤더만 내려받고 각 블록에 담긴 트랜잭션은 내려받지 않습니다. 트랜잭션이 빠진 그
+헤더 사슬은 전체 블록체인보다 약 1만 배 작습니다. 경량 클라이언트는 네트워크의 모든 트랜잭션을 알지
+못하므로 쓸 수 있는 UTXO 전체의 그림을 구성할 수 없습니다. 대신 필요할 때마다 피어가 블록체인의 관련
+부분을 부분적으로 보여주는 데 의존하는, 조금 다른 방식으로 트랜잭션을 검증합니다.
 
-As an analogy, a full node is like a tourist in a strange city, equipped
-with a detailed map of every street and every address. By comparison, a
-lightweight client is like a tourist in a strange city asking random strangers for
-turn-by-turn directions while knowing only one main avenue. Although
-both tourists can verify the existence of a street by visiting it, the
-tourist without a map doesn't know what lies down any of the side
-streets and doesn't know what other streets exist. Positioned in front
-of 23 Church Street, the tourist without a map cannot know if there are
-a dozen other [.keep-together]#"23 Church# Street" addresses in the city and whether this
-is the right one. The mapless tourist's best chance is to ask enough
-people and hope some of them are not trying to mug him.
+비유하자면 풀 노드는 모든 거리와 모든 주소가 담긴 상세 지도를 갖춘 낯선 도시의 여행자와 같습니다. 그에
+비해 경량 클라이언트는 큰길 하나만 알면서 지나가는 사람들에게 길을 하나하나 물어보는 낯선 도시의 여행자와
+같습니다. 두 여행자 모두 어떤 거리를 직접 찾아가 그것이 존재함을 확인할 수는 있지만, 지도가 없는 여행자는
+골목 안쪽에 무엇이 있는지, 또 어떤 거리들이 존재하는지 알지 못합니다. 처치 스트리트 23번지 앞에 서 있어도
+지도가 없는 여행자는 그 도시에 [.keep-together]#"처치 스트리트# 23번지"가 열두 곳쯤 더 있는지, 그리고
+여기가 맞는 곳인지 알 수 없습니다. 지도 없는 여행자가 기댈 최선은 충분히 많은 사람에게 묻고 그중 누구도
+자신을 등쳐먹으려 하지 않기를 바라는 것입니다.
 
-Lightweight clients verify transactions by reference to their _depth_ in the blockchain. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, a lightweight client will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
+경량 클라이언트는 블록체인에서 트랜잭션의 _깊이_ 를 근거로 그것을 검증합니다. 풀 노드가 제네시스 블록까지 (시간을 거슬러) 내려가며 수천 개의 블록과 수백만 건의 트랜잭션으로 이루어진 완전히 검증된 사슬을 구성하는 반면, 경량 클라이언트는 모든 블록의 작업증명만 검증하고(그 블록들과 거기 담긴 모든 트랜잭션이 유효한지는 검증하지 않습니다) 그 사슬을 관심 있는 트랜잭션과 연결합니다.
 
-For example, when examining a transaction in block 800,000, a full node
-verifies all 800,000 blocks down to the genesis block and builds a full
-database of UTXOs, establishing the validity of the transaction by
-confirming that the transaction exists and its output remains unspent. A lightweight client can
-only verify that the transaction exists. The client establishes a link
-between the transaction and the block that contains it, using a _merkle
-path_ (see <<merkle_trees>>). Then, the lightweight client waits until it sees the
-six blocks 800,001 through 800,006 piled on top of the block containing
-the transaction and verifies it by establishing its depth under blocks
-800,006 to 800,001. The fact that other nodes on the network accepted
-block 800,000 and that miners did the necessary work to produce six more blocks
-on top of it is proof, by proxy, that the transaction actually exists.
+예를 들어 800,000번 블록의 어떤 트랜잭션을 살펴볼 때, 풀 노드는 제네시스 블록까지 800,000개 블록을 모두
+검증하고 완전한 UTXO 데이터베이스를 구축해, 그 트랜잭션이 존재하며 그 출력이 아직 쓰이지 않았음을 확인해
+트랜잭션의 유효성을 확립합니다. 경량 클라이언트는 그 트랜잭션이 존재한다는 것만 검증할 수 있습니다.
+클라이언트는 _머클 경로_ (<<merkle_trees>> 참고)를 사용해 그 트랜잭션과 그것을 담은 블록 사이의 연결을
+확립합니다. 그런 다음 경량 클라이언트는 그 트랜잭션이 담긴 블록 위에 800,001번부터 800,006번까지 여섯
+블록이 쌓이는 것을 볼 때까지 기다렸다가, 800,006번부터 800,001번 블록 아래에 있는 깊이를 확인해 그
+트랜잭션을 검증합니다. 네트워크의 다른 노드들이 800,000번 블록을 받아들였고 채굴자들이 그 위에 여섯 개의
+블록을 더 만드는 데 필요한 작업을 했다는 사실이, 그 트랜잭션이 실제로 존재한다는 간접적인 증거가 됩니다.
 
-A lightweight client cannot normally be persuaded that a transaction exists in a block
-when the transaction does not in fact exist. The lightweight client establishes
-the existence of a transaction in a block by requesting a merkle path
-proof and by validating the proof of work in the chain of blocks.
-However, a transaction's existence can be "hidden" from a lightweight client. A
-lightweight client can definitely verify that a transaction exists but cannot
-verify that a transaction, such as a double-spend of the same UTXO,
-doesn't exist because it doesn't have a record of all transactions. This
-vulnerability can be used in a denial-of-service attack or for a
-double-spending attack against lightweight clients. To defend against this, a lightweight
-client needs to connect randomly to several clients to increase the
-probability that it is in contact with at least one honest node. This
-need to randomly connect means that lightweight clients also are vulnerable to
-network partitioning attacks or Sybil attacks, where they are connected
-to fake nodes or fake networks and do not have access to honest nodes or
-the real Bitcoin network.
+경량 클라이언트가, 실제로는 존재하지 않는 트랜잭션이 어떤 블록에 존재한다고 속아 넘어가는 일은 보통
+없습니다. 경량 클라이언트는 머클 경로 증명을 요청하고 블록 사슬의 작업증명을 검증해 어떤 트랜잭션이 블록
+안에 존재함을 확립합니다. 하지만 경량 클라이언트에게서 트랜잭션의 존재를 "숨기는" 것은 가능합니다. 경량
+클라이언트는 어떤 트랜잭션이 존재한다는 것은 분명히 검증할 수 있지만, 모든 트랜잭션의 기록을 갖고 있지
+않으므로 같은 UTXO에 대한 이중지불 같은 트랜잭션이 존재하지 _않는다_ 는 것은 검증할 수 없습니다. 이
+취약점은 경량 클라이언트에 대한 서비스 거부 공격이나 이중지불 공격에 쓰일 수 있습니다. 이를 막으려면 경량
+클라이언트가 여러 클라이언트에 무작위로 연결해 최소한 하나는 정직한 노드와 닿을 확률을 높여야 합니다.
+이렇게 무작위로 연결해야 한다는 점 때문에 경량 클라이언트는 네트워크 분할 공격이나 시빌 공격에도
+취약합니다. 가짜 노드나 가짜 네트워크에 연결되어 정직한 노드나 진짜 비트코인 네트워크에 접근하지 못하게
+되는 공격입니다.
 
-For many practical purposes, well-connected lightweight clients are secure enough,
-striking a balance between resource needs, practicality, and security.
-For infallible security, however, nothing beats running a full
-node.
+실용적인 목적 대부분에서 잘 연결된 경량 클라이언트는 충분히 안전하며, 자원 요구와 실용성, 보안 사이에서
+균형을 잡습니다. 다만 완벽한 보안을 원한다면 풀 노드를 운영하는 것에 견줄 만한 것이 없습니다.
 
 [TIP]
 ====
-A full node verifies a transaction by checking the entire chain of
-thousands of blocks below it in order to guarantee that the UTXO exists
-and is not spent, whereas a lightweight client only proves that a transaction
-exists and checks that the block containing that transaction is
-buried by a handful of blocks above it.
+풀 노드는 UTXO가 존재하며 쓰이지 않았음을 보장하기 위해 그 아래의 수천 개 블록 사슬 전체를 확인해
+트랜잭션을 검증하는 반면, 경량 클라이언트는 그 트랜잭션이 존재한다는 것만 증명하고 그것을 담은 블록이 그
+위의 블록 몇 개에 파묻혀 있는지 확인할 뿐입니다.
 ====
 
-To get the block headers it needs to verify a transaction is part of the
-chain, lightweight clients use a +getheaders+ message.
-The responding peer will send up to 2,000 block headers
-using a single +headers+ message.  See the illustration in
-<<spv_synchronization>>.
+어떤 트랜잭션이 사슬의 일부임을 검증하는 데 필요한 블록 헤더를 얻기 위해 경량 클라이언트는 +getheaders+
+메시지를 씁니다. 응답하는 피어는 하나의 +headers+ 메시지로 최대 2,000개의 블록 헤더를 보냅니다.
+<<spv_synchronization>>의 그림을 참고하세요.
 
 [[spv_synchronization]]
-.Lightweight client synchronizing the block headers.
+.블록 헤더를 동기화하는 경량 클라이언트.
 image::images/mbc3_1005.png["Header synchronization"]
 
-Block headers allow a lightweight client to verify that any individual block
-belongs to the blockchain with the most proof of work, but they don't
-tell the client which blocks contain transactions that are interesting to
-its wallet.  The client could download every block and check, but that
-would use a large fraction of the resources it would take to run a full
-node, so developers have looked for other ways to solve the problem.
+블록 헤더는 경량 클라이언트가 어떤 개별 블록이 작업증명이 가장 많은 블록체인에 속하는지 검증할 수 있게
+해주지만, 어떤 블록에 자기 지갑과 관련된 트랜잭션이 들어 있는지는 알려주지 않습니다. 클라이언트가 모든
+블록을 내려받아 확인할 수도 있지만, 그러면 풀 노드를 운영하는 데 드는 자원의 상당 부분을 쓰게 되므로
+개발자들은 이 문제를 푸는 다른 방법을 찾아왔습니다.
 
-Shortly after the introduction of lightweight clients, Bitcoin
-developers added a feature called _bloom filters_ in an attempt to
-reduce the bandwidth that lightweight clients needed to use to learn about their
-incoming and outgoing transactions.
-Bloom filters allow lightweight clients to receive a subset of
-the transactions without directly revealing precisely which addresses they are
-interested in, through a filtering mechanism that uses probabilities
-rather than ((("Bitcoin network", "lightweight clients", startref="bitcoin-network-lightweight")))((("lightweight clients", startref="lightweight")))((("SPV (simplified-payment-verification) clients", startref="spv-lightweight")))fixed patterns.
-
+경량 클라이언트가 도입된 직후, 비트코인 개발자들은 경량 클라이언트가 자신에게 들어오고 나가는 트랜잭션을
+알아내는 데 써야 하는 대역폭을 줄이려고 _블룸 필터_ 라는 기능을 추가했습니다. 블룸 필터는 고정된 패턴이
+아니라 확률을 쓰는 필터링 방식을 통해, 경량 클라이언트가 자신이 관심 있는 주소가 정확히 무엇인지 직접
+드러내지 않으면서 트랜잭션의 부분집합을 받을 수 있게 ((("Bitcoin network", "lightweight clients", startref="bitcoin-network-lightweight")))((("lightweight clients", startref="lightweight")))((("SPV (simplified-payment-verification) clients", startref="spv-lightweight")))해줍니다.
 [[bloom_filters]]
-=== Bloom Filters
+=== 블룸 필터
 
-A bloom filter((("Bitcoin network", "bloom filters", "operational overview", id="bitcoin-network-bloom-overview")))((("bloom filters", "operational overview", id="bloom-overview"))) is a probabilistic search filter, a way
-to describe a desired pattern without specifying it exactly. Bloom
-filters offer an efficient way to express a search pattern while
-protecting privacy. They are used by lightweight clients to ask their peers for
-transactions matching a specific pattern without revealing exactly
-which addresses, keys, or transactions they are searching for.
+블룸 필터는((("Bitcoin network", "bloom filters", "operational overview", id="bitcoin-network-bloom-overview")))((("bloom filters", "operational overview", id="bloom-overview"))) 확률적 검색 필터로, 원하는 패턴을 정확히 지정하지 않고 기술하는
+방법입니다. 블룸 필터는 프라이버시를 지키면서 검색 패턴을 효율적으로 표현할 수 있게 해줍니다. 경량
+클라이언트는 자신이 어떤 주소나 키, 트랜잭션을 찾고 있는지 정확히 드러내지 않으면서 특정 패턴에 맞는
+트랜잭션을 피어에게 요청하는 데 이를 사용합니다.
 
-In our previous analogy, a tourist without a map is asking for
-directions to a specific address, "23 Church St." If they ask a stranger
-for directions to this street, they inadvertently reveal their
-destination. A bloom filter is like asking, "Are there any streets in
-this neighborhood whose name ends in R-C-H?" A question like that
-reveals slightly less about the desired destination than asking for "23
-Church St." Using this technique, a tourist could specify the desired
-address in more detail such as "ending in U-R-C-H" or less detail such as
-"ending in H." By varying the precision of the search, the tourist
-reveals more or less information at the expense of getting more or less
-specific results. If they ask for a less specific pattern, they get a lot
-more possible addresses and better privacy, but many of the results are
-irrelevant. If they ask for a very specific pattern, they get fewer
-results but lose privacy.
+앞의 비유에서 지도가 없는 여행자는 "처치 스트리트 23번지"라는 특정 주소로 가는 길을 묻고 있습니다. 낯선
+사람에게 이 거리로 가는 길을 물으면 자기 목적지를 뜻하지 않게 드러내게 됩니다. 블룸 필터는 "이 동네에
+이름이 R-C-H로 끝나는 거리가 있나요?"라고 묻는 것과 같습니다. 이런 질문은 "처치 스트리트 23번지"를 묻는
+것보다 목적지에 대해 조금 덜 드러냅니다. 이 기법으로 여행자는 원하는 주소를 "U-R-C-H로 끝나는"처럼 더
+자세히 지정할 수도, "H로 끝나는"처럼 덜 자세히 지정할 수도 있습니다. 검색의 정밀도를 조절함으로써
+여행자는 더 구체적이거나 덜 구체적인 결과를 얻는 대가로 정보를 더 많이 또는 더 적게 드러냅니다. 덜
+구체적인 패턴을 물으면 가능한 주소가 훨씬 많아지고 프라이버시는 좋아지지만 결과의 상당수가 무관한
+것입니다. 아주 구체적인 패턴을 물으면 결과는 적어지지만 프라이버시를 잃습니다.
 
-Bloom filters serve this function by allowing a lightweight client to specify a
-search pattern for transactions that can be tuned toward precision or
-privacy. A more specific bloom filter will produce accurate results, but
-at the expense of revealing what patterns the lightweight client is interested in,
-thus revealing the addresses owned by the user's wallet. A less specific
-bloom filter will produce more data about more transactions, many
-irrelevant to the client, but will allow the client to maintain better
-privacy.
+블룸 필터는 경량 클라이언트가 트랜잭션 검색 패턴을 정밀도 쪽으로든 프라이버시 쪽으로든 조절해 지정할 수
+있게 함으로써 이 기능을 수행합니다. 더 구체적인 블룸 필터는 정확한 결과를 내놓지만, 경량 클라이언트가
+어떤 패턴에 관심이 있는지 드러내는 대가를 치르며 그로써 사용자 지갑이 소유한 주소가 드러납니다. 덜
+구체적인 블룸 필터는 더 많은 트랜잭션에 대한 데이터를 내놓고 그중 상당수는 클라이언트와 무관하지만,
+클라이언트가 더 나은 프라이버시를 유지할 수 있게 해줍니다.
 
-==== How Bloom Filters Work
+==== 블룸 필터의 작동 방식
 
-Bloom filters are implemented as a variable-size array of N binary
-digits (a bit field) and a variable number of M hash functions. The hash
-functions are designed to always produce an output that is between 1 and
-N, corresponding to the array of binary digits. The hash functions are
-generated deterministically, so that any client implementing a bloom
-filter will always use the same hash functions and get the same results
-for a specific input. By choosing different length (N) bloom filters and
-a different number (M) of hash functions, the bloom filter can be tuned,
-varying the level of accuracy and therefore privacy.
+블룸 필터는 N개의 이진 자릿수로 이루어진 가변 크기 배열(비트 필드)과 M개의 가변적인 수의 해시 함수로
+구현됩니다. 해시 함수는 이진 자릿수 배열에 대응하도록 언제나 1과 N 사이의 출력을 내놓게 설계되어
+있습니다. 해시 함수는 결정적으로 생성되므로, 블룸 필터를 구현한 어떤 클라이언트든 항상 같은 해시 함수를
+쓰고 특정 입력에 대해 같은 결과를 얻습니다. 블룸 필터의 길이(N)와 해시 함수의 개수(M)를 달리 고름으로써
+정확도와 그에 따른 프라이버시 수준을 조절할 수 있습니다.
 
-In <<bloom1>>, we use a very small array of 16 bits and a set of three
-hash functions to demonstrate how bloom filters work.
+<<bloom1>>에서는 블룸 필터의 작동 방식을 보여주기 위해 아주 작은 16비트 배열과 세 개의 해시 함수를
+사용합니다.
 
 [[bloom1]]
-.An example of a simplistic bloom filter, with a 16-bit field and three hash functions.
+.16비트 필드와 세 개의 해시 함수를 쓴 단순한 블룸 필터의 예.
 image::images/mbc3_1006.png["Bloom1"]
 
-The bloom filter is initialized so that the array of bits is all zeros.
-To add a pattern to the bloom filter, the pattern is hashed by each hash
-function in turn. Applying the first hash function to the input results
-in a number between 1 and N. The corresponding bit in the array (indexed
-from 1 to N) is found and set to +1+, thereby recording the output of
-the hash function. Then, the next hash function is used to set another
-bit and so on. Once all M hash functions have been applied, the search
-pattern will be "recorded" in the bloom filter as M bits that have been
-changed from +0+ to +1+.
+블룸 필터는 비트 배열이 모두 0인 상태로 초기화됩니다. 블룸 필터에 패턴을 추가하려면 그 패턴을 각 해시
+함수로 차례로 해시합니다. 입력에 첫 번째 해시 함수를 적용하면 1과 N 사이의 수가 나옵니다. 배열에서 그에
+해당하는 비트(1부터 N까지 인덱싱)를 찾아 +1+ 로 설정함으로써 해시 함수의 출력을 기록합니다. 그다음 해시
+함수로 또 다른 비트를 설정하고, 이런 식으로 이어갑니다. M개의 해시 함수를 모두 적용하고 나면 그 검색
+패턴은 +0+ 에서 +1+ 로 바뀐 M개의 비트로 블룸 필터에 "기록"됩니다.
 
-<<bloom2>> is an example of adding a pattern "A" to the simple bloom filter shown in <<bloom1>>.
+<<bloom2>>는 <<bloom1>>의 단순한 블룸 필터에 패턴 "A"를 추가하는 예입니다.
 
-Adding a second pattern is as simple as repeating this process. The
-pattern is hashed by each hash function in turn, and the result is
-recorded by setting the bits to +1+. Note that as a bloom filter is
-filled with more patterns, a hash function result might coincide with a
-bit that is already set to +1+, in which case the bit is not changed. In
-essence, as more patterns record on overlapping bits, the bloom filter
-starts to become saturated with more bits set to +1+ and the accuracy of
-the filter decreases. This is why the filter is a probabilistic data
-structure—it gets less accurate as more patterns are added. The accuracy
-depends on the number of patterns added versus the size of the bit array
-(N) and number of hash functions (M). A larger bit array and more hash
-functions can record more patterns with higher accuracy. A smaller bit
-array or fewer hash functions will record fewer patterns and produce
-less accuracy.
+두 번째 패턴을 추가하는 것도 이 과정을 반복하기만 하면 됩니다. 패턴을 각 해시 함수로 차례로 해시하고 그
+결과를 비트를 +1+ 로 설정해 기록합니다. 블룸 필터에 패턴이 더 많이 채워질수록 해시 함수 결과가 이미 +1+
+로 설정된 비트와 겹칠 수 있는데, 그런 경우 그 비트는 바뀌지 않는다는 점에 유의하세요. 본질적으로 더 많은
+패턴이 겹치는 비트에 기록될수록 블룸 필터는 +1+ 로 설정된 비트로 포화되기 시작하고 필터의 정확도는
+떨어집니다. 그래서 이 필터가 확률적 자료 구조인 것입니다. 패턴이 많이 추가될수록 정확도가 떨어집니다.
+정확도는 추가된 패턴의 수와 비트 배열의 크기(N), 해시 함수의 개수(M)에 달려 있습니다. 비트 배열이 크고
+해시 함수가 많을수록 더 많은 패턴을 더 높은 정확도로 기록할 수 있습니다. 비트 배열이 작거나 해시 함수가
+적으면 더 적은 패턴을 기록하고 정확도도 떨어집니다.
 
 [[bloom2]]
-.Adding a pattern "A" to our simple bloom filter.
+.단순한 블룸 필터에 패턴 "A"를 추가하기.
 image::images/mbc3_1007.png["Bloom2"]
 
-<<bloom3>> is an example of adding a second pattern "B" to the simple bloom filter.
+<<bloom3>>은 단순한 블룸 필터에 두 번째 패턴 "B"를 추가하는 예입니다.
 
 [[bloom3]]
-.Adding a second pattern "B" to our simple bloom filter.
+.단순한 블룸 필터에 두 번째 패턴 "B"를 추가하기.
 image::images/mbc3_1008.png["Bloom3"]
 
 [role="less_space pagebreak-before"]
-To test if a pattern is part of a bloom filter, the pattern is hashed by
-each hash function and the resulting bit pattern is tested against the
-bit array. If all the bits indexed by the hash functions are set to +1+,
-then the pattern is _probably_ recorded in the bloom filter. Because the
-bits may be set because of overlap from multiple patterns, the answer is
-not certain, but is rather probabilistic. In simple terms, a bloom
-filter positive match is a "Maybe, yes."
+어떤 패턴이 블룸 필터에 속하는지 시험하려면 그 패턴을 각 해시 함수로 해시하고 그 결과 비트 패턴을 비트
+배열과 대조합니다. 해시 함수가 가리키는 비트가 모두 +1+ 로 설정되어 있다면 그 패턴은 _아마도_ 블룸 필터에
+기록된 것입니다. 여러 패턴이 겹쳐서 비트가 설정되었을 수도 있으므로 그 답은 확실하지 않고 확률적입니다.
+간단히 말해 블룸 필터의 긍정 일치는 "아마도 예"입니다.
 
-<<bloom4>> is an example of testing the existence of pattern "X" in the
-simple bloom filter. The corresponding bits are set to +1+, so the
-pattern is probably a match.
+<<bloom4>>는 단순한 블룸 필터에서 패턴 "X"의 존재를 시험하는 예입니다. 해당 비트들이 +1+ 로 설정되어
+있으므로 그 패턴은 아마도 일치합니다.
 
 [[bloom4]]
-.Testing the existence of pattern "X" in the bloom filter. The result is a probabilistic positive match, meaning "Maybe."
+.블룸 필터에서 패턴 "X"의 존재를 시험하기. 결과는 확률적 긍정 일치이며 "아마도"라는 뜻이다.
 image::images/mbc3_1009.png["Bloom4"]
 
-On the contrary, if a pattern is tested against the bloom filter and any
-one of the bits is set to +0+, this proves that the pattern was not
-recorded in the bloom filter. A negative result is not a probability, it
-is a certainty. In simple terms, a negative match on a bloom filter is a
-"Definitely not!"
+반대로 어떤 패턴을 블룸 필터와 대조했을 때 비트 중 하나라도 +0+ 으로 설정되어 있다면, 이는 그 패턴이 블룸
+필터에 기록되지 않았음을 증명합니다. 부정 결과는 확률이 아니라 확실성입니다. 간단히 말해 블룸 필터의 부정
+일치는 "확실히 아니오!"입니다.
 
-<<bloom5>> is an example of testing the existence of pattern "Y" in the
-simple bloom filter. One of the corresponding bits is set to +0+, so the
-pattern is definitely((("Bitcoin network", "bloom filters", "operational overview", startref="bitcoin-network-bloom-overview")))((("bloom filters", "operational overview", startref="bloom-overview"))) not a match.
+<<bloom5>>는 단순한 블룸 필터에서 패턴 "Y"의 존재를 시험하는 예입니다. 해당 비트 중 하나가 +0+ 으로
+설정되어 있으므로 그 패턴은 확실히 ((("Bitcoin network", "bloom filters", "operational overview", startref="bitcoin-network-bloom-overview")))((("bloom filters", "operational overview", startref="bloom-overview")))일치하지 않습니다.
 
 [[bloom5]]
-.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
+.블룸 필터에서 패턴 "Y"의 존재를 시험하기. 결과는 확정적 부정 일치이며 "확실히 아니오!"라는 뜻이다.
 image::images/mbc3_1010.png[]
+==== 경량 클라이언트가 블룸 필터를 쓰는 방법
 
-==== How Lightweight Clients Use Bloom Filters
+블룸 필터는 ((("Bitcoin network", "bloom filters", "lightweight clients and", id="bitcoin-network-bloom-lightweight")))((("bloom filters", "lightweight clients and", id="bloom-lightweight")))((("lightweight clients", "bloom filters and", id="lightweight-bloom")))경량 클라이언트가 피어에게서 받는 트랜잭션(과 그것을 담은 블록)을
+걸러내, 자신이 어떤 주소나 키에 관심이 있는지 정확히 드러내지 않으면서 관심 있는 트랜잭션만 고르는 데
+쓰입니다.
 
-Bloom filters ((("Bitcoin network", "bloom filters", "lightweight clients and", id="bitcoin-network-bloom-lightweight")))((("bloom filters", "lightweight clients and", id="bloom-lightweight")))((("lightweight clients", "bloom filters and", id="lightweight-bloom")))are used to filter the transactions (and blocks containing
-them) that a lightweight client receives from its peers, selecting only
-transactions of interest to the lightweight client without revealing exactly which
-addresses or keys it is interested in.
+경량 클라이언트는 블룸 필터를 "비어 있는" 상태로 초기화합니다. 그 상태에서 블룸 필터는 어떤 패턴에도
+일치하지 않습니다. 그런 다음 경량 클라이언트는 자신이 관심 있는 모든 주소와 키, 해시의 목록을 만듭니다.
+자기 지갑이 통제하는 UTXO에서 공개키 해시와 스크립트 해시, 트랜잭션 ID를 뽑아내는 방식입니다. 그리고
+이들을 하나씩 블룸 필터에 추가해, 그 패턴들이 어떤 트랜잭션에 들어 있으면 블룸 필터가 "일치"하되 패턴
+자체는 드러나지 않게 합니다.
 
-A lightweight client will initialize a bloom filter
-as "empty"; in that state, the bloom filter will not match any patterns.
-The lightweight client will then make a list of all the addresses, keys, and
-hashes that it is interested in. It will do this by extracting the
-public key hash, script hash, and transaction IDs from any UTXO
-controlled by its wallet. The lightweight client then adds each of these to the
-bloom filter so that the bloom filter will "match" if these patterns
-are present in a transaction, without revealing the patterns themselves.
-
-The lightweight client will then send a
-+filterload+ message to the peer containing the bloom filter to use on
-the connection. On the peer, bloom filters are checked against each
-incoming transaction. The full node checks several parts of the
-transaction against the bloom filter, looking for a match including:
+그다음 경량 클라이언트는 그 연결에서 사용할 블룸 필터가 담긴 +filterload+ 메시지를 피어에게 보냅니다.
+피어 쪽에서는 들어오는 트랜잭션마다 블룸 필터와 대조합니다. 풀 노드는 트랜잭션의 여러 부분을 블룸 필터와
+대조해 일치를 찾는데, 다음이 포함됩니다.
 
 ++++
 <ul>
-<li>The transaction ID</li>
-<li>The data components from the scripts of each of the transaction outputs (every key and hash in the script)</li>
-<li class="less_space pagebreak-before">Each of the transaction inputs</li>
-<li>Each of the input signature data components (or witness scripts)</li>
+<li>트랜잭션 ID</li>
+<li>각 트랜잭션 출력의 스크립트에 담긴 데이터 구성 요소(스크립트 안의 모든 키와 해시)</li>
+<li class="less_space pagebreak-before">각 트랜잭션 입력</li>
+<li>각 입력 서명 데이터 구성 요소(또는 위트니스 스크립트)</li>
 </ul>
 ++++
 
 
-By checking against all these components, bloom filters can be used to
-match public key hashes, scripts, +OP_RETURN+ values, public keys in
-signatures, or any future component of a smart contract or complex
-script.
+이 모든 구성 요소를 대조함으로써 블룸 필터는 공개키 해시와 스크립트, +OP_RETURN+ 값, 서명 안의 공개키,
+또는 앞으로 나올 스마트 계약이나 복잡한 스크립트의 어떤 구성 요소와도 일치시킬 수 있습니다.
 
-After a filter is established, the peer will then test each
-transaction's outputs against the bloom filter. Only transactions that
-match the filter are sent to the client.
+필터가 설정되고 나면 피어는 각 트랜잭션의 출력을 블룸 필터와 대조합니다. 필터에 일치하는 트랜잭션만
+클라이언트로 보냅니다.
 
-In response to a +getdata+ message from the client, peers will send a
-+merkleblock+ message that contains only block headers for blocks
-matching the filter and a merkle path (see <<merkle_trees>>) for each
-matching transaction. The peer will then also send +tx+ messages
-containing the transactions matched by the filter.
+클라이언트의 +getdata+ 메시지에 대한 응답으로 피어는 +merkleblock+ 메시지를 보내는데, 여기에는 필터에
+일치하는 블록의 블록 헤더와 일치하는 각 트랜잭션에 대한 머클 경로(<<merkle_trees>> 참고)만 담깁니다.
+이어서 피어는 필터에 일치한 트랜잭션들이 담긴 +tx+ 메시지도 보냅니다.
 
-As the full node sends transactions to the lightweight client, the lightweight client
-discards any false positives and uses the correctly matched transactions
-to update its UTXO set and wallet balance. As it updates its own view of
-the UTXO set, it also modifies the bloom filter to match any future
-transactions referencing the UTXO it just found. The full node then uses
-the new bloom filter to match new transactions and the whole process
-repeats.
+풀 노드가 경량 클라이언트에 트랜잭션을 보내면, 경량 클라이언트는 거짓 양성을 버리고 제대로 일치한
+트랜잭션으로 자기 UTXO 집합과 지갑 잔액을 갱신합니다. UTXO 집합에 대한 자기 관점을 갱신하면서, 방금 찾은
+UTXO를 참조하는 앞으로의 트랜잭션에도 일치하도록 블룸 필터도 함께 수정합니다. 그러면 풀 노드는 새 블룸
+필터로 새 트랜잭션을 대조하고, 이 과정 전체가 반복됩니다.
 
-The client setting the bloom filter can interactively add patterns to the
-filter by sending a +filteradd+ message. To clear the bloom filter, the
-client can send a +filterclear+ message. Because it is not possible to
-remove a pattern from a bloom filter, a client has to clear and resend a
-new bloom filter if a pattern is no longer desired.
+블룸 필터를 설정한 클라이언트는 +filteradd+ 메시지를 보내 대화식으로 필터에 패턴을 추가할 수 있습니다.
+블룸 필터를 비우려면 +filterclear+ 메시지를 보내면 됩니다. 블룸 필터에서 패턴을 제거하는 것은 불가능하므로,
+어떤 패턴이 더 이상 필요 없어지면 클라이언트는 필터를 비우고 새 블룸 필터를 다시 보내야 합니다.
 
-The network protocol and bloom filter mechanism for lightweight clients is defined
-in BIP37.
+경량 클라이언트를 위한 네트워크 프로토콜과 블룸 필터 방식은 BIP37에 정의되어 있습니다.
 
-Unfortunately, after the deployment of bloom filters, it became clear
-that they didn't offer very much privacy.  A full node receiving a bloom
-filter from a peer could apply that filter to the entire blockchain to
-find all of the client's transactions (plus false positives).  It could
-then look for patterns and relationships between the transactions.
-Randomly selected false positive transactions would be unlikely to have
-a parent-child relationship from output to input, but transactions from
-the user's wallet would be very likely to have that relationship.  If
-all of the related transactions have certain characteristics, such as
-at least one P2PKH output, then transactions without that characteristic
-can be assumed not to belong to the wallet.
+안타깝게도 블룸 필터가 배포된 뒤, 그것이 프라이버시를 그리 많이 제공하지 못한다는 점이 분명해졌습니다.
+피어에게서 블룸 필터를 받은 풀 노드는 그 필터를 블록체인 전체에 적용해 그 클라이언트의 트랜잭션을(거짓
+양성과 함께) 모두 찾아낼 수 있습니다. 그런 다음 트랜잭션 사이의 패턴과 관계를 살펴볼 수 있습니다.
+무작위로 걸린 거짓 양성 트랜잭션들은 출력에서 입력으로 이어지는 부모-자식 관계를 가질 가능성이 낮지만,
+사용자 지갑의 트랜잭션들은 그런 관계를 가질 가능성이 매우 높습니다. 관련된 트랜잭션이 모두 최소 하나의
+P2PKH 출력을 갖는 등 특정한 성격을 공유한다면, 그 성격이 없는 트랜잭션은 그 지갑의 것이 아니라고 가정할
+수 있습니다.
 
-It was also discovered that specially constructed filters could force
-the full nodes that processed them to perform a large amount of work,
-which could lead to denial-of-service attacks.
+또한 특별히 구성된 필터가 그것을 처리하는 풀 노드에 막대한 작업을 강제할 수 있고, 이것이 서비스 거부
+공격으로 이어질 수 있다는 점도 밝혀졌습니다.
 
-For both of those reasons, Bitcoin Core eventually limited support for
-bloom filters to only clients on IP addresses that were explicitly
-allowed by the node operator.  This meant that an alternative method for
-helping lightweight clients find their transactions((("Bitcoin network", "bloom filters", "lightweight clients and", startref="bitcoin-network-bloom-lightweight")))((("bloom filters", "lightweight clients and", startref="bloom-lightweight")))((("lightweight clients", "bloom filters and", startref="lightweight-bloom"))) was needed.
-
-=== Compact Block Filters
+이 두 가지 이유로 비트코인 코어는 결국 블룸 필터 지원을 노드 운영자가 명시적으로 허용한 IP 주소의
+클라이언트로만 제한했습니다. 이는 경량 클라이언트가 자기 트랜잭션을 찾도록 돕는 다른 방법이
+((("Bitcoin network", "bloom filters", "lightweight clients and", startref="bitcoin-network-bloom-lightweight")))((("bloom filters", "lightweight clients and", startref="bloom-lightweight")))((("lightweight clients", "bloom filters and", startref="lightweight-bloom")))필요해졌다는 뜻이었습니다.
+=== 컴팩트 블록 필터
 
 // https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012636.html
 
-An idea was ((("Bitcoin network", "compact block filters", id="bitcoin-network-compact-filter")))((("compact block filters", id="compact-block-filter")))((("blocks", "compact block filters", id="block-compact-filter")))posted to the Bitcoin-Dev mailing list by an anonymous
-developer in 2016 of reversing the bloom filter process.  With a BIP37
-bloom filter, each client hashes their addresses to create a bloom
-filter and nodes hash parts of each transaction to attempt to match
-that filter.  In the new proposal, nodes hash parts of each transaction
-in a block to create a bloom filter and clients hash their addresses to
-attempt to match that filter.  If a client finds a match, they download
-the entire block.
+2016년 ((("Bitcoin network", "compact block filters", id="bitcoin-network-compact-filter")))((("compact block filters", id="compact-block-filter")))((("blocks", "compact block filters", id="block-compact-filter")))한 익명의 개발자가 블룸 필터 과정을 뒤집자는 아이디어를 Bitcoin-Dev
+메일링 리스트에 올렸습니다. BIP37 블룸 필터에서는 각 클라이언트가 자기 주소를 해시해 블룸 필터를 만들고,
+노드가 각 트랜잭션의 일부를 해시해 그 필터와 일치시키려 합니다. 새 제안에서는 노드가 블록 안 각
+트랜잭션의 일부를 해시해 블룸 필터를 만들고, 클라이언트가 자기 주소를 해시해 그 필터와 일치시키려 합니다.
+클라이언트가 일치를 찾으면 그 블록 전체를 내려받습니다.
 
 [NOTE]
 ====
-Despite the similarities in names, BIP152 _compact blocks_ and
-BIP157/158 _compact block filters_ are unrelated.
+이름이 비슷하지만 BIP152의 _컴팩트 블록_ 과 BIP157/158의 _컴팩트 블록 필터_ 는 서로 무관합니다.
 ====
 
-This allows nodes to create a single filter for every block, which they
-can save to disk and serve over and over, eliminating the
-denial-of-service vulnerabilities with BIP37.  Clients don't give full
-nodes any information about their past or future addresses.  They only
-download blocks, which may contain thousands of transactions that
-weren't created by the client.  They can even download each matching
-block from a different peer, making it harder for full nodes to connect
-transactions belonging to a single client across multiple blocks.
+이 방식은 노드가 블록마다 필터를 하나씩 만들어 디스크에 저장해 두고 몇 번이고 제공할 수 있게 해주므로,
+BIP37의 서비스 거부 취약점이 사라집니다. 클라이언트는 자신의 과거나 미래 주소에 대한 정보를 풀 노드에
+전혀 주지 않습니다. 블록만 내려받을 뿐이며, 그 블록에는 클라이언트가 만들지 않은 트랜잭션이 수천 건 들어
+있을 수 있습니다. 심지어 일치하는 블록마다 다른 피어에게서 내려받을 수도 있어, 풀 노드가 여러 블록에
+걸쳐 한 클라이언트에 속한 트랜잭션을 엮기가 더 어려워집니다.
 
-This idea for server-generated filters doesn't offer perfect privacy;
-it still places some costs on full nodes (and it does require lightweight
-clients to use more bandwidth for the block download), and the filters can
-only be used for confirmed transactions (not unconfirmed transactions). However,
-it is much more private and reliable than BIP37 client-requested
-bloom filters.
+서버가 필터를 생성하는 이 아이디어가 완벽한 프라이버시를 제공하지는 않습니다. 여전히 풀 노드에 어느 정도
+비용을 지우고(경량 클라이언트도 블록을 내려받느라 대역폭을 더 써야 합니다), 그 필터는 확인된 트랜잭션에만
+쓸 수 있습니다(미확인 트랜잭션에는 쓸 수 없습니다). 그럼에도 BIP37의 클라이언트 요청 블룸 필터보다 훨씬
+사적이고 믿음직합니다.
 
-After the description of the original idea based on bloom filters,
-developers realized there was a better data structure for
-server-generated filters, called Golomb-Rice Coded Sets (GCS).
+블룸 필터에 기반한 원래 아이디어가 나온 뒤, 개발자들은 서버 생성 필터에 더 알맞은 자료 구조가 있다는 것을
+알아냈습니다. 골롬-라이스 부호화 집합(Golomb-Rice Coded Sets, GCS)입니다.
 
-==== Golomb-Rice Coded Sets (GCS)
+==== 골롬-라이스 부호화 집합(GCS)
 
-Imagine ((("Bitcoin network", "compact block filters", "GCS (Golomb-Rice coded sets)", id="bitcoin-network-compact-filter-gcs")))((("compact block filters", "GCS (Golomb-Rice coded sets)", id="compact-block-filter-gcs")))((("blocks", "compact block filters", "GCS (Golomb-Rice coded sets)", id="block-compact-filter-gcs")))((("GCS (Golomb-Rice coded sets)", id="gcs-filter")))that Alice wants to send a list of numbers to Bob.  The simple
-way to do that is to just send him the entire list of numbers:
+앨리스가 ((("Bitcoin network", "compact block filters", "GCS (Golomb-Rice coded sets)", id="bitcoin-network-compact-filter-gcs")))((("compact block filters", "GCS (Golomb-Rice coded sets)", id="compact-block-filter-gcs")))((("blocks", "compact block filters", "GCS (Golomb-Rice coded sets)", id="block-compact-filter-gcs")))((("GCS (Golomb-Rice coded sets)", id="gcs-filter")))밥에게 숫자 목록을 보내려 한다고 상상해 봅시다. 가장 간단한 방법은
+숫자 목록 전체를 그대로 보내는 것입니다.
 
 ----
 849
@@ -857,8 +626,7 @@ way to do that is to just send him the entire list of numbers:
 379
 ----
 
-But there's a more efficient way.  First, Alice puts the list in
-numerical order:
+그런데 더 효율적인 방법이 있습니다. 먼저 앨리스가 목록을 수 순서대로 정렬합니다.
 
 ----
 379
@@ -868,10 +636,8 @@ numerical order:
 900
 ----
 
-Then, Alice sends the first number.  For the remaining numbers, she
-sends the difference between that number and the preceding number.  For
-example, for the second number, she sends 97 (476 – 379); for the third
-number, she sends 177 (653 – 476); and so on:
+그런 다음 앨리스는 첫 번째 수를 보냅니다. 나머지 수에 대해서는 그 수와 바로 앞 수의 차이를 보냅니다. 예를
+들어 두 번째 수로는 97(476 – 379)을, 세 번째 수로는 177(653 – 476)을 보내는 식입니다.
 
 ----
 379
@@ -881,21 +647,16 @@ number, she sends 177 (653 – 476); and so on:
 51
 ----
 
-We can see that the differences between two numbers in an ordered list
-produces numbers that are shorter than the original numbers.  Upon
-receiving this list, Bob can reconstruct the original list by simply
-adding each number with its predecessor.  That means we save space
-without losing any information, which is ((("lossless encoding")))called _lossless encoding_.
+정렬된 목록에서 두 수의 차이가 원래 수보다 짧은 수를 만들어낸다는 것을 알 수 있습니다. 이 목록을 받은
+밥은 각 수를 그 앞 수와 더하기만 하면 원래 목록을 복원할 수 있습니다. 즉 정보를 전혀 잃지 않으면서 공간을
+아끼는 것인데, 이를 ((("lossless encoding")))_무손실 인코딩_ 이라고 합니다.
 
-If we randomly select numbers within a fixed range of values, then the
-more numbers we select, the smaller the average (mean) size of the
-differences.  That means the amount of data we need to transfer doesn't
-increase as fast as the length of our list increases (up to a point).
+고정된 값 범위 안에서 수를 무작위로 고른다면, 고르는 수가 많아질수록 차이의 평균 크기는 작아집니다. 즉
+목록이 길어지는 속도만큼 전송해야 할 데이터가 빠르게 늘지는 않는다는 뜻입니다(어느 지점까지는요).
 
-Even more usefully, the length of the randomly selected numbers in a
-list of differences is naturally biased toward smaller lengths.
-Consider selecting two random numbers from 1 to 6; this is the same
-as rolling two dice.  There are 36 distinct combinations of two dice:
+더 유용한 점은, 차이 목록에서 무작위로 고른 수들의 길이가 자연스럽게 짧은 쪽으로 치우친다는 것입니다.
+1부터 6까지에서 수 두 개를 고르는 경우를 생각해 보세요. 주사위 두 개를 굴리는 것과 같습니다. 주사위 두
+개의 서로 다른 조합은 36가지입니다.
 
 [cols="1,1,1,1,1,1"]
 |===
@@ -907,8 +668,7 @@ as rolling two dice.  There are 36 distinct combinations of two dice:
 | 6 1 | 6 2 | 6 3 | 6 4 | 6 5 | 6 6
 |===
 
-Let's find the difference between the larger of the numbers and the
-smaller of the numbers:
+큰 수에서 작은 수를 뺀 차이를 구해 봅시다.
 
 [role="less_space pagebreak-before"]
 [cols="1,1,1,1,1,1"]
@@ -921,17 +681,15 @@ smaller of the numbers:
 | 5 | 4 | 3 | 2 | 1 | 0
 |===
 
-If we count the frequency of each difference occurring, we see that the
-small differences are much more likely to occur than the large
-differences:
+각 차이가 나타나는 빈도를 세어 보면, 작은 차이가 큰 차이보다 훨씬 자주 나타난다는 것을 알 수 있습니다.
 
 ++++
 <table>
 
 <thead>
 <tr>
-<th>Difference</th>
-<th>Occurrences</th>
+<th>차이</th>
+<th>나타난 횟수</th>
 </tr>
 </thead>
 <tbody>
@@ -963,292 +721,204 @@ differences:
 </table>
 ++++
 
-If we know that we might need to store large numbers (because large
-differences can happen, even if they are rare), but we'll most often need
-to store small numbers, we can encode each number using a system that
-uses less space for small numbers and extra space for large numbers.
-On average, that system will perform better than using the same amount
-of space for every number.
+큰 수를 저장해야 할 수도 있지만(드물더라도 큰 차이가 생길 수 있으므로) 대개는 작은 수를 저장하게 된다는
+것을 안다면, 작은 수에는 공간을 덜 쓰고 큰 수에는 공간을 더 쓰는 체계로 각 수를 인코딩할 수 있습니다.
+평균적으로 그런 체계는 모든 수에 같은 공간을 쓰는 것보다 성능이 좋습니다.
 
-Golomb coding provides that facility.  Rice coding is a subset of Golomb
-coding that's more convenient to use in some situations, including the
-application of Bitcoin ((("Bitcoin network", "compact block filters", "GCS (Golomb-Rice coded sets)", startref="bitcoin-network-compact-filter-gcs")))((("compact block filters", "GCS (Golomb-Rice coded sets)", startref="compact-block-filter-gcs")))((("blocks", "compact block filters", "GCS (Golomb-Rice coded sets)", startref="block-compact-filter-gcs")))((("GCS (Golomb-Rice coded sets)", startref="gcs-filter")))block filters.
+골롬 부호화가 그런 기능을 제공합니다. 라이스 부호화는 골롬 부호화의 부분집합으로, 비트코인 블록 필터에
+적용하는 경우를 포함해 어떤 상황에서는 쓰기가 더
+((("Bitcoin network", "compact block filters", "GCS (Golomb-Rice coded sets)", startref="bitcoin-network-compact-filter-gcs")))((("compact block filters", "GCS (Golomb-Rice coded sets)", startref="compact-block-filter-gcs")))((("blocks", "compact block filters", "GCS (Golomb-Rice coded sets)", startref="block-compact-filter-gcs")))((("GCS (Golomb-Rice coded sets)", startref="gcs-filter")))편리합니다.
+==== 블록 필터에 어떤 데이터를 담을 것인가
 
-==== What Data to Include in a Block Filter
+우리의 ((("Bitcoin network", "compact block filters", "what to include", id="bitcoin-network-compact-filter-include")))((("compact block filters", "what to include", id="compact-block-filter-include")))((("blocks", "compact block filters", "what to include", id="block-compact-filter-include")))주된 목표는 어떤 블록에 자기 지갑과 관련된 트랜잭션이 들어 있는지
+지갑이 알아낼 수 있게 하는 것입니다. 지갑이 제 역할을 하려면 두 종류의 정보를 알아야 합니다.
 
-Our primary ((("Bitcoin network", "compact block filters", "what to include", id="bitcoin-network-compact-filter-include")))((("compact block filters", "what to include", id="compact-block-filter-include")))((("blocks", "compact block filters", "what to include", id="block-compact-filter-include")))goal is to allow wallets to learn whether a block contains a
-transaction affecting that wallet.  For a wallet to be effective, it
-needs to learn two types of information:
+돈을 받았을 때::
 
-When it has received money::
+구체적으로는 트랜잭션 출력에 그 지갑이 통제하는(이를테면 승인된 비밀키를 통제하는) 스크립트가 들어
+   있을 때
 
-Specifically, when a transaction
-   output contains a script that the wallet controls (such as by
-   controlling the authorized private key)
+돈을 썼을 때::
 
-When it has spent money::  
+구체적으로는 트랜잭션 입력이 그 지갑이 통제하던 이전 트랜잭션 출력을 참조할 때
 
-Specifically, when a transaction input
-   references a previous transaction output that the wallet controlled
+컴팩트 블록 필터를 설계할 때의 부차적인 목표는, 필터를 받는 지갑이 피어에게서 정확한 필터를 받았는지
+검증할 수 있게 하는 것이었습니다. 예를 들어 지갑이 그 필터가 만들어진 블록을 내려받았다면 자기만의
+필터를 생성할 수 있습니다. 그런 다음 자기 필터를 피어의 필터와 비교해 둘이 동일한지 확인하면, 그 피어가
+정확한 필터를 만들었음을 증명하게 됩니다.
 
-A secondary goal during the design of compact block filters was to allow
-the wallet receiving the filter to verify that it received an accurate
-filter from a peer.  For example, if the wallet downloaded the block
-from which the filter was created, the wallet could generate its own
-filter.  It could then compare its filter to the peer's filter and
-verify that they were identical, proving the peer had generated an
-accurate filter.
+주된 목표와 부차적인 목표를 모두 충족하려면 필터가 두 종류의 정보를 참조해야 합니다.
 
-For both the primary and secondary goals to be met, a filter would need
-to reference two types of information:
+* 블록 안 모든 트랜잭션의 모든 출력에 대한 스크립트
 
-* The script for every output in every transaction in a block
+* 블록 안 모든 트랜잭션의 모든 입력에 대한 아웃포인트
 
-* The outpoint for every input in every transaction in a block
+컴팩트 블록 필터의 초기 설계는 이 두 정보를 모두 담았지만, 부차적인 목표를 포기하면 주된 목표를 더
+효율적으로 달성할 방법이 있다는 것을 알게 되었습니다. 새 설계에서도 블록 필터는 여전히 두 종류의 정보를
+참조하되, 그 둘이 더 밀접하게 관련됩니다.
 
-An early design for compact block filters included both of those pieces
-of information, but it was realized there was a more efficient way
-to accomplish the primary goal if we sacrificed the secondary goal.  In
-the new design, a block filter would still reference two types of
-information, but they'd be more closely related:
+* 앞서와 같이, 블록 안 모든 트랜잭션의 모든 출력에 대한 스크립트.
 
-* As before, the script for every output in every transaction in a
-block.
+* 달라진 점으로, 블록 안 모든 트랜잭션의 모든 입력에 대해 그 아웃포인트가 참조하는 출력의 스크립트도
+함께 참조합니다. 다시 말해 쓰이고 있는 출력 스크립트입니다.
 
-* In a change, it would also reference the script of the output
-referenced by the outpoint for every input in every transaction in a
-block.  In other words, the output script being spent.
+여기에는 몇 가지 이점이 있었습니다. 첫째, 지갑이 아웃포인트를 추적할 필요가 없어졌습니다. 대신 돈을 받을
+것으로 예상되는 출력 스크립트만 훑으면 됩니다. 둘째, 같은 블록 안에서 뒤쪽 트랜잭션이 앞쪽 트랜잭션의
+출력을 쓸 때마다 둘 다 같은 출력 스크립트를 참조하게 됩니다. 컴팩트 블록 필터에서 같은 출력 스크립트를
+두 번 이상 참조하는 것은 중복이므로 중복 사본을 제거해 필터의 크기를 줄일 수 있습니다.
 
-This had several advantages.  First, it meant that wallets didn't need
-to track outpoints; they could instead just scan for the
-output scripts to which they expected to receive money. Second, any time a
-later transaction in a block spends the output of an earlier
-transaction in the same block, they'll both reference the same
-output script.  More than one reference to the same output script is
-redundant in a compact block filter, so the redundant copies can be
-removed, shrinking the size of the filters.
+풀 노드는 블록을 검증할 때 그 블록의 현재 트랜잭션 출력과, 입력이 참조하는 이전 블록의 트랜잭션 출력
+양쪽의 출력 스크립트에 모두 접근할 수 있어야 합니다. 따라서 이 단순화된 모델로 컴팩트 블록 필터를 만들 수
+있습니다. 하지만 블록 자체에는 이전 블록에 담긴 트랜잭션의 출력 스크립트가 들어 있지 않으므로, 클라이언트가
+블록 필터가 제대로 만들어졌는지 검증할 간편한 방법은 없습니다. 다만 피어가 거짓말을 하고 있는지 클라이언트가
+알아챌 수 있게 돕는 대안이 있습니다. 여러 피어에게서 같은 필터를
+((("Bitcoin network", "compact block filters", "what to include", startref="bitcoin-network-compact-filter-include")))((("compact block filters", "what to include", startref="compact-block-filter-include")))((("blocks", "compact block filters", "what to include", startref="block-compact-filter-include")))받아 보는 것입니다.
 
-When full nodes validate a block, they need access to the output scripts
-for both the current transaction outputs in a block and the transaction
-outputs from previous blocks that are being referenced in inputs, so
-they're able to build compact block filters in this simplified model.
-But a block itself doesn't include the output scripts from transactions
-included in previous blocks, so there's no convenient way for a client
-to verify a block filter was built correctly.  However, there is an
-alternative that can help a client detect if a peer is lying to it:
-obtaining the same filter from ((("Bitcoin network", "compact block filters", "what to include", startref="bitcoin-network-compact-filter-include")))((("compact block filters", "what to include", startref="compact-block-filter-include")))((("blocks", "compact block filters", "what to include", startref="block-compact-filter-include")))multiple peers.
+==== 여러 피어에게서 블록 필터 내려받기
 
-==== Downloading Block Filters from Multiple Peers
+((("Bitcoin network", "compact block filters", "downloading multiple", id="bitcoin-network-compact-filter-download")))((("compact block filters", "downloading multiple", id="compact-block-filter-download")))((("blocks", "compact block filters", "downloading multiple", id="block-compact-filter-download")))((("downloading multiple block filters", id="download-multiple-block")))((("multiple block filters, downloading", id="multiple-block-download")))피어는 지갑에 부정확한 필터를 줄 수 있습니다. 부정확한 필터를 만드는
+방법은 두 가지입니다. 피어가 해당 블록에 실제로는 나타나지 않는 트랜잭션을 참조하는 필터를 만들 수
+있습니다(거짓 양성). 아니면 해당 블록에 실제로 나타나는 트랜잭션을 참조하지 않는 필터를 만들 수도
+있습니다(거짓 음성).
 
-A peer ((("Bitcoin network", "compact block filters", "downloading multiple", id="bitcoin-network-compact-filter-download")))((("compact block filters", "downloading multiple", id="compact-block-filter-download")))((("blocks", "compact block filters", "downloading multiple", id="block-compact-filter-download")))((("downloading multiple block filters", id="download-multiple-block")))((("multiple block filters, downloading", id="multiple-block-download")))can provide a wallet with an inaccurate filter.  There are two ways
-to create an inaccurate filter.  The peer can create a filter that
-references transactions that don't actually appear in the associated
-block (a false positive).  Alternatively, the peer can create a filter
-that doesn't reference transactions that do actually appear in the
-associated block (a false negative).
+부정확한 필터에 대한 첫 번째 보호 장치는 클라이언트가 여러 피어에게서 필터를 받는 것입니다. BIP157
+프로토콜은 클라이언트가 필터에 대한 짧은 32바이트 커밋먼트만 내려받아, 각 피어가 다른 모든 피어와 같은
+필터를 알리고 있는지 판단할 수 있게 해줍니다. 그러면 모든 피어의 의견이 일치할 때, 여러 피어에게 필터를
+질의하느라 클라이언트가 써야 하는 대역폭을 최소로 줄일 수 있습니다.
 
-The first protection against an inaccurate filter is for a client to
-obtain a filter from multiple peers.  The BIP157 protocol allows a
-client to download just a short 32-byte commitment to a filter to
-determine whether each peer is advertising the same filter as all of the
-client's other peers.  That minimizes the amount of bandwidth the client
-must expend to query many different peers for their filters, if all of
-those peers agree.
+서로 다른 피어 둘 이상이 같은 블록에 대해 다른 필터를 가지고 있다면 클라이언트는 그것들을 모두 내려받을
+수 있습니다. 그리고 해당 블록도 함께 내려받을 수 있습니다. 그 블록에 지갑과 관련된 트랜잭션이 들어 있는데
+어떤 필터에는 그것이 포함되어 있지 않다면, 지갑은 그 필터를 만든 피어가 부정확했다고 확신할 수 있습니다.
+골롬-라이스 부호화 집합은 언제나 잠재적 일치를 포함하기 때문입니다.
 
-If two or more different peers have different filters for the same
-block, the client can download all of them.  It can then also download
-the associated block.  If the block contains any transaction related to
-the wallet that is not part of one of the filters, then the wallet can
-be sure that whichever peer created that filter was
-inaccurate--Golomb-Rice Coded Sets will always include a
-potential match.
+반대로 필터가 지갑과 일치할 수도 있다고 한 트랜잭션이 블록에 들어 있지 않더라도, 그것이 필터가
+부정확했다는 증거는 아닙니다. GCS의 크기를 최소로 줄이기 위해 일정 수준의 거짓 양성을 허용하기 때문입니다.
+지갑이 할 수 있는 일은 무작위로든 일치가 나왔을 때든 그 피어에게서 필터를 계속 내려받으며 클라이언트의
+거짓 양성 비율을 추적하는 것입니다. 그 비율이 필터가 쓰도록 설계된 거짓 양성 비율과 크게 다르다면, 지갑은
+그 피어 사용을 그만둘 수 있습니다. 대부분의 경우 부정확한 필터가 낳는 유일한 결과는 지갑이 예상보다 대역폭을
+더 쓰게 된다는 ((("Bitcoin network", "compact block filters", "downloading multiple", startref="bitcoin-network-compact-filter-download")))((("compact block filters", "downloading multiple", startref="compact-block-filter-download")))((("blocks", "compact block filters", "downloading multiple", startref="block-compact-filter-download")))((("downloading multiple block filters", startref="download-multiple-block")))((("multiple block filters, downloading", startref="multiple-block-download")))것입니다.
 
-Alternatively, if the block doesn't contain a transaction that the
-filter said might match the wallet, that isn't proof that the filter was
-inaccurate.  To minimize the size of a GCS, we allow a certain number of
-false positives.  What the wallet can do is continue downloading
-additional filters from the peer, either randomly or when they indicate
-a match, and then track the client's false positive rate.  If it
-differs significantly from the false positive rate that filters were
-designed to use, the wallet can stop using that peer.  In most cases,
-the only consequence of the inaccurate filter is that the wallet uses
-more bandwidth than((("Bitcoin network", "compact block filters", "downloading multiple", startref="bitcoin-network-compact-filter-download")))((("compact block filters", "downloading multiple", startref="compact-block-filter-download")))((("blocks", "compact block filters", "downloading multiple", startref="block-compact-filter-download")))((("downloading multiple block filters", startref="download-multiple-block")))((("multiple block filters, downloading", startref="multiple-block-download"))) expected.
+==== 손실 인코딩으로 대역폭 줄이기
 
-==== Reducing Bandwidth with Lossy Encoding
+우리가 ((("Bitcoin network", "compact block filters", "lossy encoding")))((("compact block filters", "lossy encoding")))((("blocks", "compact block filters", "lossy encoding")))((("lossy encoding")))전달하려는, 블록 안 트랜잭션에 대한 데이터는 출력 스크립트입니다.
+출력 스크립트는 길이가 제각각이고 일정한 패턴을 따르므로, 그 차이들이 우리가 원하는 것처럼 고르게
+분포하지 않습니다. 하지만 이 책 여러 곳에서 보았듯이 해시 함수를 사용하면 어떤 데이터에 대한 커밋먼트를
+만들면서 무작위로 고른 수처럼 보이는 값도 함께 얻을 수 있습니다.
 
-The data ((("Bitcoin network", "compact block filters", "lossy encoding")))((("compact block filters", "lossy encoding")))((("blocks", "compact block filters", "lossy encoding")))((("lossy encoding")))about the transactions in a block that we want to communicate
-is an output script.  Output scripts vary in length and follow patterns,
-which means the differences between them won't be evenly distributed
-like we want.  However, we've already seen in many places in this book
-that we can use a hash function to create a commitment to some data and
-also produce a value that looks like a randomly selected number.
+이 책의 다른 곳에서는 커밋먼트의 강도와 출력이 무작위와 얼마나 구별되지 않는지를 보장해 주는 암호학적으로
+안전한 해시 함수를 썼습니다. 다만 더 빠르고 설정하기 쉬운 비암호학적 해시 함수도 있는데, 컴팩트 블록
+필터에 사용할 SipHash 함수가 그렇습니다.
 
-In other places in this book, we've used a cryptographically secure hash
-function that provides assurances about the strength of its commitment
-and how indistinguishable from random its output is.  However, there are
-faster and more configurable non-cryptographic hash functions, such as
-the SipHash function we'll use for compact block filters.
+사용되는 알고리즘의 자세한 내용은 BIP158에 설명되어 있지만, 요지는 각 출력 스크립트를 SipHash와 몇 가지
+산술 연산으로 64비트 커밋먼트로 줄인다는 것입니다. 큰 수들의 집합을 더 짧은 수로 잘라내는 것이라고 생각할
+수 있는데, 이 과정에서 데이터가 사라지므로 _손실 인코딩_ 이라고 합니다. 정보를 일부 잃는 대신 나중에
+저장해야 할 정보가 줄어 공간을 아끼게 됩니다. 이 경우 전형적으로 160비트 이상인 출력 스크립트가 64비트까지
+줄어듭니다.
+==== 컴팩트 블록 필터 사용하기
 
-The details of the algorithm used are described in BIP158, but the gist
-is that each output script is reduced to a 64-bit commitment using
-SipHash and some arithmetic operations.  You can think of this as
-taking a set of large numbers and truncating them to shorter numbers, a
-process that loses data (so it's called _lossy encoding_).  By losing
-some information, we don't need to store as much information later,
-which saves space.  In this case, we go from a typical output script
-that's 160 bits or longer down to just 64 bits.
+블록 안 모든 출력 스크립트에 대한 커밋먼트의 64비트 값을 정렬하고 중복 항목을 제거한 뒤, 각 항목 사이의
+차이(델타)를 구해 GCS를 구성합니다. 그렇게 만들어진 컴팩트 블록 필터를 피어가 (지갑 같은) 클라이언트에
+배포합니다.
 
-==== Using Compact Block Filters
+클라이언트는 그 델타로 원래 커밋먼트를 복원합니다. 지갑 같은 클라이언트는 자신이 주시하는 출력 스크립트를
+모두 모아 BIP158과 같은 방식으로 커밋먼트를 생성합니다. 그리고 자신이 생성한 커밋먼트 중 하나라도 필터
+안의 커밋먼트와 일치하는지 확인합니다.
 
-The 64-bit values for every commitment to an output script in a block are
-sorted, duplicate entries are removed, and the GCS is constructed by
-finding the differences (deltas) between each entry.  That compact block
-filter is then distributed by peers to their clients (such as wallets).
+컴팩트 블록 필터의 손실성을 수를 잘라내는 것에 빗댄 앞의 예를 떠올려 보세요. 어떤 클라이언트가 123456이라는
+수를 담은 블록을 찾고 있는데, 정확하지만 손실이 있는 컴팩트 블록 필터에 1234가 들어 있다고 상상해 봅시다.
+클라이언트가 그 1234를 보면 해당 블록을 내려받습니다.
 
-A client uses the deltas to reconstruct the original commitments.  The
-client, such as a wallet, also takes all the output scripts it is
-monitoring for and generates commitments in the same way as BIP158.  It
-checks whether any of its generated commitments match the commitments in
-the filter.
+1234를 담은 정확한 필터라면 123456을 담은 블록을 클라이언트가 알아내게 해준다는 것이 100% 보장됩니다.
+이를 _참 양성_ 이라고 합니다. 다만 (이 예에서) 그 블록에 클라이언트가 찾는 것이 아닌 123400이나 123401,
+또는 그 밖의 거의 백 개에 이르는 항목이 들어 있을 가능성도 있는데, 이를
+((("false positives")))_거짓 양성_ 이라고 합니다.
 
-Recall our example of the lossiness of compact block filters being
-similar to truncating a number.  Imagine a client is looking for a block
-that contains the number 123456 and that an accurate (but lossy)
-compact block filter contains the number 1234.  When a client sees that
-1234, it will download the associated block.
+참 양성 일치율이 100%라는 것은 대단히 좋은 일입니다. 지갑이 자신과 관련된 모든 트랜잭션을 찾는 데 컴팩트
+블록 필터를 믿고 쓸 수 있다는 뜻이기 때문입니다. 거짓 양성 비율이 0이 아니라는 것은, 지갑이 관심 있는
+트랜잭션이 들어 있지 않은 블록도 일부 내려받게 된다는 뜻입니다. 그 주된 결과는 클라이언트가 대역폭을 더
+쓰게 된다는 것인데, 큰 문제는 아닙니다. BIP158 컴팩트 블록 필터의 실제 거짓 양성 비율은 매우 낮으므로
+심각한 문제가 되지 않습니다. 블룸 필터에서 그랬듯 거짓 양성 비율은 클라이언트의 프라이버시를 높이는 데
+도움이 되기도 하지만, 가능한 한 최선의 프라이버시를 원한다면 역시 자기 풀 노드를 쓰는 것이 좋습니다.
 
-There's a 100% guarantee that an accurate filter containing 1234 will
-allow a client to learn about a block containing 123456, called a _true
-positive_.  However, there's also a chance that the block might contain
-123400, 123401, or almost a hundred other entries that are not what the
-client is looking for (in this example), ((("false positives")))called a _false positive_.
-
-A 100% true positive match rate is great.  It means that a wallet can
-depend on compact block filters to find every transaction affecting that
-wallet.  A nonzero false positive rate means that the wallet will end
-up downloading some blocks that don't contain transactions interesting
-to the wallet.  The main consequence of this is that the client will use
-extra bandwidth, which is not a huge problem.  The actual
-false positive rate for BIP158 compact block filters is very low, so
-it's not a major problem.  A false positive rate can also help improve a
-client's privacy, as it does with bloom filters, although anyone wanting
-the best possible privacy should still use their own full node.
-
-In the long term, some developers advocate for having blocks commit to
-the filter for that block, with the most likely scheme having each
-coinbase transaction commit to the filter for that block.  Full nodes
-would calculate the filter for each block themselves and only accept a
-block if it contained an accurate commitment.  That would allow a
-lightweight client to download an 80-byte block header, a (usually)
-small coinbase transaction, and the filter for that block to receive
-strong evidence that the filter ((("Bitcoin network", "compact block filters", startref="bitcoin-network-compact-filter")))((("compact block filters", startref="compact-block-filter")))((("blocks", "compact block filters", startref="block-compact-filter")))was accurate.
+장기적으로 일부 개발자는 블록이 그 블록의 필터에 커밋하게 하자고 주장하며, 가장 유력한 방안은 각 코인베이스
+트랜잭션이 그 블록의 필터에 커밋하게 하는 것입니다. 그러면 풀 노드는 블록마다 필터를 직접 계산해, 정확한
+커밋먼트가 들어 있는 블록만 받아들이게 됩니다. 그렇게 되면 경량 클라이언트는 80바이트 블록 헤더와 (대개)
+작은 코인베이스 트랜잭션, 그리고 그 블록의 필터만 내려받고도 그 필터가 정확하다는 강력한 증거를 얻을 수
+((("Bitcoin network", "compact block filters", startref="bitcoin-network-compact-filter")))((("compact block filters", startref="compact-block-filter")))((("blocks", "compact block filters", startref="block-compact-filter")))있습니다.
 
 
 [role="less_space pagebreak-before"]
-=== Lightweight Clients and Privacy
+=== 경량 클라이언트와 프라이버시
 
-Lightweight clients ((("Bitcoin network", "lightweight clients", "privacy")))((("lightweight clients", "privacy")))((("privacy", "lightweight clients")))have weaker privacy than a full node. A full
-node downloads all transactions and therefore reveals no information
-about whether it is using some address in its wallet. A lightweight client
-only downloads transactions that are related to its wallet in some way.
+경량 클라이언트는 ((("Bitcoin network", "lightweight clients", "privacy")))((("lightweight clients", "privacy")))((("privacy", "lightweight clients")))풀 노드보다 프라이버시가 약합니다. 풀 노드는 모든 트랜잭션을
+내려받으므로 자기 지갑의 어떤 주소를 쓰고 있는지에 대한 정보를 전혀 드러내지 않습니다. 경량 클라이언트는
+어떤 식으로든 자기 지갑과 관련된 트랜잭션만 내려받습니다.
 
-Bloom filters and compact block filters are ways to reduce the loss of privacy. Without them, a
-lightweight client would have to explicitly list the addresses it was interested
-in, creating a serious breach of privacy. However, even with
-filters, an adversary monitoring the traffic of a lightweight client or
-connected to it directly as a node in the P2P network may be able to collect enough
-information over time to learn the addresses in the wallet of the lightweight
-client.
+블룸 필터와 컴팩트 블록 필터는 그 프라이버시 손실을 줄이는 방법입니다. 이들이 없다면 경량 클라이언트는
+자신이 관심 있는 주소를 명시적으로 나열해야 해서 프라이버시가 심각하게 침해될 것입니다. 하지만 필터가
+있더라도, 경량 클라이언트의 트래픽을 감시하거나 P2P 네트워크에서 노드로 직접 연결된 적대자는 시간이 지나며
+충분한 정보를 모아 그 경량 클라이언트 지갑의 주소를 알아낼 수도 있습니다.
 
-=== Encrypted and Authenticated Connections
+=== 암호화되고 인증된 연결
 
-Most new((("Bitcoin network", "encryption")))((("encryption")))((("Tor transport"))) users of
-Bitcoin assume that the network communications of a Bitcoin node are
-encrypted. In fact, the original implementation of Bitcoin communicates
-entirely in the clear, as does the modern implementation of Bitcoin Core
-at the time of writing.
+비트코인의((("Bitcoin network", "encryption")))((("encryption")))((("Tor transport"))) 새 사용자 대부분은 비트코인 노드의 네트워크 통신이 암호화되어
+있으리라 짐작합니다. 하지만 사실 비트코인의 최초 구현은 통신을 전부 평문으로 했고, 이 글을 쓰는 시점의
+최신 비트코인 코어 구현도 마찬가지입니다.
 
-As a way to increase the privacy and security of the Bitcoin P2P
-network, there is a solution that provides encryption of the
-communications: _Tor transport_.
+비트코인 P2P 네트워크의 프라이버시와 보안을 높이는 방법으로, 통신을 암호화해 주는 해법이 있습니다.
+_Tor 전송_ 입니다.
 
-Tor, which
-stands for _The Onion Routing network_, is a software project and
-network that offers encryption and encapsulation of data through
-randomized network paths that offer anonymity, untraceability, and
-privacy.
+Tor는 _The Onion Routing network_ 의 약자로, 무작위 네트워크 경로를 통해 데이터를 암호화하고 캡슐화해
+익명성과 추적 불가능성, 프라이버시를 제공하는 소프트웨어 프로젝트이자 네트워크입니다.
 
-Bitcoin Core ((("Bitcoin Core", "Tor transport")))offers several configuration options that allow you to run
-a Bitcoin node with its traffic transported over the Tor network. In
-addition, Bitcoin Core can also offer a Tor hidden service allowing
-other Tor nodes to connect to your node directly over Tor.
+비트코인 코어는 ((("Bitcoin Core", "Tor transport")))트래픽을 Tor 네트워크로 전송하며 비트코인 노드를 운영할 수 있게
+해주는 여러 설정 옵션을 제공합니다. 또한 비트코인 코어는 Tor 히든 서비스를 제공해, 다른 Tor 노드가 Tor를
+통해 여러분의 노드에 직접 연결하게 할 수도 있습니다.
 
-As of Bitcoin Core version 0.12, a node will offer a hidden Tor service
-automatically if it is able to connect to a local Tor service. If you
-have Tor installed and the Bitcoin Core process runs as a user with
-adequate permissions to access the Tor authentication cookie, it should
-work automatically. Use the +debug+ flag to turn on Bitcoin Core's
-debugging for the Tor service like this:
+비트코인 코어 0.12 버전부터는 로컬 Tor 서비스에 연결할 수 있으면 노드가 자동으로 Tor 히든 서비스를
+제공합니다. Tor가 설치되어 있고 비트코인 코어 프로세스가 Tor 인증 쿠키에 접근할 수 있는 충분한 권한을 가진
+사용자로 실행된다면 자동으로 동작할 것입니다. 다음과 같이 +debug+ 플래그로 Tor 서비스에 대한 비트코인
+코어의 디버깅을 켤 수 있습니다.
 
 ----
 $ bitcoind --daemon --debug=tor
 ----
 
-You should see ++tor: ADD_ONION successful++ in the logs, indicating that
-Bitcoin Core has added a hidden service to the Tor network.
+로그에 ++tor: ADD_ONION successful++ 이 보이면 비트코인 코어가 Tor 네트워크에 히든 서비스를 추가한
+것입니다.
 
-You can find more instructions on running Bitcoin Core as a Tor hidden
-service in the Bitcoin Core documentation (_docs/tor.md_) and various
-online tutorials.
+비트코인 코어를 Tor 히든 서비스로 운영하는 방법에 대한 더 자세한 안내는 비트코인 코어 문서(_docs/tor.md_)와
+여러 온라인 튜토리얼에서 찾을 수 있습니다.
 
 [role="less_space pagebreak-before"]
 [[mempool]]
-=== Mempools and Orphan Pools
+=== 멤풀과 고아 풀
 
-Almost((("Bitcoin network", "mempools")))((("Bitcoin network", "orphan pools")))((("memory pool")))((("orphan pools")))((("unconfirmed transactions")))((("transactions", "unconfirmed"))) every node on the Bitcoin
-network maintains a temporary list of unconfirmed transactions called
-the _memory pool_ (_mempool_). Nodes use this pool
-to keep track of transactions that are known to the network but are not
-yet included in the blockchain, called _unconfirmed transactions_.
+비트코인((("Bitcoin network", "mempools")))((("Bitcoin network", "orphan pools")))((("memory pool")))((("orphan pools")))((("unconfirmed transactions")))((("transactions", "unconfirmed"))) 네트워크의 거의 모든 노드는 _메모리 풀_ (_멤풀_)이라는,
+미확인 트랜잭션의 임시 목록을 유지합니다. 노드는 이 풀로 네트워크에는 알려졌지만 아직 블록체인에 포함되지
+않은 트랜잭션을 추적하며, 이를 _미확인 트랜잭션_ 이라고 합니다.
 
-As unconfirmed transactions are received and verified, they are added to the
-mempool and relayed to the neighboring nodes to propagate on
-the network.
+미확인 트랜잭션을 받아 검증하면 멤풀에 추가하고 이웃 노드로 중계해 네트워크에 퍼뜨립니다.
 
-Some node
-implementations also maintain a separate pool of orphaned transactions.
-If a transaction's inputs refer to a transaction that is not yet known,
-such as a missing parent, the orphan transaction will be stored
-temporarily in the orphan pool until the parent transaction arrives.
+일부 노드 구현은 고아 트랜잭션을 위한 별도의 풀도 유지합니다. 어떤 트랜잭션의 입력이 아직 알려지지 않은
+트랜잭션, 이를테면 빠진 부모를 참조한다면, 그 고아 트랜잭션은 부모 트랜잭션이 도착할 때까지 고아 풀에
+임시로 보관됩니다.
 
-When a transaction is added to the mempool, the orphan pool is
-checked for any orphans that reference this transaction's outputs (its
-children). Any matching orphans are then validated. If valid, they are
-removed from the orphan pool and added to the mempool,
-completing the chain that started with the parent transaction. In light
-of the newly added transaction, which is no longer an orphan, the
-process is repeated recursively looking for any further descendants
-until no more descendants are found. Through this process, the arrival
-of a parent transaction triggers a cascade reconstruction of an entire
-chain of interdependent transactions by reuniting the orphans with
-their parents all the way down the chain.
+어떤 트랜잭션이 멤풀에 추가되면, 그 트랜잭션의 출력을 참조하는 고아(즉 그 자식)가 있는지 고아 풀을
+확인합니다. 일치하는 고아가 있으면 검증합니다. 유효하면 고아 풀에서 제거해 멤풀에 추가함으로써 부모
+트랜잭션에서 시작된 사슬을 완성합니다. 이제 고아가 아니게 된 그 새 트랜잭션에 대해서도 같은 과정을
+재귀적으로 반복하며 더 이상 후손이 없을 때까지 후손을 찾습니다. 이 과정을 통해 부모 트랜잭션 하나가
+도착하면, 사슬을 따라 내려가며 고아들을 각자의 부모와 다시 이어 붙여 서로 의존하는 트랜잭션 사슬 전체를
+연쇄적으로 복원하게 됩니다.
 
-Some implementations of Bitcoin also maintain a UTXO
-database, which is the set of all unspent outputs on the
-blockchain. This represents a different set of data from the mempool. Unlike the
-mempool and orphan pools, the UTXO database
-contains millions of entries of unspent transaction outputs,
-everything that is unspent from all the way back to the genesis block.
-The UTXO database is stored as a
-table on persistent storage.
+일부 비트코인 구현은 블록체인의 모든 미사용 출력의 집합인 UTXO 데이터베이스도 유지합니다. 이는 멤풀과는
+다른 데이터 집합입니다. 멤풀이나 고아 풀과 달리 UTXO 데이터베이스에는 제네시스 블록까지 거슬러 올라가는
+모든 미사용 트랜잭션 출력 수백만 건이 들어 있습니다. UTXO 데이터베이스는 영속 저장소에 테이블로
+저장됩니다.
 
-Whereas the mempool and orphan pools represent a single node's local
-perspective and might vary significantly from node to node depending
-on when the node was started or restarted, the UTXO database represents
-the emergent consensus of the network and therefore will not usually
-vary between nodes.
+멤풀과 고아 풀이 개별 노드의 로컬 관점을 나타내며 노드가 언제 시작되거나 재시작되었는지에 따라 노드마다
+크게 다를 수 있는 반면, UTXO 데이터베이스는 네트워크에서 창발한 합의를 나타내므로 보통 노드 사이에 차이가
+없습니다.
 
-Now that we have an understanding of many of the data types and
-structures used by nodes and clients to send data across the Bitcoin
-network, it's time to look at the software that's responsible for
-keeping the network secure and operational.
+이제 노드와 클라이언트가 비트코인 네트워크로 데이터를 보내는 데 쓰는 여러 데이터 유형과 구조를 이해했으니,
+네트워크를 안전하게 유지하고 돌아가게 하는 소프트웨어를 살펴볼 차례입니다.
