@@ -22,7 +22,7 @@
 ## 3단계 — 키·지갑·트랜잭션
 
 - [x] `ch04_keys.adoc`
-- [ ] `ch05_wallets.adoc`
+- [x] `ch05_wallets.adoc`
 - [ ] `ch06_transactions.adoc`
 
 ## 4단계 — 나머지 본문
