@@ -1,57 +1,41 @@
 [[c_signatures]]
-== Digital Signatures
+== 디지털 서명
 
-Two ((("digital signatures", "schnorr signature algorithm")))((("schnorr signature algorithm")))((("digital signatures", "ECDSA")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)")))((("transactions", "signatures", see="digital signatures")))signature algorithms are currently
-used in Bitcoin, the _schnorr signature algorithm_ and the _Elliptic
-Curve Digital Signature Algorithm_ (_ECDSA_).
-These algorithms are used for digital signatures based on elliptic
-curve private/public key pairs, as described in <<elliptic_curve>>.
-They are used for spending segwit v0 P2WPKH outputs, segwit v1 P2TR
-keypath spending, and by the script functions +OP_CHECKSIG+,
-+OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+, [.keep-together]#+OP_CHECKMULTISIGVERIFY+,# and
-+OP_CHECKSIGADD+.
-Any time one of those is executed, a signature must be
-provided.
+((("digital signatures", "schnorr signature algorithm")))((("schnorr signature algorithm")))((("digital signatures", "ECDSA")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)")))((("transactions", "signatures", see="digital signatures")))현재 비트코인에서는 _슈노르 서명 알고리즘_ 과 _타원곡선 디지털 서명
+알고리즘_ (_ECDSA_)이라는 두 가지 서명 알고리즘이 쓰입니다. 이 알고리즘들은
+<<elliptic_curve>>에서 설명한 타원곡선 비밀키/공개키 쌍에 기반한 디지털 서명에 사용됩니다.
+세그윗 v0 P2WPKH 출력을 쓸 때, 세그윗 v1 P2TR 키패스 지출을 할 때, 그리고 스크립트 함수
++OP_CHECKSIG+, +OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+,
+[.keep-together]#+OP_CHECKMULTISIGVERIFY+,# +OP_CHECKSIGADD+ 에서 쓰입니다. 이들 중 하나가
+실행될 때마다 서명을 제공해야 합니다.
 
-A digital signature((("digital signatures", "purpose of"))) serves
-three purposes in Bitcoin. First, the
-signature proves that the controller of a private key, who is by
-implication the owner of the funds, has _authorized_ the spending of
-those funds. Secondly, the proof of authorization is _undeniable_
-(nonrepudiation). Thirdly, that the authorized transaction cannot be
-changed by unauthenticated third parties--that its _integrity_ is
-intact.
+디지털 서명은((("digital signatures", "purpose of"))) 비트코인에서 세 가지 목적을 수행합니다. 첫째, 서명은 비밀키를
+통제하는 사람, 즉 사실상 그 자금의 소유자가 그 자금의 지출을 _승인했다_ 는 것을 증명합니다.
+둘째, 그 승인의 증명은 _부인할 수 없습니다_ (부인 방지). 셋째, 승인된 그 트랜잭션을 인증되지
+않은 제삼자가 바꿀 수 없다는 것, 즉 _무결성_ 이 온전하다는 것을 보장합니다.
 
 [NOTE]
 ====
-Each transaction input and any signatures it may contain is _completely_
-independent of any other input or signature. Multiple parties can
-collaborate to construct transactions and sign only one input each.
-Several protocols use this fact to create multiparty transactions for
-privacy.
+각 트랜잭션 입력과 거기 담길 수 있는 서명은 다른 어떤 입력이나 서명과도 _완전히_
+독립적입니다. 여러 당사자가 협력해 트랜잭션을 구성하면서 각자 입력 하나씩만 서명할 수
+있습니다. 여러 프로토콜이 이 점을 활용해 프라이버시를 위한 다자간 트랜잭션을 만듭니다.
 ====
 
-In this chapter we look at how digital signatures work and how they can
-present proof of control of a private key without revealing that private
-key.
+이 장에서는 디지털 서명이 어떻게 작동하는지, 그리고 비밀키를 드러내지 않고도 그 키를 통제한다는
+증명을 어떻게 제시할 수 있는지 살펴봅니다.
 
 [role="less_space pagebreak-before"]
-=== How Digital Signatures Work
+=== 디지털 서명의 작동 방식
 
-A digital signature
-consists of two parts. The first part is an algorithm for creating a
-signature for a message (the transaction) using a private key (the
-signing key). The second part is an algorithm
-that allows anyone to verify the signature, given also the message and the corresponding
-public key.
+디지털 서명은 두 부분으로 이루어집니다. 첫 번째 부분은 비밀키(서명 키)로 메시지(트랜잭션)에
+대한 서명을 만드는 알고리즘입니다. 두 번째 부분은 메시지와 대응하는 공개키가 함께 주어졌을 때
+누구나 그 서명을 검증할 수 있게 하는 알고리즘입니다.
 
-==== Creating a Digital Signature
+==== 디지털 서명 만들기
 
-In Bitcoin's((("digital signatures", "creating"))) use of digital signature algorithms, the "message" being
-signed is the transaction, or more accurately a hash of a specific
-subset of the data in the transaction, ((("commitment hash")))called the _commitment hash_ (see
-<<sighash_types>>). The
-signing key is the user's private key. The result is the signature:
+비트코인이((("digital signatures", "creating"))) 디지털 서명 알고리즘을 쓸 때 서명되는 "메시지"는 트랜잭션이며, 더
+정확히 말하면 트랜잭션 데이터의 특정 부분집합에 대한 해시인 ((("commitment hash")))_커밋먼트 해시_ 입니다
+(<<sighash_types>> 참고). 서명 키는 사용자의 비밀키입니다. 그 결과가 서명입니다.
 
 [latexmath]
 ++++
@@ -60,815 +44,600 @@ Sig = F_{sig}(F_{hash}(m), x)
 \end{equation}
 ++++
 
-where:
+여기서
 
-* _x_ is the signing private key
-* _m_ is the message to sign, the commitment hash (such as parts of a transaction)
-* _F_~_hash_~ is the hashing function
-* _F_~_sig_~ is the signing algorithm
-* _Sig_ is the resulting signature
+* _x_ 는 서명에 쓰는 비밀키
+* _m_ 은 서명할 메시지, 즉 커밋먼트 해시(트랜잭션의 일부 등)
+* _F_~_hash_~ 는 해시 함수
+* _F_~_sig_~ 는 서명 알고리즘
+* _Sig_ 는 그 결과인 서명
 
-You can find more details on the mathematics of schnorr and ECDSA signatures in <<schnorr_signatures>>
-and <<ecdsa_signatures>>.
+슈노르 서명과 ECDSA 서명의 수학에 대한 자세한 내용은 <<schnorr_signatures>>와
+<<ecdsa_signatures>>에서 볼 수 있습니다.
 
-In both schnorr and ECDSA signatures, the function _F_~_sig_~ produces a signature +Sig+ that is composed of
-two values.  There are differences between the two values in the
-different algorithms, which we'll explore later. After the two values
-are calculated, they are serialized into a byte stream.  For ECDSA
-signatures, the encoding uses an international standard encoding scheme
-called the
-_Distinguished Encoding Rules_, or _DER_.  For schnorr signatures, a
-simpler serialization format is used.
+슈노르 서명과 ECDSA 서명 모두에서 함수 _F_~_sig_~ 는 두 개의 값으로 이루어진 서명 +Sig+ 를
+만들어냅니다. 두 알고리즘에서 이 두 값에는 차이가 있는데, 뒤에서 살펴봅니다. 두 값이 계산되고
+나면 바이트 스트림으로 직렬화됩니다. ECDSA 서명에서는 _구별 부호화 규칙(Distinguished Encoding
+Rules)_, 줄여서 _DER_ 이라는 국제 표준 인코딩 방식을 씁니다. 슈노르 서명에서는 더 단순한
+직렬화 형식을 씁니다.
 
-==== Verifying the Signature
+==== 서명 검증하기
 
-The((("digital signatures", "verifying")))((("verifying", "digital signatures"))) signature verification algorithm takes the message (a hash of parts of the transaction and related data), the signer's public key and the signature, and returns ++TRUE++ if the signature is valid for this message and public key.
+((("digital signatures", "verifying")))((("verifying", "digital signatures")))서명 검증 알고리즘은 메시지(트랜잭션의 일부와 관련 데이터의 해시)와 서명자의 공개키, 그리고 서명을 입력받아, 그 서명이 이 메시지와 공개키에 대해 유효하면 ++TRUE++ 를 돌려줍니다.
 
-To verify the signature, one must have the signature, the serialized
-transaction, some data about the output being spent, and the public key
-that corresponds to the private key used to create the signature.
-Essentially, verification of a signature means "Only the controller of
-the private key that generated this public key could have produced this
-signature on this transaction."
-
+서명을 검증하려면 서명과 직렬화된 트랜잭션, 쓰이는 출력에 대한 일부 데이터, 그리고 그 서명을
+만드는 데 쓰인 비밀키에 대응하는 공개키가 있어야 합니다. 본질적으로 서명을 검증한다는 것은
+"이 공개키를 만들어낸 비밀키를 통제하는 사람만이 이 트랜잭션에 대해 이 서명을 만들어낼 수
+있었다"는 뜻입니다.
 [[sighash_types]]
-==== Signature Hash Types (SIGHASH)
+==== 서명 해시 유형(SIGHASH)
 
-Digital signatures((("digital signatures", "SIGHASH flags", id="digital-signature-sighash")))((("SIGHASH flags", id="sighash"))) apply to messages,
-which in the case of Bitcoin, are the transactions themselves. The
-signature proves a _commitment_ by the signer to specific transaction
-data. In the simplest form, the signature applies to almost the entire
-transaction, thereby committing to all the inputs, outputs, and other
-transaction fields. However, a signature can commit to only a subset of
-the data in a transaction, which is useful for a number of scenarios as
-we will see in this section.
+디지털 서명은((("digital signatures", "SIGHASH flags", id="digital-signature-sighash")))((("SIGHASH flags", id="sighash"))) 메시지에 적용되며, 비트코인에서 그 메시지는 트랜잭션 자체입니다.
+서명은 서명자가 특정 트랜잭션 데이터에 _커밋_ 했음을 증명합니다. 가장 단순한 형태에서 서명은
+트랜잭션 거의 전체에 적용되어 모든 입력과 출력, 그 밖의 트랜잭션 필드에 커밋합니다. 하지만
+서명이 트랜잭션 데이터의 일부에만 커밋하게 할 수도 있으며, 이 절에서 보듯 여러 상황에서
+유용합니다.
 
-Bitcoin signatures have a way of indicating which
-part of a transaction's data is included in the hash signed by the
-private key using a +SIGHASH+ flag. The +SIGHASH+ flag is a single byte
-that is appended to the signature. Every signature has either an
-explicit or implicit +SIGHASH+ flag,
-and the flag can be different from input to input. A transaction with
-three signed inputs may have three signatures with different +SIGHASH+
-flags, each signature signing (committing) to different parts of the
-transaction.
+비트코인 서명에는 +SIGHASH+ 플래그로 트랜잭션 데이터 중 어느 부분이 비밀키로 서명되는 해시에
+들어가는지 나타내는 방법이 있습니다. +SIGHASH+ 플래그는 서명 뒤에 붙는 1바이트입니다. 모든
+서명에는 명시적이든 암묵적이든 +SIGHASH+ 플래그가 있으며, 그 플래그는 입력마다 다를 수
+있습니다. 서명된 입력이 셋인 트랜잭션에는 서로 다른 +SIGHASH+ 플래그를 가진 서명이 셋 있을 수
+있고, 각 서명은 트랜잭션의 서로 다른 부분에 서명(커밋)합니다.
 
-Remember, each input may contain one or more signatures. As
-a result, an input may have signatures
-with different +SIGHASH+ flags that commit to different parts of the
-transaction. Note also that Bitcoin transactions
-may contain inputs from different "owners," who may sign only one input
-in a partially constructed transaction, collaborating with
-others to gather all the necessary signatures to make a valid
-transaction. Many of the +SIGHASH+ flag types only make sense if you
-think of multiple participants collaborating outside the Bitcoin network
-and updating a partially signed transaction.
+각 입력에는 서명이 하나 이상 들어갈 수 있다는 점을 기억하세요. 그래서 한 입력 안에 트랜잭션의
+서로 다른 부분에 커밋하는, 서로 다른 +SIGHASH+ 플래그를 가진 서명들이 있을 수 있습니다. 또한
+비트코인 트랜잭션에는 서로 다른 "소유자"의 입력이 들어갈 수 있는데, 그들은 부분적으로 구성된
+트랜잭션에서 자기 입력 하나만 서명하고 다른 사람들과 협력해 유효한 트랜잭션을 만드는 데 필요한
+서명을 모두 모을 수 있습니다. +SIGHASH+ 플래그 유형 중 상당수는 여러 참여자가 비트코인 네트워크
+바깥에서 협력하며 부분 서명된 트랜잭션을 갱신하는 상황을 떠올려야 비로소 말이 됩니다.
 
-There are three +SIGHASH+ flags: +ALL+, +NONE+, and +SINGLE+, as shown
-in <<sighash_types_and_their>>.
++SIGHASH+ 플래그는 +ALL+, +NONE+, +SINGLE+ 세 가지이며 <<sighash_types_and_their>>에
+나타냈습니다.
 
 ++++
 <table id="sighash_types_and_their">
 <caption>
-<span class="plain"><code>SIGHASH</code></span> types and their meanings</caption>
+<span class="plain"><code>SIGHASH</code></span> 유형과 그 의미</caption>
 <thead>
 <tr>
-<th><code>SIGHASH</code> flag</th>
-<th>Value</th>
-<th>Description</th>
+<th><code>SIGHASH</code> 플래그</th>
+<th>값</th>
+<th>설명</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><p><code>ALL</code></p></td>
 <td><p><code>0x01</code></p></td>
-<td><p>Signature applies to all inputs and outputs</p></td>
+<td><p>서명이 모든 입력과 모든 출력에 적용됨</p></td>
 </tr>
 <tr>
 <td><p><code>NONE</code></p></td>
 <td><p><code>0x02</code></p></td>
-<td><p>Signature applies to all inputs, none of the outputs</p></td>
+<td><p>서명이 모든 입력에 적용되고 출력에는 적용되지 않음</p></td>
 </tr>
 <tr>
 <td><p><code>SINGLE</code></p></td>
 <td><p><code>0x03</code></p></td>
-<td><p>Signature applies to all inputs but only the one output with the same index number as the signed input</p></td>
+<td><p>서명이 모든 입력과, 서명된 입력과 같은 인덱스 번호를 가진 출력 하나에만 적용됨</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-In addition, there is a modifier flag, +SIGHASH_ANYONECANPAY+, which can
-be combined with each of the preceding flags. When +ANYONECANPAY+ is
-set, only one input is signed, leaving the rest (and their sequence
-numbers) open for modification. The +ANYONECANPAY+ has the value +0x80+
-and is applied by bitwise OR, resulting in the combined flags as shown
-in <<sighash_types_with_modifiers>>.
+여기에 더해 +SIGHASH_ANYONECANPAY+ 라는 수정자 플래그가 있는데, 앞의 각 플래그와 조합할 수
+있습니다. +ANYONECANPAY+ 가 설정되면 입력 하나만 서명되고 나머지(그리고 그 시퀀스 번호)는
+수정할 수 있도록 열린 채로 남습니다. +ANYONECANPAY+ 의 값은 +0x80+ 이며 비트 OR로 적용되어
+<<sighash_types_with_modifiers>>와 같은 조합 플래그가 됩니다.
 
 [role="less_space pagebreak-before"]
 ++++
 <table id="sighash_types_with_modifiers">
 <caption>
-<span class="plain"><code>SIGHASH</code></span> types with modifiers and their meanings</caption>
+수정자가 붙은 <span class="plain"><code>SIGHASH</code></span> 유형과 그 의미</caption>
 <thead>
 <tr>
-<th><code>SIGHASH</code> flag</th>
-<th>Value</th>
-<th>Description</th>
+<th><code>SIGHASH</code> 플래그</th>
+<th>값</th>
+<th>설명</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><p><code>ALL|ANYONECANPAY</code></p></td>
 <td><p><code>0x81</code></p></td>
-<td><p>Signature applies to one input and all outputs</p></td>
+<td><p>서명이 입력 하나와 모든 출력에 적용됨</p></td>
 </tr>
 <tr>
 <td><p><code>NONE|ANYONECANPAY</code></p></td>
 <td><p><code>0x82</code></p></td>
-<td><p>Signature applies to one input, none of the outputs</p></td>
+<td><p>서명이 입력 하나에 적용되고 출력에는 적용되지 않음</p></td>
 </tr>
 <tr>
 <td><p><code>SINGLE|ANYONECANPAY</code></p></td>
 <td><p><code>0x83</code></p></td>
-<td><p>Signature applies to one input and the output with the same index number</p></td>
+<td><p>서명이 입력 하나와 같은 인덱스 번호를 가진 출력에 적용됨</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-The way +SIGHASH+ flags are applied during signing and verification is
-that a copy of the transaction is made and certain fields within are
-either omitted or truncated (set to zero length and emptied). The resulting transaction is
-serialized. The +SIGHASH+ flag is included in the serialized
-transaction data and the result is hashed. The hash digest itself is the "message"
-that is signed. Depending on which +SIGHASH+ flag is used, different
-parts of the transaction are included.
-By including the
-+SIGHASH+ flag itself, the signature commits the
-+SIGHASH+ type as well, so it can't be changed (e.g., by a miner).
+서명과 검증 과정에서 +SIGHASH+ 플래그가 적용되는 방식은, 트랜잭션의 사본을 만든 뒤 그 안의
+특정 필드를 생략하거나 잘라내는(길이를 0으로 만들어 비우는) 것입니다. 그렇게 만들어진 트랜잭션을
+직렬화합니다. +SIGHASH+ 플래그도 직렬화된 트랜잭션 데이터에 포함되고 그 결과를 해시합니다. 그
+해시 다이제스트 자체가 서명되는 "메시지"입니다. 어떤 +SIGHASH+ 플래그를 쓰느냐에 따라 트랜잭션의
+서로 다른 부분이 포함됩니다. +SIGHASH+ 플래그 자체를 포함시킴으로써 서명은 +SIGHASH+ 유형에도
+커밋하게 되고, 따라서 (채굴자 등이) 그것을 바꿀 수 없습니다.
 
-In
-<<serialization_of_signatures_der>>, we will see that the last part of the
-DER-encoded signature was +01+, which is the +SIGHASH_ALL+ flag for ECDSA signatures. This
-locks the transaction data, so Alice's signature is committing to the state
-of all inputs and outputs. This is the most common signature form.
+<<serialization_of_signatures_der>>에서 보겠지만 DER로 인코딩된 서명의 마지막 부분은 +01+
+이었는데, 이것이 ECDSA 서명의 +SIGHASH_ALL+ 플래그입니다. 이는 트랜잭션 데이터를 잠그므로,
+앨리스의 서명은 모든 입력과 출력의 상태에 커밋하는 것입니다. 이것이 가장 흔한 서명 형태입니다.
 
-Let's look at some of the other +SIGHASH+ types and how they can be used
-in practice:
+다른 +SIGHASH+ 유형 몇 가지와 그것이 실제로 어떻게 쓰일 수 있는지 봅시다.
 
-+ALL|ANYONECANPAY+ :: This ((("crowdfunding")))construction can be used to make a
-"crowdfunding&#x201d;-style transaction. Someone attempting to raise
-funds can construct a transaction with a single output. The single
-output pays the "goal" amount to the fundraiser. Such a transaction is
-obviously not valid, as it has no inputs. However, others can now amend
-it by adding an input of their own as a donation. They sign their own
-input with +ALL|ANYONECANPAY+. Unless enough inputs are gathered to
-reach the value of the output, the transaction is invalid. Each donation
-is a "pledge," which cannot be collected by the fundraiser until the
-entire goal amount is raised.  Unfortunately, this protocol can be
-circumvented by the fundraiser adding an input of their own (or from
-someone who lends them funds), allowing them to collect the donations
-even if they haven't reached the specified value.
++ALL|ANYONECANPAY+ :: 이 ((("crowdfunding")))구성은 "크라우드펀딩" 방식의 트랜잭션을 만드는 데 쓸 수
+있습니다. 자금을 모으려는 사람이 출력 하나짜리 트랜잭션을 구성합니다. 그 유일한 출력은 모금자에게
+"목표" 금액을 지불합니다. 이런 트랜잭션은 입력이 없으므로 당연히 유효하지 않습니다. 하지만 이제
+다른 사람들이 자기 입력을 기부로 추가해 이를 보완할 수 있습니다. 그들은 자기 입력을
++ALL|ANYONECANPAY+ 로 서명합니다. 출력의 값에 도달할 만큼 입력이 모이기 전까지 그 트랜잭션은
+유효하지 않습니다. 각 기부는 "약정"이며, 목표 금액 전체가 모이기 전까지 모금자가 가져갈 수
+없습니다. 안타깝게도 이 프로토콜은 모금자가 자기 입력(또는 자금을 빌려준 사람의 입력)을 추가하는
+방식으로 우회할 수 있어, 지정한 금액에 도달하지 않아도 기부금을 가져갈 수 있습니다.
 
-+NONE+ :: This construction can be used to create a "bearer check" or
-"blank check" of a specific amount. It commits to all inputs but allows
-the outputs to be changed. Anyone can write their own
-Bitcoin address into the output script.
-By itself, this allows any miner to change
-the output destination and claim the funds for themselves, but if other
-required signatures in the transaction use +SIGHASH_ALL+ or another type
-that commits to the output, it allows those spenders to change the
-destination without allowing any third parties (like miners) to modify
-the outputs.
++NONE+ :: 이 구성은 특정 금액의 "소지자 수표"나 "백지 수표"를 만드는 데 쓸 수 있습니다. 모든
+입력에 커밋하지만 출력은 바꿀 수 있게 합니다. 누구나 출력 스크립트에 자기 비트코인 주소를 써넣을
+수 있습니다. 이것만으로는 어떤 채굴자든 출력 목적지를 바꿔 자금을 가로챌 수 있지만, 그 트랜잭션에
+필요한 다른 서명들이 +SIGHASH_ALL+ 이나 출력에 커밋하는 다른 유형을 쓴다면, 지출자들은 목적지를
+바꿀 수 있으면서도 (채굴자 같은) 제삼자는 출력을 수정하지 못하게 됩니다.
 
-+NONE|ANYONECANPAY+ :: This construction can be used to build a "dust
-collector." Users who have tiny UTXOs in their wallets can't spend these
-without the cost in fees exceeding the value of the UTXO; see
-<<uneconomical_outputs>>. With this type
-of signature, the uneconomical UTXOs can be donated for anyone to aggregate and
-spend whenever they want.
++NONE|ANYONECANPAY+ :: 이 구성은 "더스트 수집기"를 만드는 데 쓸 수 있습니다. 지갑에 아주 작은
+UTXO를 가진 사용자는 수수료 비용이 그 UTXO의 값을 넘어서기 때문에 그것을 쓸 수 없습니다.
+<<uneconomical_outputs>>를 참고하세요. 이 유형의 서명을 쓰면 비경제적 UTXO를 기부해 누구든 원할
+때 모아서 쓸 수 있게 할 수 있습니다.
 
-There are some proposals to modify or
-expand the +SIGHASH+ system.  The most widely discussed proposal as of
-this writing is ((("BIP118 SIGHASH flags")))BIP118, which proposes to add two
-new sighash flags.  A signature using +SIGHASH_ANYPREVOUT+ would not
-commit to an input's outpoint field, allowing it to be used to spend any
-previous output for a particular witness program.  For example, if Alice
-receives two outputs for the same amount to the same witness program
-(e.g., requiring a single signature from her wallet), a
-+SIGHASH_ANYPREVOUT+ signature for spending either one of those outputs
-could be copied and used to spend the other output to the same
-destination.
++SIGHASH+ 체계를 수정하거나 확장하자는 제안이 몇 가지 있습니다. 이 글을 쓰는 시점에 가장 널리
+논의되는 제안은 ((("BIP118 SIGHASH flags")))BIP118로, 새로운 sighash 플래그 두 개를 추가하자는 것입니다.
++SIGHASH_ANYPREVOUT+ 를 쓰는 서명은 입력의 아웃포인트 필드에 커밋하지 않으므로, 특정 위트니스
+프로그램에 대한 어떤 이전 출력이든 쓰는 데 사용할 수 있습니다. 예를 들어 앨리스가 같은 위트니스
+프로그램(이를테면 자기 지갑의 서명 하나를 요구하는)으로 같은 금액의 출력 두 개를 받았다면, 그중
+하나를 쓰기 위한 +SIGHASH_ANYPREVOUT+ 서명을 복사해 같은 목적지로 다른 출력을 쓰는 데 쓸 수
+있습니다.
 
-A signature using +SIGHASH_ANYPREVOUTANYSCRIPT+ would not
-commit to the outpoint, the amount, the witness program, or the
-specific leaf in the taproot merkle tree (script tree), allowing it to spend any previous output that the signature could satisfy.  For example, if Alice received two
-outputs for different amounts and different witness programs (e.g., one
-requiring a single signature and another requiring her signature plus some
-other data), a +SIGHASH_ANYPREVOUTANYSCRIPT+ signature for spending
-either one of those outputs could be copied and used to spend the other
-output to the same destination (assuming the extra data for the second
-output was known).
++SIGHASH_ANYPREVOUTANYSCRIPT+ 를 쓰는 서명은 아웃포인트나 금액, 위트니스 프로그램, 탭루트 머클
+트리(스크립트 트리)의 특정 잎에 커밋하지 않으므로, 그 서명이 충족할 수 있는 어떤 이전 출력이든
+쓸 수 있습니다. 예를 들어 앨리스가 서로 다른 금액과 서로 다른 위트니스 프로그램(하나는 서명
+하나를 요구하고 다른 하나는 그의 서명에 더해 다른 데이터를 요구하는)으로 출력 두 개를 받았다면,
+그중 하나를 쓰기 위한 +SIGHASH_ANYPREVOUTANYSCRIPT+ 서명을 복사해 같은 목적지로 다른 출력을
+쓰는 데 쓸 수 있습니다(두 번째 출력에 필요한 추가 데이터를 알고 있다는 전제하에).
 
-The main expected use for the two ++SIGHASH_ANYPREVOUT++ opcodes is improved
-payment channels, such as those used in the Lightning Network (LN), although
-several other uses have been described.
+++SIGHASH_ANYPREVOUT++ 옵코드 둘의 주된 기대 용도는 라이트닝 네트워크(LN)에서 쓰이는 것과 같은
+개선된 결제 채널이지만, 다른 여러 용도도 제시되었습니다.
 
 [NOTE]
 ====
-You will not often see +SIGHASH+ flags presented as an option in a user's
-wallet application.  Simple wallet applications
-sign with [.keep-together]#+SIGHASH_ALL+# flags.  More sophisticated applications, such as
-LN nodes, may use alternative +SIGHASH+ flags, but they
-use protocols that have been extensively reviewed to understand the
-influence of the alternative ((("digital signatures", "SIGHASH flags", startref="digital-signature-sighash")))((("SIGHASH flags", startref="sighash")))flags.
+사용자의 지갑 애플리케이션에서 +SIGHASH+ 플래그가 선택지로 제시되는 일은 흔치 않습니다. 단순한
+지갑 애플리케이션은 [.keep-together]#+SIGHASH_ALL+# 플래그로 서명합니다. LN 노드처럼 더 정교한
+애플리케이션은 다른 +SIGHASH+ 플래그를 쓰기도 하지만, 그 다른 플래그가 어떤 영향을 주는지
+이해하기 위해 폭넓게 검토된 ((("digital signatures", "SIGHASH flags", startref="digital-signature-sighash")))((("SIGHASH flags", startref="sighash")))프로토콜을 사용합니다.
 ====
-
 [[schnorr_signatures]]
-=== Schnorr Signatures
+=== 슈노르 서명
 
-In 1989, ((("digital signatures", "schnorr signature algorithm", id="digital-sigs-schnorr")))((("schnorr signature algorithm", id="schnorr")))Claus Schnorr published a paper describing the signature
-algorithm that's become eponymous with him.  The algorithm isn't
-specific to the elliptic curve cryptography (ECC) that Bitcoin and many
-other applications use, although it is perhaps most strongly associated
-with ECC today.  Schnorr signatures have a number of nice properties:
+1989년 ((("digital signatures", "schnorr signature algorithm", id="digital-sigs-schnorr")))((("schnorr signature algorithm", id="schnorr")))클라우스 슈노르는 자기 이름을 딴 서명 알고리즘을 설명하는 논문을
+발표했습니다. 이 알고리즘은 비트코인과 여러 다른 응용이 쓰는 타원곡선 암호(ECC)에만 국한된
+것은 아니지만, 오늘날 아마 ECC와 가장 강하게 연결되어 있을 것입니다. 슈노르 서명에는 좋은
+성질이 여럿 있습니다.
 
-Provable security::
-  A mathematical ((("digital signatures", "schnorr signature algorithm", "properties of")))((("schnorr signature algorithm", "properties of")))proof of the security of schnorr signatures depends on
-  only the difficulty of solving the Discrete Logarithm Problem (DLP),
-  particularly for elliptic curves (EC) for Bitcoin, and the ability of
-  a hash function (like the SHA256 function used in Bitcoin) to produce
-  unpredictable values, called the random oracle model (ROM).  Other
-  signature algorithms have additional dependencies or require much
-  larger public keys or signatures for equivalent security to
-  ECC-Schnorr (when the threat is defined as classical computers; other
-  algorithms may provide more efficient security against quantum
-  computers).
+증명 가능한 안전성::
+  슈노르 ((("digital signatures", "schnorr signature algorithm", "properties of")))((("schnorr signature algorithm", "properties of")))서명의 안전성에 대한 수학적 증명은 이산로그 문제(DLP), 특히 비트코인의
+  경우 타원곡선(EC)에서의 이산로그 문제를 푸는 어려움과, 해시 함수(비트코인이 쓰는 SHA256
+  함수 같은)가 예측할 수 없는 값을 내놓는 능력에만 의존합니다. 후자를 랜덤 오라클 모델(ROM)
+  이라고 합니다. 다른 서명 알고리즘은 의존하는 것이 더 많거나, ECC-슈노르와 같은 수준의
+  안전성을 얻으려면 훨씬 더 큰 공개키나 서명이 필요합니다(위협을 고전 컴퓨터로 정의했을 때의
+  이야기이며, 양자 컴퓨터에 대해서는 다른 알고리즘이 더 효율적인 안전성을 제공할 수도
+  있습니다).
 
-Linearity::
-  Schnorr signatures have a property that mathematicians ((("linearity")))call
-  _linearity_, which applies to functions with two particular
-  properties.  The first property is that summing together two or more
-  variables and then running a function on that sum will produce the
-  same value as running the function on each of the variables
-  independently and then summing together the results, e.g.,
-  _f(x_ + _y_ + _z)_ == _f(x)_ + _f(y)_ + _f(z)_; this property is((("additivity"))) called
-  _additivity_.  The second property is that multiplying a variable and
-  then running a function on that product will produce the same value as
-  running the function on the variable and then multiplying it by the
-  same amount, e.g., _f(a_ × _x)_ == _a_ × _f(x)_; this property is ((("homogeneity of degree 1")))called
-  _homogeneity of degree 1_.
+선형성::
+  슈노르 서명에는 수학자들이 ((("linearity")))_선형성_ 이라고 부르는 성질이 있는데, 이는 두 가지
+  특정 성질을 가진 함수에 적용됩니다. 첫 번째 성질은 변수 둘 이상을 먼저 더한 뒤 그 합에
+  함수를 적용한 값이, 각 변수에 함수를 따로 적용한 뒤 그 결과들을 더한 값과 같다는 것입니다.
+  예를 들어 _f(x_ + _y_ + _z)_ == _f(x)_ + _f(y)_ + _f(z)_ 이며, 이 성질을
+  ((("additivity")))_가법성_ 이라고 합니다. 두 번째 성질은 변수에 어떤 값을 곱한 뒤 그 곱에 함수를
+  적용한 값이, 변수에 함수를 적용한 뒤 같은 값을 곱한 것과 같다는 것입니다. 예를 들어
+  _f(a_ × _x)_ == _a_ × _f(x)_ 이며, 이 성질을 ((("homogeneity of degree 1")))_1차 동차성_ 이라고 합니다.
 +
-In cryptographic operations, some functions may be private (such
-  as functions involving private keys or secret nonces), so being able
-  to get the same result whether performing an operation inside or
-  outside of a function makes it easy for multiple parties to coordinate
-  and cooperate without sharing their secrets.  We'll see some of the
-  specific benefits of linearity in schnorr signatures in
-  <<schnorr_multisignatures>> and <<schnorr_threshold_signatures>>.
+암호 연산에서 어떤 함수는 비공개일 수 있으므로(비밀키나 비밀 논스가 관여하는 함수 등),
+  연산을 함수 안에서 하든 밖에서 하든 같은 결과를 얻을 수 있다는 점은 여러 당사자가 각자의
+  비밀을 공유하지 않고도 조율하고 협력하기 쉽게 해줍니다. 슈노르 서명에서 선형성이 주는 구체적인
+  이점은 <<schnorr_multisignatures>>와 <<schnorr_threshold_signatures>>에서 살펴봅니다.
 
-Batch verification::
-  When used((("batch verification of digital signatures"))) in a certain way (which Bitcoin does), one consequence of
-  schnorr's linearity is that it's relatively straightforward to verify
-  more than one schnorr signature at the same time in less time than it
-  would take to verify each signature independently.  The more
-  signatures that are verified in a batch, the greater the speed up.
-  For the typical number of signatures in a block, it's possible to
-  batch verify them in about half the amount of time it would take to
-  verify each signature independently.
+일괄 검증::
+  특정 ((("batch verification of digital signatures")))방식으로 쓰면(비트코인이 그렇게 합니다) 슈노르의 선형성이 낳는 결과 중 하나는,
+  둘 이상의 슈노르 서명을 각각 따로 검증할 때보다 더 짧은 시간에 한꺼번에 검증하기가 비교적
+  수월하다는 것입니다. 한 묶음에서 검증하는 서명이 많을수록 속도 향상이 커집니다. 블록 하나에
+  들어가는 통상적인 서명 수라면, 각 서명을 따로 검증할 때의 절반 정도 시간에 일괄 검증할 수
+  있습니다.
 
-Later in this chapter, we'll describe the schnorr signature algorithm
-exactly as it's used in Bitcoin, but we're going to start with a
-simplified version of it and work our way toward the actual protocol in
-stages.
+이 장 뒤에서 비트코인이 실제로 쓰는 그대로의 슈노르 서명 알고리즘을 설명하겠지만, 먼저 단순화한
+형태에서 시작해 단계적으로 실제 프로토콜까지 나아가 보겠습니다.
 
 [role="less_space pagebreak-before"]
-Alice((("digital signatures", "schnorr signature algorithm", "examples of usage")))((("schnorr signature algorithm", "examples of usage"))) starts by choosing a large random number (_x_), which we call her
-_private key_.  She also knows a public point on Bitcoin's elliptic
-curve called the Generator (_G_) (see <<public_key_derivation>>).  Alice uses EC
-multiplication to multiply _G_ by her private key _x_, in which case _x_
-is called a _scalar_ because it scales up _G_.  The result is _xG_,
-which we call Alice's _public key_.  Alice gives her public key to Bob.
-Even though Bob also knows _G_, the DLP prevents Bob from being able to divide _xG_ by _G_ to derive Alice's
-private key.
+앨리스는((("digital signatures", "schnorr signature algorithm", "examples of usage")))((("schnorr signature algorithm", "examples of usage"))) 큰 무작위 수(_x_)를 고르는 것으로 시작하며, 이를 _비밀키_ 라고 합니다.
+앨리스는 또한 생성점(_G_)이라 불리는, 비트코인 타원곡선 위의 공개된 점도 알고 있습니다
+(<<public_key_derivation>> 참고). 앨리스는 EC 곱셈으로 _G_ 에 자기 비밀키 _x_ 를 곱하는데, 이때
+_x_ 는 _G_ 를 배로 늘리므로 _스칼라_ 라고 부릅니다. 그 결과가 _xG_ 이며 앨리스의 _공개키_
+입니다. 앨리스는 자기 공개키를 밥에게 줍니다. 밥도 _G_ 를 알고 있지만, DLP 때문에 _xG_ 를
+_G_ 로 나누어 앨리스의 비밀키를 알아낼 수는 없습니다.
 
-At some later time, Bob wants Alice to identify herself by proving
-that she knows the scalar _x_ for the public key (_xG_) that Bob
-received earlier.  Alice can't give Bob _x_ directly because that would
-allow him to identify as her to other people, so she needs to prove
-her knowledge of _x_ without revealing _x_ to Bob,((("zero-knowledge proof"))) called a
-_zero-knowledge proof_.  For that, we begin the schnorr identity
-process:
+얼마 뒤 밥은 앞서 받은 공개키(_xG_)에 대한 스칼라 _x_ 를 앨리스가 알고 있음을 증명하는 방식으로
+자신의 신원을 밝히기를 원합니다. 앨리스는 _x_ 를 밥에게 그대로 줄 수 없습니다. 그러면 밥이
+다른 사람들에게 앨리스인 척할 수 있기 때문입니다. 그래서 앨리스는 _x_ 를 밥에게 드러내지 않고
+그것을 안다는 것을 증명해야 하는데, 이를 ((("zero-knowledge proof")))_영지식 증명_ 이라고 합니다. 이를 위해
+슈노르 신원 확인 절차를 시작합니다.
 
-1. Alice chooses another large random number (_k_), which we call the
-  _private nonce_.  Again she uses it as a scalar, multiplying it by _G_
-  to produce _kG_, which we call the _public nonce_.  She gives the
-  public nonce to Bob.
+1. 앨리스는 또 다른 큰 무작위 수(_k_)를 고르며, 이를 _비밀 논스_ 라고 합니다. 이번에도 이를
+  스칼라로 써서 _G_ 에 곱해 _kG_ 를 만드는데, 이를 _공개 논스_ 라고 합니다. 앨리스는 공개
+  논스를 밥에게 줍니다.
 
-2. Bob chooses a large random number of his own, _e_, which we call the
-  _challenge scalar_.  We say "challenge" because it's used to challenge
-  Alice to prove that she knows the private key (_x_) for the public key
-  (_xG_) she previously gave Bob; we say "scalar" because it will later
-  be used to multiply an EC point.
+2. 밥은 자기만의 큰 무작위 수 _e_ 를 고르며, 이를 _챌린지 스칼라_ 라고 합니다. "챌린지"라고
+  하는 것은 앨리스가 앞서 밥에게 준 공개키(_xG_)에 대한 비밀키(_x_)를 안다는 것을 증명하도록
+  앨리스에게 도전하는 데 쓰이기 때문이고, "스칼라"라고 하는 것은 나중에 EC 점에 곱해질 것이기
+  때문입니다.
 
-3. Alice now has the numbers (scalars) _x_, _k_, and _e_.  She combines
-  them together to produce a final scalar _s_ using the formula
-  _s_ = _k_ + _ex_.  She gives _s_ to Bob.
+3. 이제 앨리스는 스칼라 _x_, _k_, _e_ 를 가지고 있습니다. 앨리스는 이들을 _s_ = _k_ + _ex_
+  라는 식으로 결합해 최종 스칼라 _s_ 를 만듭니다. 그리고 _s_ 를 밥에게 줍니다.
 
-4. Bob now knows the scalars _s_ and _e_, but not _x_ or _k_.  However,
-  Bob does know _xG_ and _kG_, and he can compute for himself _sG_ and
-  _exG_.  That means he can check the equality of a scaled-up version of
-  the operation Alice performed: [.keep-together]#_sG_ == _kG_ + _exG_.#  If that is equal,
-  then Bob can be sure that Alice knew _x_ when she generated _s_.
+4. 이제 밥은 스칼라 _s_ 와 _e_ 를 알지만 _x_ 나 _k_ 는 모릅니다. 하지만 밥은 _xG_ 와 _kG_ 를
+  알고 있고, _sG_ 와 _exG_ 를 스스로 계산할 수 있습니다. 즉 앨리스가 수행한 연산을 배로 늘린
+  형태의 등식 [.keep-together]#_sG_ == _kG_ + _exG_# 가 성립하는지 확인할 수 있습니다. 성립한다면
+  밥은 앨리스가 _s_ 를 만들 때 _x_ 를 알고 있었다고 확신할 수 있습니다.
 
-.Schnorr Identity Protocol with Integers Instead of Points
+.점 대신 정수로 본 슈노르 신원 확인 프로토콜
 ****
-It might be easier to understand the interactive schnorr identity
-protocol if we create an insecure oversimplification by substituting each of the preceding values (including _G_) with simple integers instead of points on an elliptic curve.
-For example, we'll use the prime numbers starting with 3:
+앞의 값들(_G_ 포함)을 타원곡선 위의 점 대신 단순한 정수로 바꿔 안전하지 않게 지나치게 단순화해
+보면, 대화형 슈노르 신원 확인 프로토콜을 이해하기가 더 쉬울 수 있습니다. 예를 들어 3부터
+시작하는 소수를 써봅시다.
 
-Setup: Alice chooses _x_ = 3 as her private key.  She multiplies it by the
-generator _G_ = 5 to get her public key _xG_ = 15.  She gives Bob 15.
+준비: 앨리스는 비밀키로 _x_ = 3을 고릅니다. 여기에 생성원 _G_ = 5를 곱해 공개키 _xG_ = 15를
+얻습니다. 그리고 밥에게 15를 줍니다.
 
-1. Alice chooses the private nonce _k_ = 7 and generates the public nonce
-  _kG_ = 35.  She gives Bob 35.
+1. 앨리스는 비밀 논스 _k_ = 7을 고르고 공개 논스 _kG_ = 35를 만듭니다. 밥에게 35를 줍니다.
 
-2. Bob chooses _e_ = 11 and gives it to Alice.
+2. 밥은 _e_ = 11을 골라 앨리스에게 줍니다.
 
-3. Alice generates _s_ = 40 = 7 + 11 × 3.  She gives Bob 40.
+3. 앨리스는 _s_ = 40 = 7 + 11 × 3을 만듭니다. 밥에게 40을 줍니다.
 
-4. Bob derives _sG_ = 200 = 40 × 5 and _exG_ = 165 = 11 × 15.  He then
-  verifies that [.keep-together]#200 == 35 + 165.#  Note that this is the same operation
-  that Alice performed, but all of the values have been scaled up by 5
-  (the value of _G_).
+4. 밥은 _sG_ = 200 = 40 × 5와 _exG_ = 165 = 11 × 15를 유도합니다. 그런 다음
+  [.keep-together]#200 == 35 + 165# 인지 검증합니다. 이는 앨리스가 수행한 것과 같은 연산이되
+  모든 값이 5(_G_ 의 값)배로 늘어난 것임에 유의하세요.
 
-Of course, this is an oversimplified example.  When working with simple
-integers, we can divide products by the generator _G_ to get the
-underlying scalar, which isn't secure.  This is why a critical property
-of the elliptic curve cryptography used in Bitcoin is that
-multiplication is easy but division by a point on the curve is impractical.  Also, with numbers
-this small, finding underlying values (or valid substitutes) through
-brute force is easy; the numbers used in Bitcoin are much larger.
+물론 이는 지나치게 단순화한 예입니다. 단순한 정수를 다룰 때는 곱을 생성원 _G_ 로 나누어 그 밑에
+깔린 스칼라를 구할 수 있는데, 이는 안전하지 않습니다. 비트코인이 쓰는 타원곡선 암호의 결정적인
+성질이 곱셈은 쉽지만 곡선 위의 점으로 나누는 것은 현실적으로 불가능하다는 점인 이유가 바로
+여기 있습니다. 또한 이렇게 작은 수로는 무차별 대입으로 밑에 깔린 값(또는 유효한 대체값)을 찾기가
+쉽습니다. 비트코인이 쓰는 수는 훨씬 큽니다.
 ****
 
-Let's discuss some of the features of the interactive schnorr
-identity protocol that make it secure:
+대화형 슈노르 신원 확인 프로토콜을 안전하게 만들어 주는 특징 몇 가지를 살펴봅시다.
 
-The nonce (k)::
-In step 1, ((("digital signatures", "schnorr signature algorithm", "security features")))((("schnorr signature algorithm", "security features")))Alice chooses a number that Bob doesn't
-  know and can't guess and gives him the scaled form of that number,
-  _kG_.  At that point, Bob also already has her public key (_xG_),
-  which is the scaled form of _x_, her private key.  That means when Bob is working on
-  the final equation (_sG_ = _kG_ + _exG_), there are two independent
-  variables that Bob doesn't know (_x_ and _k_).  It's possible to use
-  simple algebra to solve an equation with one unknown variable but not
-  two independent unknown variables, so the presence of Alice's nonce
-  prevents Bob from being able to derive her private key.  It's critical
-  to note that this protection depends on nonces being unguessable in
-  any way.  If there's anything predictable about Alice's nonce, Bob may
-  be able to leverage that into figuring out Alice's private key.  See
-  <<nonce_warning>> for more details.
+논스(k)::
+1단계에서 ((("digital signatures", "schnorr signature algorithm", "security features")))((("schnorr signature algorithm", "security features")))앨리스는 밥이 모르고 추측할 수도 없는 수를 골라, 그 수를 배로 늘린 형태인
+  _kG_ 를 밥에게 줍니다. 그 시점에 밥은 앨리스의 공개키(_xG_)도 이미 가지고 있는데, 이는 그의
+  비밀키 _x_ 를 배로 늘린 형태입니다. 즉 밥이 최종 등식(_sG_ = _kG_ + _exG_)을 다룰 때, 밥이
+  모르는 독립적인 변수가 둘(_x_ 와 _k_) 있다는 뜻입니다. 미지수가 하나인 방정식은 간단한
+  대수로 풀 수 있지만 독립적인 미지수가 둘이면 풀 수 없으므로, 앨리스의 논스가 있다는 것이
+  밥이 그의 비밀키를 알아내지 못하게 막아줍니다. 이 보호가 논스를 어떤 식으로도 추측할 수
+  없다는 데 달려 있다는 점이 결정적으로 중요합니다. 앨리스의 논스에 예측 가능한 구석이 있다면
+  밥이 그것을 지렛대 삼아 앨리스의 비밀키를 알아낼 수도 있습니다. 자세한 내용은
+  <<nonce_warning>>을 참고하세요.
 
-The challenge scalar (e)::
-Bob waits to receive Alice's public nonce
-  and then proceeds in step 2 to give her a number (the challenge
-  scalar) that Alice didn't previously know and couldn't have guessed.
-  It's critical that Bob only give her the challenge scalar after she
-  commits to her public nonce.  Consider what could happen if someone
-  who didn't know _x_ wanted to impersonate Alice, and Bob accidentally
-  gave them the challenge scalar _e_ before they told him the public
-  nonce _kG_.  This allows the impersonator to change parameters on both sides of
-  the equation that Bob will use for verification, _sG_ == _kG_ + _exG_;
-  specifically, they can change both _sG_ and _kG_.  Think about a
-  simplified form of that expression: _x_ = _y_ + _a_.  If you can change both
-  _x_ and _y_, you can cancel out _a_ using _x_++'++ = (_x_ – _a_) + _a_.  Any
-  value you choose for _x_ will now satisfy the equation.  For the
-  actual equation the impersonator simply chooses a random number for _s_, generates
-  _sG_, and then uses EC subtraction to select a _kG_ that equals _kG_ =
-  _sG_ – _exG_.  They give Bob their calculated _kG_ and later their random
-  _sG_, and Bob thinks that's valid because [.keep-together]#_sG_ == (_sG_ – _exG_)# + _exG_.
-  This explains why the order of operations in the protocol is
-  essential: Bob must only give Alice the challenge scalar after Alice
-  has committed to her public nonce.
+챌린지 스칼라(e)::
+밥은 앨리스의 공개 논스를 받을 때까지 기다린 뒤 2단계로 넘어가, 앨리스가 미리 알지 못했고
+  추측할 수도 없었던 수(챌린지 스칼라)를 앨리스에게 줍니다. 밥이 챌린지 스칼라를 앨리스가 공개
+  논스에 커밋한 _뒤에만_ 준다는 점이 결정적으로 중요합니다. _x_ 를 모르는 누군가가 앨리스인
+  척하려 하는데, 밥이 실수로 그들이 공개 논스 _kG_ 를 알려주기 전에 챌린지 스칼라 _e_ 를
+  주었다면 어떤 일이 생길지 생각해 봅시다. 그러면 사칭자는 밥이 검증에 쓸 등식
+  _sG_ == _kG_ + _exG_ 의 양변을 모두 바꿀 수 있게 됩니다. 구체적으로 _sG_ 와 _kG_ 를 둘 다
+  바꿀 수 있습니다. 그 식을 단순화한 형태 _x_ = _y_ + _a_ 를 생각해 보세요. _x_ 와 _y_ 를 둘
+  다 바꿀 수 있다면 _x_++'++ = (_x_ – _a_) + _a_ 로 _a_ 를 상쇄할 수 있습니다. 이제 _x_ 로
+  어떤 값을 고르든 그 등식이 성립합니다. 실제 등식에서 사칭자는 그저 _s_ 로 무작위 수를 골라
+  _sG_ 를 만든 다음, EC 뺄셈으로 _kG_ = _sG_ – _exG_ 가 되는 _kG_ 를 고르면 됩니다. 계산한
+  _kG_ 를 밥에게 주고 나중에 무작위로 고른 _sG_ 를 주면, [.keep-together]#_sG_ == (_sG_ – _exG_)#
+  + _exG_ 이므로 밥은 그것이 유효하다고 여깁니다. 프로토콜에서 연산 순서가 왜 필수적인지 이것이
+  설명해 줍니다. 밥은 앨리스가 공개 논스에 커밋한 뒤에만 챌린지 스칼라를 주어야 합니다.
 
 ++++
 <p class="fix_tracking">
-The interactive identity protocol described here matches part of Claus
-Schnorr's original description, but it lacks two essential features we
-need for the decentralized Bitcoin network.  The first of these is that
-it relies on Bob waiting for Alice to commit to her public nonce and
-then Bob giving her a random challenge scalar.  In Bitcoin, the spender
-of every transaction needs to be authenticated by thousands of Bitcoin
-full nodes—including future nodes that haven't been started yet but
-whose operators will one day want to ensure the bitcoins they receive
-came from a chain of transfers where every transaction was valid.  Any
-Bitcoin node that is unable to communicate with Alice, today or in the
-future, will be unable to authenticate her transaction and will be in
-disagreement with every other node that did authenticate it.  That's not
-acceptable for a consensus system like Bitcoin.  For Bitcoin to work, we
-need a protocol that doesn't require interaction between Alice and each
-node that wants to authenticate her.
+여기서 설명한 대화형 신원 확인 프로토콜은 클라우스 슈노르의 원래 설명 중 일부와 일치하지만,
+탈중앙화된 비트코인 네트워크에 필요한 핵심 특징 두 가지가 빠져 있습니다. 첫째는 밥이 앨리스가
+공개 논스에 커밋하기를 기다렸다가 무작위 챌린지 스칼라를 주는 데 의존한다는 점입니다.
+비트코인에서는 모든 트랜잭션의 지출자가 수천 개의 비트코인 풀 노드에게 인증받아야 합니다. 여기에는
+아직 실행되지도 않았지만 언젠가 그 운영자가 자신이 받는 비트코인이 모든 트랜잭션이 유효했던 이전
+사슬에서 왔는지 확인하고 싶어 할 미래의 노드도 포함됩니다. 지금이든 나중이든 앨리스와 통신할 수
+없는 비트코인 노드는 그의 트랜잭션을 인증할 수 없고, 그것을 인증한 다른 모든 노드와 어긋나게
+됩니다. 비트코인 같은 합의 시스템에서 이는 받아들일 수 없습니다. 비트코인이 작동하려면 앨리스와,
+그를 인증하려는 각 노드 사이의 상호작용이 필요 없는 프로토콜이 필요합니다.
 </p>
 ++++
 
-A simple technique, known as the Fiat-Shamir transform after its
-discoverers, can turn the schnorr interactive identity protocol
-into a noninteractive digital signature scheme.  Recall the importance
-of steps 1 and 2--including that they be performed in order.  Alice must
-commit to an unpredictable nonce; Bob must give Alice an unpredictable
-challenge scalar only after he has received her commitment.  Recall also
-the properties of secure cryptographic hash functions we've used
-elsewhere in this book: it will always produce the same output when
-given the same input but it will produce a value indistinguishable from
-random data when given a different input.
+발견자들의 이름을 딴 피아트-샤미르 변환이라는 간단한 기법으로 대화형 슈노르 신원 확인 프로토콜을
+비대화형 디지털 서명 방식으로 바꿀 수 있습니다. 1단계와 2단계가, 그리고 그 순서가 중요했다는
+점을 떠올려 보세요. 앨리스는 예측할 수 없는 논스에 커밋해야 하고, 밥은 그 커밋먼트를 받은 뒤에만
+앨리스에게 예측할 수 없는 챌린지 스칼라를 주어야 합니다. 이 책의 다른 곳에서 써온 안전한
+암호학적 해시 함수의 성질도 떠올려 보세요. 같은 입력에는 항상 같은 출력을 내놓지만, 다른 입력에는
+무작위 데이터와 구별되지 않는 값을 내놓습니다.
 
-This allows Alice to choose her private nonce, derive her public nonce,
-and then hash the public nonce to get the challenge scalar.  Because
-Alice can't predict the output of the hash function (the challenge), and
-because it's always the same for the same input (the nonce), this
-ensures that Alice gets a random challenge even though she chooses the nonce
-and hashes it herself.  We no longer need interaction from Bob.  She can
-simply publish her public nonce _kG_ and the scalar _s_, and each of the
-thousands of full nodes (past and future) can hash _kG_ to produce _e_,
-use that to produce _exG_, and then verify _sG_ == _kG_ + _exG_.  Written
-explicitly, the verification equation becomes [.keep-together]#_sG_ == _kG_ + _hash_(_kG_) × _xG_.#
+덕분에 앨리스는 자기 비밀 논스를 고르고 공개 논스를 유도한 다음, 그 공개 논스를 해시해 챌린지
+스칼라를 얻을 수 있습니다. 앨리스는 해시 함수의 출력(챌린지)을 예측할 수 없고, 같은 입력(논스)에
+대해서는 항상 같은 값이 나오므로, 앨리스가 직접 논스를 고르고 해시하더라도 무작위 챌린지를 얻게
+됩니다. 이제 밥과의 상호작용이 필요 없습니다. 앨리스는 그저 공개 논스 _kG_ 와 스칼라 _s_ 를
+공개하면 되고, 수천 개의 (과거와 미래의) 풀 노드 각각이 _kG_ 를 해시해 _e_ 를 만들고 그것으로
+_exG_ 를 만들어 _sG_ == _kG_ + _exG_ 를 검증할 수 있습니다. 명시적으로 쓰면 검증 등식은
+[.keep-together]#_sG_ == _kG_ + _hash_(_kG_) × _xG_# 가 됩니다.
 
-We need one other thing to finish converting the interactive schnorr
-identity protocol into a digital signature protocol useful for
-Bitcoin.  We don't just want Alice to prove that she knows her private
-key; we also want to give her the ability to commit to a message.  Specifically,
-we want her to commit to the data related to the Bitcoin transaction she
-wants to send.  With the Fiat-Shamir transform in place, we already
-have a commitment, so we can simply have it additionally commit to the
-message.  Instead of _hash_(_kG_), we now also commit to the message
-_m_ using _hash_(_kG_ || _m_), where || stands for concatenation.
+대화형 슈노르 신원 확인 프로토콜을 비트코인에 쓸모 있는 디지털 서명 프로토콜로 바꾸려면 한 가지가
+더 필요합니다. 우리는 앨리스가 자기 비밀키를 안다는 것을 증명하는 것만 원하는 게 아니라, 메시지에
+커밋할 수 있는 능력도 주고 싶습니다. 구체적으로는 앨리스가 보내려는 비트코인 트랜잭션과 관련된
+데이터에 커밋하기를 원합니다. 피아트-샤미르 변환을 적용하고 나면 이미 커밋먼트가 있으므로, 거기에
+메시지까지 함께 커밋하게 하면 됩니다. _hash_(_kG_) 대신 이제 메시지 _m_ 에도 커밋하도록
+_hash_(_kG_ || _m_)을 씁니다. 여기서 || 는 이어 붙이기를 뜻합니다.
 
-We've now defined a version of the schnorr signature protocol, but
-there's one more thing we need to do to address a Bitcoin-specific
-concern.  In BIP32 key derivation, as described in
-<<public_child_key_derivation>>, the algorithm for unhardened derivation
-takes a public key and adds to it a nonsecret value to produce a
-derived public key.  That means it's also possible to add that
-nonsecret value to a valid signature for one key to produce a signature
-for a related key.  That related signature is valid but it wasn't
-authorized by the person possessing the private key, which is a major
-security failure.  To protect BIP32 unhardened derivation and
-also support several protocols people wanted to build on top of schnorr
-signatures, Bitcoin's version of schnorr signatures, called _BIP340
-schnorr signatures for secp256k1_, also commits to the public key being
-used in addition to the public nonce and the message.  That makes the
-full commitment _hash_(_kG_ || _xG_ || _m_).
+이제 슈노르 서명 프로토콜의 한 버전을 정의했지만, 비트코인 특유의 문제를 해결하기 위해 한 가지가
+더 필요합니다. <<public_child_key_derivation>>에서 설명한 BIP32 키 유도에서, 비강화 유도
+알고리즘은 공개키에 비밀이 아닌 값을 더해 유도된 공개키를 만듭니다. 즉 어떤 키에 대한 유효한
+서명에 그 비밀이 아닌 값을 더해 관련된 키에 대한 서명을 만드는 것도 가능하다는 뜻입니다. 그렇게
+만들어진 서명은 유효하지만 비밀키를 가진 사람이 승인한 것이 아니며, 이는 중대한 보안 결함입니다.
+BIP32 비강화 유도를 보호하고 사람들이 슈노르 서명 위에 만들고 싶어 한 여러 프로토콜을 뒷받침하기
+위해, 비트코인 버전의 슈노르 서명, 즉 _secp256k1을 위한 BIP340 슈노르 서명_ 은 공개 논스와
+메시지에 더해 사용되는 공개키에도 커밋합니다. 그래서 전체 커밋먼트는 _hash_(_kG_ || _xG_ || _m_)
+이 됩니다.
 
-Now that we've described each part of the BIP340 schnorr signature
-algorithm and explained what it does for us, we can define the protocol.
-Multiplication of integers are performed _modulus p_, indicating that the
-result of the operation is divided by the number _p_ (as defined in the
-secp256k1 standard) and the remainder is used.  The number _p_ is very
-large, but if it was 3 and the result of an operation was 5, the actual
-number we would use is 2 (i.e., 5 divided by 3 has a remainder of 2).
+BIP340 슈노르 서명 알고리즘의 각 부분을 설명하고 그것이 무엇을 해주는지 밝혔으니, 이제 프로토콜을
+정의할 수 있습니다. 정수의 곱셈은 _모듈러스 p_ 로 수행되는데, 이는 연산 결과를 (secp256k1
+표준에 정의된) 수 _p_ 로 나눈 나머지를 쓴다는 뜻입니다. _p_ 는 매우 큰 수이지만, 만약 그것이
+3이고 어떤 연산의 결과가 5였다면 실제로 쓰는 수는 2입니다(5를 3으로 나눈 나머지가 2이므로).
 
-Setup: Alice chooses a large random number (_x_) as her private key
-(either directly or by using a protocol like BIP32 to deterministically
-generate a private key from a large random seed value).  She uses the
-parameters defined in secp256k1 (see <<elliptic_curve>>) to multiply the
-generator _G_ by her scalar _x_, producing _xG_ (her public key).  She
-gives her public key to everyone who will later authenticate her Bitcoin
-transactions (e.g., by having _xG_ included in a transaction output).  When
-she's ready to spend, she begins generating her signature:
+준비: 앨리스는 큰 무작위 수(_x_)를 비밀키로 고릅니다(직접 고르거나, BIP32 같은 프로토콜로 큰
+무작위 시드 값에서 결정적으로 비밀키를 생성합니다). secp256k1에 정의된 매개변수
+(<<elliptic_curve>> 참고)를 사용해 생성원 _G_ 에 자기 스칼라 _x_ 를 곱해 _xG_ (그의 공개키)를
+만듭니다. 그리고 나중에 자기 비트코인 트랜잭션을 인증할 모든 사람에게 공개키를 줍니다(예: _xG_
+를 트랜잭션 출력에 담는 방식으로). 지출할 준비가 되면 서명 생성을 시작합니다.
 
-1. Alice chooses a large random private nonce _k_ and derives the public
-   nonce _kG_.
+1. 앨리스는 큰 무작위 비밀 논스 _k_ 를 고르고 공개 논스 _kG_ 를 유도합니다.
 
-2. She chooses her message _m_ (e.g., transaction data) and generates the
-   challenge scalar _e_ = _hash_(_kG_ || _xG_ || _m_).
+2. 메시지 _m_ (예: 트랜잭션 데이터)을 고르고 챌린지 스칼라
+   _e_ = _hash_(_kG_ || _xG_ || _m_)을 만듭니다.
 
-3. She produces the scalar _s_ = _k_ + _ex_.  The two values _kG_ and _s_
-   are her signature.  She gives this signature to everyone who wants to
-   verify that signature; she also needs to ensure everyone receives her
-   message _m_.  In Bitcoin, this is done by including her signature in
-   the witness structure of her spending transaction and then relaying that
-   transaction to full nodes.
+3. 스칼라 _s_ = _k_ + _ex_ 를 만듭니다. 이 두 값 _kG_ 와 _s_ 가 그의 서명입니다. 앨리스는 그
+   서명을 검증하려는 모든 사람에게 주며, 모두가 메시지 _m_ 도 받도록 해야 합니다. 비트코인에서는
+   자기 서명을 지출 트랜잭션의 위트니스 구조에 담고 그 트랜잭션을 풀 노드에 중계하는 방식으로
+   이루어집니다.
 
-4. The verifiers (e.g., full nodes) use _s_ to derive _sG_ and then
-   verify that _sG_ == _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_.  If the equation is
-   valid, Alice proved that she knows her private key _x_ (without
-   revealing it) and committed to the message _m_ (containing the
-   transaction data).
+4. 검증자(예: 풀 노드)는 _s_ 로 _sG_ 를 유도한 다음
+   _sG_ == _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_ 인지 검증합니다. 등식이 성립하면 앨리스는
+   자기 비밀키 _x_ 를 (드러내지 않고) 안다는 것을 증명했고 (트랜잭션 데이터가 담긴) 메시지
+   _m_ 에 커밋한 것입니다.
 
-==== Serialization of Schnorr Signatures
+==== 슈노르 서명의 직렬화
 
-A schnorr signature ((("digital signatures", "schnorr signature algorithm", "serialization")))((("schnorr signature algorithm", "serialization")))((("serialization", "of schnorr signature algorithm", secondary-sortas="schnorr")))consists of two values, _kG_ and _s_.  The value
-_kG_ is a point on Bitcoin's elliptic curve (called secp256k1) and would normally be represented by two 32-byte coordinates, e.g., (_x_, _y_).
-However, only the _x_ coordinate is needed, so only that value is
-included.  When you see _kG_ in schnorr signatures for Bitcoin, note that it's only that point's _x_
-coordinate.
+슈노르 서명은 ((("digital signatures", "schnorr signature algorithm", "serialization")))((("schnorr signature algorithm", "serialization")))((("serialization", "of schnorr signature algorithm", secondary-sortas="schnorr")))_kG_ 와 _s_ 두 값으로 이루어집니다. _kG_ 는 비트코인 타원곡선
+(secp256k1이라고 합니다) 위의 점이며 보통이라면 32바이트 좌표 둘, 예를 들어 (_x_, _y_)로
+표현됩니다. 하지만 _x_ 좌표만 있으면 되므로 그 값만 담습니다. 비트코인의 슈노르 서명에서 _kG_ 를
+보게 되면 그것이 그 점의 _x_ 좌표뿐이라는 점에 유의하세요.
 
-The value _s_ is a scalar (a number meant to multiply other numbers).  For
-Bitcoin's secp256k1 curve, it can never be more than 32 bytes long.
+_s_ 는 스칼라(다른 수에 곱해지는 수)입니다. 비트코인의 secp256k1 곡선에서는 결코 32바이트를 넘을
+수 없습니다.
 
-Although both _kG_ and _s_ can sometimes be values that can be
-represented with fewer than 32 bytes, it's improbable that they'd be
-much smaller than 32 bytes, so they're serialized as two 32-byte
-values (i.e., values smaller than 32 bytes have leading zeros).
-They're serialized in the order of _kG_ and then _s_, producing exactly
-64 bytes.
+_kG_ 와 _s_ 모두 때로는 32바이트보다 적은 바이트로 표현할 수 있는 값이 되기도 하지만, 32바이트보다
+훨씬 작을 가능성은 희박하므로 둘 다 32바이트 값으로 직렬화합니다(즉 32바이트보다 작은 값에는 앞에
+0이 붙습니다). _kG_ 다음에 _s_ 순서로 직렬화되어 정확히 64바이트가 됩니다.
 
-The taproot soft fork, also called v1 segwit, introduced schnorr signatures
-to Bitcoin and is the only way they are used in Bitcoin as of this writing.  When
-used with either taproot keypath or scriptpath spending, a 64-byte
-schnorr signature is considered to use a default signature hash (sighash)
-that is +SIGHASH_ALL+.  If an alternative sighash is used, or if the
-spender wants to waste space to explicitly specify +SIGHASH_ALL+, a
-single additional byte is appended to the signature that specifies the
-signature hash, making the signature 65 bytes.
+v1 세그윗이라고도 하는 탭루트 소프트 포크가 슈노르 서명을 비트코인에 도입했으며, 이 글을 쓰는
+시점에 비트코인에서 슈노르 서명이 쓰이는 방식은 그것뿐입니다. 탭루트 키패스 지출이나 스크립트패스
+지출과 함께 쓰일 때, 64바이트 슈노르 서명은 기본 서명 해시(sighash)인 +SIGHASH_ALL+ 을 쓰는 것으로
+간주됩니다. 다른 sighash를 쓰거나, 지출자가 공간을 낭비하더라도 +SIGHASH_ALL+ 을 명시하고 싶다면
+서명 뒤에 서명 해시를 지정하는 1바이트를 덧붙여 서명이 65바이트가 됩니다.
 
-As we'll see, either 64 or 65 bytes is considerably more efficient that
-the serialization used for ECDSA signatures described in
-<<serialization_of_signatures_der>>.
-
+앞으로 보겠지만, 64바이트든 65바이트든 <<serialization_of_signatures_der>>에서 설명하는 ECDSA
+서명의 직렬화보다 훨씬 효율적입니다.
 [[schnorr_multisignatures]]
-==== Schnorr-based Scriptless Multisignatures
+==== 슈노르 기반 스크립트 없는 다중서명
 
-In the((("digital signatures", "schnorr signature algorithm", "scriptless multisignatures", id="digital-sigs-schnorr-multisig")))((("schnorr signature algorithm", "scriptless multisignatures", id="schnorr-multisig")))((("scriptless multisignatures", "in schnorr signature algorithm", secondary-sortas="schnorr", id="scriptless-multi-schnorr")))((("multisignature scripts", "in schnorr signature algorithm", secondary-sortas="schnorr", id="multi-script-schnorr"))) single-signature schnorr protocol described in <<schnorr_signatures>>, Alice
-uses a signature (_kG_, _s_) to publicly prove her knowledge of her
-private key, which in this case we'll call _y_.  Imagine if Bob also has
-a private key (_z_) and he's willing to work with Alice to prove that
-together they know _x_ = _y_ + _z_ without either of them revealing their
-private key to each other or anyone else.  Let's go through the BIP340
-schnorr signature protocol again.
+((("digital signatures", "schnorr signature algorithm", "scriptless multisignatures", id="digital-sigs-schnorr-multisig")))((("schnorr signature algorithm", "scriptless multisignatures", id="schnorr-multisig")))((("scriptless multisignatures", "in schnorr signature algorithm", secondary-sortas="schnorr", id="scriptless-multi-schnorr")))((("multisignature scripts", "in schnorr signature algorithm", secondary-sortas="schnorr", id="multi-script-schnorr")))<<schnorr_signatures>>에서 설명한 단일 서명 슈노르 프로토콜에서
+앨리스는 서명 (_kG_, _s_)으로 자기 비밀키를 안다는 것을 공개적으로 증명하는데, 여기서는 그
+비밀키를 _y_ 라고 하겠습니다. 밥도 비밀키(_z_)를 가지고 있고, 두 사람이 서로에게도 다른 누구에게도
+자기 비밀키를 드러내지 않으면서 _x_ = _y_ + _z_ 를 함께 안다는 것을 증명하려 협력한다고 상상해
+봅시다. BIP340 슈노르 서명 프로토콜을 다시 짚어 보겠습니다.
 
 [WARNING]
 ====
-The simple protocol we are about to describe is not secure for the
-reasons we will explain shortly.  We use it only to demonstrate the
-mechanics of schnorr multisignatures before describing related protocols
-that are believed to be secure.
+지금 설명하려는 단순한 프로토콜은 곧 설명할 이유들 때문에 안전하지 않습니다. 안전하다고 여겨지는
+관련 프로토콜을 설명하기에 앞서 슈노르 다중서명의 작동 원리를 보여주기 위해서만 씁니다.
 ====
 
-Alice and Bob need to derive the public key for _x_, which is _xG_.
-Since it's possible to use elliptic curve operations to add two EC
-points together, they start by Alice deriving _yG_ and Bob deriving
-_zG_.  They then add them together to create [.keep-together]#_xG_ = _yG_ + _zG_.#  The point
-_xG_ is ((("aggregated public keys")))((("public keys", "aggregated")))their _aggregated public key_.  To create a signature, they begin the
-simple multisignature protocol:
+앨리스와 밥은 _x_ 에 대한 공개키, 즉 _xG_ 를 유도해야 합니다. 타원곡선 연산으로 EC 점 두 개를
+더할 수 있으므로, 먼저 앨리스가 _yG_ 를, 밥이 _zG_ 를 유도합니다. 그런 다음 둘을 더해
+[.keep-together]#_xG_ = _yG_ + _zG_# 를 만듭니다. 점 _xG_ 가 그들의
+((("aggregated public keys")))((("public keys", "aggregated")))_집계 공개키_ 입니다. 서명을 만들기 위해 단순한 다중서명 프로토콜을
+시작합니다.
 
-1. They each individually choose a large random private nonce, _a_ for
-   Alice and _b_ for Bob.  They also individually derive the corresponding
-   public nonce _aG_ and _bG_.  Together, they produce an aggregated
-   public nonce _kG_ = _aG_ + _bG_.
+1. 각자 큰 무작위 비밀 논스를 고릅니다. 앨리스는 _a_, 밥은 _b_ 입니다. 각자 대응하는 공개 논스
+   _aG_ 와 _bG_ 도 유도합니다. 그리고 함께 집계 공개 논스 _kG_ = _aG_ + _bG_ 를 만듭니다.
 
-2. They agree on the message to sign, _m_ (e.g., a transaction), and
-   each generates a copy of the challenge scalar: _e_ = _hash_(_kG_ || _xG_ || _m_).
+2. 서명할 메시지 _m_ (예: 트랜잭션)에 합의하고, 각자 챌린지 스칼라
+   _e_ = _hash_(_kG_ || _xG_ || _m_)의 사본을 만듭니다.
 
-3. Alice produces the scalar _q_ = _a_ + _ey_.  Bob produces the scalar
-   _r_ = _b_ + _ez_.  They add the scalars together to produce
-   _s_ = _q_ + _r_.  Their signature is the two values _kG_ [.keep-together]#and _s_.#
+3. 앨리스는 스칼라 _q_ = _a_ + _ey_ 를 만듭니다. 밥은 스칼라 _r_ = _b_ + _ez_ 를 만듭니다. 두
+   스칼라를 더해 _s_ = _q_ + _r_ 를 만듭니다. 그들의 서명은 _kG_ 와 [.keep-together]#_s_ 두
+   값입니다.#
 
-4. The verifiers check their public key and signature using the normal
-   equation: [.keep-together]#_sG_ ==# _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_.
+4. 검증자들은 통상의 등식으로 그들의 공개키와 서명을 검사합니다:
+   [.keep-together]#_sG_ ==# _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_.
 
-Alice and Bob have proven that they know the sum of their private keys without
-either one of them revealing their private key to the other or anyone
-else.  The protocol can be extended to any number of participants (e.g.,
-a million people could prove they knew the sum of their million
-different keys).
+앨리스와 밥은 서로에게도 다른 누구에게도 자기 비밀키를 드러내지 않고 두 비밀키의 합을 안다는 것을
+증명했습니다. 이 프로토콜은 참여자가 몇 명이든 확장할 수 있습니다(예: 백만 명이 각자 다른 백만
+개의 키의 합을 안다는 것을 증명할 수 있습니다).
 
-The preceding protocol has several security problems.  Most notable is that one
-party might learn the public keys of the other parties before committing
-to their own public key.  For example, Alice generates her public key
-_yG_ honestly and shares it with Bob.  Bob generates his public key
-using _zG_ – _yG_.  When their two keys are combined [.keep-together]#(_yG_ + _zG_ – _yG_),# the
-positive and negative _yG_ terms cancel out so the public key only represents
-the private key for _z_ (i.e., Bob's private key).  Now Bob can create a
-valid signature without any assistance from Alice.  This is ((("key cancellation attacks")))called a
-_key cancellation attack_.
+앞의 프로토콜에는 보안 문제가 몇 가지 있습니다. 가장 두드러진 것은 한 당사자가 자기 공개키에
+커밋하기 전에 다른 당사자들의 공개키를 알게 될 수 있다는 점입니다. 예를 들어 앨리스가 정직하게
+공개키 _yG_ 를 만들어 밥에게 공유합니다. 밥은 _zG_ – _yG_ 를 써서 자기 공개키를 만듭니다. 두 키를
+합치면 [.keep-together]#(_yG_ + _zG_ – _yG_)# 에서 양의 _yG_ 항과 음의 _yG_ 항이 상쇄되므로, 그
+공개키는 _z_ (즉 밥의 비밀키)에 대한 비밀키만 나타내게 됩니다. 이제 밥은 앨리스의 도움 없이도
+유효한 서명을 만들 수 있습니다. 이를 ((("key cancellation attacks")))_키 상쇄 공격_ 이라고 합니다.
 
-There are various ways to solve the key cancellation attack.  The
-simplest scheme would be to require each participant commit to their
-part of the public key before sharing anything about that key with all
-of the other participants.  For example, Alice and Bob each individually
-hash their public keys and share their digests with each other.  When
-they both have the other's digest, they can share their keys.  They
-individually check that the other's key hashes to the previously
-provided digest and then proceed with the protocol normally.  This prevents
-either one of them from choosing a public key that cancels out the keys
-of the other participants.  However, it's easy to fail to implement this
-scheme correctly, such as using it in a naive way with unhardened
-BIP32 public key derivation.  Additionally, it adds an extra step for
-communication between the participants, which may be undesirable in many
-cases.  More complex schemes have been proposed that address these
-shortcomings.
+키 상쇄 공격을 막는 방법은 여러 가지가 있습니다. 가장 단순한 방식은 각 참여자가 자기 공개키에
+관한 무엇이든 다른 모든 참여자와 공유하기 전에 먼저 자기 몫의 공개키에 커밋하도록 요구하는
+것입니다. 예를 들어 앨리스와 밥이 각자 자기 공개키를 해시해 그 다이제스트를 서로 공유합니다. 둘
+다 상대의 다이제스트를 갖게 되면 그때 키를 공유합니다. 각자 상대의 키를 해시한 값이 앞서 받은
+다이제스트와 맞는지 확인한 뒤 통상대로 프로토콜을 진행합니다. 이렇게 하면 둘 중 누구도 다른
+참여자의 키를 상쇄하는 공개키를 고를 수 없습니다. 다만 이 방식을 올바르게 구현하지 못하기 쉬운데,
+비강화 BIP32 공개키 유도와 함께 순진하게 쓰는 경우가 그렇습니다. 게다가 참여자 사이의 통신 단계가
+하나 더 늘어나는데, 많은 경우 바람직하지 않을 수 있습니다. 이런 단점을 해결하는 더 복잡한 방식들이
+제안되었습니다.
 
-In addition to the key cancellation attack, there are a number of
-attacks possible against ((("nonce attacks")))nonces.  Recall that the purpose of the nonce
-is to prevent anyone from being able to use their knowledge of other values
-in the signature verification equation to solve for your private key,
-determining its value.  To effectively accomplish that, you must use a
-different nonce every time you sign a different message or change other
-signature parameters.  The different nonces must not be related in any
-way.  For a multisignature, every participant must follow these rules or
-it could compromise the security of other participants.  In addition,
-cancellation and other attacks need to be prevented.  Different
-protocols that accomplish these aims make different trade-offs, so
-there's no single multisignature protocol to recommend in all cases.
-Instead, we'll note three from the MuSig family of protocols:
+키 상쇄 공격 외에 ((("nonce attacks")))논스를 노리는 공격도 여러 가지가 가능합니다. 논스의 목적은 서명 검증
+등식의 다른 값들을 아는 사람이 그 지식으로 여러분의 비밀키를 풀어내 그 값을 알아내지 못하게 막는
+것임을 떠올려 보세요. 이를 제대로 달성하려면 다른 메시지에 서명하거나 다른 서명 매개변수를 바꿀
+때마다 매번 다른 논스를 써야 합니다. 그 다른 논스들은 어떤 식으로도 서로 관련되어서는 안 됩니다.
+다중서명에서는 모든 참여자가 이 규칙을 지켜야 하며, 그러지 않으면 다른 참여자의 보안까지 위협할 수
+있습니다. 여기에 더해 상쇄를 비롯한 공격도 막아야 합니다. 이런 목표를 달성하는 프로토콜마다 서로
+다른 절충을 하므로, 모든 경우에 권할 만한 단일 다중서명 프로토콜은 없습니다. 대신 MuSig 계열
+프로토콜 세 가지를 짚어 보겠습니다.
 
 MuSig::
-  Also called _MuSig1_, this protocol((("MuSig protocol"))) requires three rounds of
-  communication during the signing process, making it similar to the
-  process we just described.  MuSig1's greatest advantage is its
-  simplicity.
+  _MuSig1_ 이라고도 하는 이 프로토콜은((("MuSig protocol"))) 서명 과정에서 세 라운드의 통신이 필요해,
+  방금 설명한 과정과 비슷합니다. MuSig1의 가장 큰 장점은 단순함입니다.
 
 MuSig2::
-  This only ((("MuSig2 protocol")))requires two rounds of communication and can sometimes allow
-  one of the rounds to be combined with key exchange.  This can
-  significantly speed up signing for certain protocols, such as how
-  scriptless multisignatures are planned to be used in the LN.  MuSig2 is specified in BIP327 (the only scriptless
-  multisignature protocol that has a BIP as of this writing).
+  두 ((("MuSig2 protocol")))라운드의 통신만 필요하며, 때로는 그중 한 라운드를 키 교환과 합칠 수도
+  있습니다. 스크립트 없는 다중서명을 LN에서 쓰려고 계획한 방식처럼 특정 프로토콜에서는 서명 속도를
+  크게 높일 수 있습니다. MuSig2는 BIP327에 규정되어 있습니다(이 글을 쓰는 시점에 BIP가 있는 유일한
+  스크립트 없는 다중서명 프로토콜입니다).
 
 MuSig-DN::
-  DN stands ((("MuSig-DN protocol")))((("repeated session attacks")))for Deterministic Nonce, which eliminates as a concern a
-  problem known as the _repeated session attack_.  It can't be combined
-  with key exchange and it's significantly more complex to implement
-  than MuSig or MuSig2.
+  DN은 ((("MuSig-DN protocol")))((("repeated session attacks")))결정적 논스(Deterministic Nonce)를 뜻하며, _반복 세션 공격_ 이라고
+  알려진 문제를 걱정거리에서 지워줍니다. 키 교환과 합칠 수 없고, MuSig나 MuSig2보다 구현하기가
+  훨씬 복잡합니다.
 
-For most applications, MuSig2 is the best multisignature protocol
-available at the time((("digital signatures", "schnorr signature algorithm", "scriptless multisignatures", startref="digital-sigs-schnorr-multisig")))((("schnorr signature algorithm", "scriptless multisignatures", startref="schnorr-multisig")))((("scriptless multisignatures", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="scriptless-multi-schnorr")))((("multisignature scripts", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="multi-script-schnorr"))) of writing.
-
+대부분의 응용에서 MuSig2가 이 글을 쓰는 시점에 쓸 수 있는 최선의 다중서명
+((("digital signatures", "schnorr signature algorithm", "scriptless multisignatures", startref="digital-sigs-schnorr-multisig")))((("schnorr signature algorithm", "scriptless multisignatures", startref="schnorr-multisig")))((("scriptless multisignatures", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="scriptless-multi-schnorr")))((("multisignature scripts", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="multi-script-schnorr")))프로토콜입니다.
 [[schnorr_threshold_signatures]]
-==== Schnorr-based Scriptless Threshold Signatures
+==== 슈노르 기반 스크립트 없는 임계 서명
 
-Scriptless ((("digital signatures", "schnorr signature algorithm", "scriptless threshold signatures", id="digital-sigs-schnorr-threshold")))((("schnorr signature algorithm", "scriptless threshold signatures", id="schnorr-threshold")))((("scriptless threshold signatures", id="scriptless-threshold-schnorr")))((("threshold signatures", "in schnorr signature algorithm", secondary-sortas="schnorr", id="threshold-schnorr")))multisignature protocols only work for _k_-of-_k_ signing.
-Everyone with a partial public key that becomes part of the aggregated
-public key must contribute a partial signature and partial nonce to the
-final signature.  Sometimes, though, the participants want to allow a
-subset of them to sign, such as _t_-of-_k_ where a threshold (_t_) number of participants can sign for
-a key constructed by _k_ participants.  That type of signature is called a
-_threshold signature_.
+((("digital signatures", "schnorr signature algorithm", "scriptless threshold signatures", id="digital-sigs-schnorr-threshold")))((("schnorr signature algorithm", "scriptless threshold signatures", id="schnorr-threshold")))((("scriptless threshold signatures", id="scriptless-threshold-schnorr")))((("threshold signatures", "in schnorr signature algorithm", secondary-sortas="schnorr", id="threshold-schnorr")))스크립트 없는 다중서명 프로토콜은 _k_-of-_k_ 서명에서만 동작합니다.
+집계 공개키의 일부가 되는 부분 공개키를 가진 사람은 모두 최종 서명에 부분 서명과 부분 논스를
+보태야 합니다. 그런데 참여자들이 그중 일부만 서명할 수 있게 하고 싶을 때도 있습니다. _k_ 명의
+참여자가 만든 키에 대해 임계값(_t_)만큼의 참여자가 서명할 수 있는 _t_-of-_k_ 같은 경우입니다.
+이런 유형의 서명을 _임계 서명_ 이라고 합니다.
 
-We saw script-based threshold signatures in
-<<multisig>>.  But just as
-scriptless multisignatures save space and increase privacy compared to
-scripted multisignatures, _scriptless threshold signatures_ save space and
-increase privacy compared to _scripted threshold signatures_.  To anyone
-not involved in the signing, a _scriptless threshold signature_ looks
-like any other signature that could've been created by a single-sig
-user or through a scriptless multisignature protocol.
+스크립트 기반 임계 서명은 <<multisig>>에서 보았습니다. 스크립트 없는 다중서명이 스크립트
+다중서명에 비해 공간을 아끼고 프라이버시를 높이듯, _스크립트 없는 임계 서명_ 도 _스크립트 임계
+서명_ 에 비해 공간을 아끼고 프라이버시를 높입니다. 서명에 관여하지 않은 사람에게 _스크립트 없는
+임계 서명_ 은 단일 서명 사용자가 만들었을 수도 있고 스크립트 없는 다중서명 프로토콜로 만들었을
+수도 있는 여느 서명과 똑같아 보입니다.
 
-Various methods are known for generating scriptless threshold
-signatures, with the simplest being a slight modification of how we
-created scriptless multisignatures previously.  This protocol also
-depends on verifiable secret sharing (which itself depends on secure
-secret sharing).
+스크립트 없는 임계 서명을 생성하는 방법은 여러 가지가 알려져 있는데, 가장 단순한 것은 앞서 스크립트
+없는 다중서명을 만든 방식을 조금 바꾸는 것입니다. 이 프로토콜은 검증 가능한 비밀 공유에도
+의존하는데, 그것은 다시 안전한 비밀 공유에 의존합니다.
 
-Basic secret sharing can work through simple splitting.  Alice has a
-secret number that she splits into three equal-length parts and shares
-with Bob, Carol, and Dan.  Those three can combine the partial numbers
-they received (called _shares_) in the correct order to reconstruct
-Alice's secret.  A more sophisticated scheme would involve Alice adding
-on some additional information to each share, called a correction code,
-that allows any two of them to recover the number.  This scheme is not
-secure because each share gives its holder partial knowledge of Alice's
-secret, making it easier for the participant to guess Alice's secret
-than a nonparticipant who didn't have a share.
+기본적인 비밀 공유는 단순히 쪼개는 방식으로도 할 수 있습니다. 앨리스에게 비밀 숫자가 있는데 이를
+같은 길이의 세 조각으로 나눠 밥과 캐럴, 댄에게 공유합니다. 세 사람은 자신이 받은 부분 숫자(_지분_
+이라고 합니다)를 올바른 순서로 합쳐 앨리스의 비밀을 복원할 수 있습니다. 더 정교한 방식이라면 앨리스가
+각 지분에 정정 부호라는 추가 정보를 붙여 셋 중 둘만 있어도 그 숫자를 복원할 수 있게 할 것입니다.
+이 방식은 안전하지 않은데, 각 지분이 그 소유자에게 앨리스 비밀에 대한 부분적인 지식을 주어 지분이
+없는 사람보다 앨리스의 비밀을 추측하기 쉬워지기 때문입니다.
 
-A secure secret sharing scheme prevents participants from learning
-anything about the secret unless they combine the minimum threshold
-number of shares.  For example, Alice can choose a threshold of
-2 if she wants any two of Bob, Carol, and Dan to be able to
-reconstruct her secret.  The best known secure secret sharing algorithm
-is _Shamir's Secret Sharing Scheme_, commonly abbreviated SSSS and named
-after its discoverer, one of the same discoverers of the Fiat-Shamir
-transform we saw in <<schnorr_signatures>>.
+안전한 비밀 공유 방식은 최소 임계값만큼의 지분을 합치지 않는 한 참여자가 그 비밀에 대해 아무것도
+알지 못하게 막습니다. 예를 들어 앨리스는 밥과 캐럴, 댄 중 아무나 둘이 자기 비밀을 복원할 수 있게
+하고 싶다면 임계값을 2로 고를 수 있습니다. 가장 잘 알려진 안전한 비밀 공유 알고리즘은 흔히 SSSS로
+줄여 쓰는 _샤미르의 비밀 공유 방식_ 이며, 발견자의 이름을 딴 것인데 그는 <<schnorr_signatures>>에서
+본 피아트-샤미르 변환의 공동 발견자이기도 합니다.
 
-In some cryptographic protocols, such as the scriptless threshold signature
-schemes we're working toward, it's critical for Bob, Carol, and Dan to
-know that Alice followed her side of the protocol correctly.  They need to
-know that the shares she creates all derive from the same secret, that
-she used the threshold value she claims, and that she gave each one of
-them a different share.  A protocol that can accomplish all of that,
-and still be a secure secret sharing scheme, is a _verifiable secret
-sharing scheme_.
+우리가 지금 다루는 스크립트 없는 임계 서명 방식처럼 일부 암호 프로토콜에서는, 앨리스가 자기 쪽
+프로토콜을 올바르게 따랐다는 것을 밥과 캐럴, 댄이 아는 것이 결정적으로 중요합니다. 그들은 앨리스가
+만든 지분들이 모두 같은 비밀에서 유도되었는지, 앨리스가 주장한 임계값을 실제로 썼는지, 그리고 각자에게
+서로 다른 지분을 주었는지 알아야 합니다. 이 모든 것을 해내면서도 여전히 안전한 비밀 공유 방식인
+프로토콜을 _검증 가능한 비밀 공유 방식_ 이라고 합니다.
 
-To see how multisignatures and verifiable secret sharing work for
-Alice, Bob, and Carol, imagine they each wish to receive funds that can
-be spent by any two of them.  They collaborate as described in
-<<schnorr_multisignatures>> to produce a regular multisignature public
-key to accept the funds (k-of-k).  Then each participant derives two
-secret shares from their private key--one for each of two the other
-participants. The shares allow any two of them to reconstruct the
-originating partial private key for the multisignature. Each participant
-distributes one of their secret shares to the other two participants,
-resulting in each participant storing their own partial private key and
-one share for every other participant. Subsequently, each participant
-verifies the authenticity and uniqueness of the shares they received
-compared to the shares given to the other participants.
+다중서명과 검증 가능한 비밀 공유가 앨리스와 밥, 캐럴에게 어떻게 작동하는지 보기 위해, 세 사람이 셋 중
+아무나 둘이 쓸 수 있는 자금을 받고 싶어 한다고 상상해 봅시다. 그들은 <<schnorr_multisignatures>>에서
+설명한 대로 협력해 그 자금을 받을 통상의 다중서명 공개키(k-of-k)를 만듭니다. 그런 다음 각 참여자는
+자기 비밀키에서 비밀 지분 두 개를 유도하는데, 다른 두 참여자 각각에게 줄 것입니다. 이 지분들은 셋 중
+둘이 그 다중서명의 원래 부분 비밀키를 복원할 수 있게 해줍니다. 각 참여자는 자기 비밀 지분 중 하나씩을
+다른 두 참여자에게 나눠 주므로, 결국 각 참여자는 자기 부분 비밀키와 다른 모든 참여자에 대한 지분 하나씩을
+보관하게 됩니다. 이어서 각 참여자는 자신이 받은 지분이 진짜인지, 그리고 다른 참여자들에게 준 지분과
+서로 다른지 검증합니다.
 
-Later on, when (for example) Alice and Bob want to generate a scriptless
-threshold signature without Carol's involvement, they exchange the two
-shares they possess for Carol. This enables them to reconstruct Carol's
-partial private key.  Alice and Bob also have their private keys,
-allowing them to create a scriptless multisignature with all three
-necessary keys.
+나중에 (예를 들어) 앨리스와 밥이 캐럴 없이 스크립트 없는 임계 서명을 만들고 싶으면, 두 사람이 가진
+캐럴에 대한 지분 두 개를 주고받습니다. 그러면 캐럴의 부분 비밀키를 복원할 수 있습니다. 앨리스와 밥에게는
+자기 비밀키도 있으므로, 필요한 세 키를 모두 갖추고 스크립트 없는 다중서명을 만들 수 있습니다.
 
-In other words, the scriptless threshold signature scheme just described
-is the same as a scriptless multisignature scheme except that
-a threshold number of participants have the ability to reconstruct the
-partial private keys of any other participants who are unable or
-unwilling to sign.
+다시 말해 방금 설명한 스크립트 없는 임계 서명 방식은, 임계값만큼의 참여자가 서명할 수 없거나 서명하려
+하지 않는 다른 참여자의 부분 비밀키를 복원할 수 있다는 점만 빼면 스크립트 없는 다중서명 방식과
+같습니다.
 
-This does point to a few things to be aware about when considering a
-scriptless threshold signature protocol:
+이 점은 스크립트 없는 임계 서명 프로토콜을 고려할 때 유의할 것들을 몇 가지 짚어 줍니다.
 
-No accountability::
-Because Alice and Bob reconstruct Carol's partial
-private key, there can be no fundamental difference between a scriptless
-multisignature produced by a process that involved Carol and one that
-didn't.  Even if Alice, Bob, or Carol claim that they didn't sign,
-there's no guaranteed way for them to prove that they didn't
-help produce the signature.  If it's important to know which members of
-the group signed, you will need to use a script.
+책임 소재 없음::
+앨리스와 밥이 캐럴의 부분 비밀키를 복원하므로, 캐럴이 관여한 과정으로 만들어진 스크립트 없는 다중서명과
+그렇지 않은 것 사이에 근본적인 차이가 있을 수 없습니다. 앨리스든 밥이든 캐럴이든 자신은 서명하지 않았다고
+주장하더라도, 그 서명을 만드는 데 자신이 돕지 않았음을 증명할 확실한 방법이 없습니다. 집단의 어느
+구성원이 서명했는지 아는 것이 중요하다면 스크립트를 써야 합니다.
 
-Manipulation attacks::
-Imagine that Bob tells Alice that Carol is
-unavailable, so they work together to reconstruct Carol's partial
-private key.  Then Bob tells Carol that Alice is unavailable, so they
-work together to reconstruct Alice's partial private key.  Now Bob has
-his own partial private key plus the keys of Alice and Carol, allowing
-him to spend the funds himself without their involvement.  This attack can
-be addressed if all of the participants agree to only communicate using a
-scheme that allows any one of them to see all of the other's messages
-(e.g., if Bob tells Alice that Carol is unavailable, Carol is able to see
-that message before she begins working with Bob).  Other solutions,
-possibly more robust solutions, to this problem were being researched at
-the time of writing.
+조작 공격::
+밥이 앨리스에게 캐럴과 연락이 닿지 않는다고 말해 둘이 함께 캐럴의 부분 비밀키를 복원한다고 상상해 봅시다.
+그런 다음 밥이 캐럴에게는 앨리스와 연락이 닿지 않는다고 말해 둘이 함께 앨리스의 부분 비밀키를 복원합니다.
+이제 밥은 자기 부분 비밀키에 더해 앨리스와 캐럴의 키까지 갖게 되어, 두 사람 없이 혼자 자금을 쓸 수
+있습니다. 이 공격은 모든 참여자가 서로의 메시지를 모두 볼 수 있는 방식으로만 소통하기로 합의하면 막을 수
+있습니다(예: 밥이 앨리스에게 캐럴과 연락이 닿지 않는다고 말하면, 캐럴이 밥과 작업을 시작하기 전에 그
+메시지를 볼 수 있게 하는 것). 이 문제에 대한 다른, 어쩌면 더 견고한 해법이 이 글을 쓰는 시점에 연구되고
+있었습니다.
 
-No scriptless threshold signature protocol has been proposed as a BIP
-yet, although significant research into the subject has been performed
-by multiple Bitcoin contributors and we expect peer-reviewed solutions
-will become available after the publication of this((("digital signatures", "schnorr signature algorithm", startref="digital-sigs-schnorr")))((("schnorr signature algorithm", startref="schnorr")))((("digital signatures", "schnorr signature algorithm", "scriptless threshold signatures", startref="digital-sigs-schnorr-threshold")))((("schnorr signature algorithm", "scriptless threshold signatures", startref="schnorr-threshold")))((("scriptless threshold signatures", startref="scriptless-threshold-schnorr")))((("threshold signatures", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="threshold-schnorr"))) book.
-
+아직 BIP로 제안된 스크립트 없는 임계 서명 프로토콜은 없지만, 여러 비트코인 기여자가 이 주제를 상당히
+연구해 왔으며 이 책이 출간된 뒤에는 동료 검토를 거친 해법이 나오리라
+((("digital signatures", "schnorr signature algorithm", startref="digital-sigs-schnorr")))((("schnorr signature algorithm", startref="schnorr")))((("digital signatures", "schnorr signature algorithm", "scriptless threshold signatures", startref="digital-sigs-schnorr-threshold")))((("schnorr signature algorithm", "scriptless threshold signatures", startref="schnorr-threshold")))((("scriptless threshold signatures", startref="scriptless-threshold-schnorr")))((("threshold signatures", "in schnorr signature algorithm", secondary-sortas="schnorr", startref="threshold-schnorr")))기대합니다.
 [[ecdsa_signatures]]
-=== ECDSA Signatures
+=== ECDSA 서명
 
-Unfortunately ((("digital signatures", "ECDSA", id="digital-signature-ecdsa")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)", id="ecdsa")))for the future development of Bitcoin and many other
-applications, Claus Schnorr patented the algorithm he discovered and
-prevented its use in open standards and open source software for almost
-two decades.  Cryptographers in the early 1990s who were blocked from
-using the schnorr signature scheme developed an alternative construction
-called the _Digital Signature Algorithm_ (DSA), with a version adapted
-to elliptic curves called ECDSA.
+((("digital signatures", "ECDSA", id="digital-signature-ecdsa")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)", id="ecdsa")))비트코인을 비롯한 여러 응용의 앞날에는 안타깝게도, 클라우스 슈노르는
+자신이 발견한 알고리즘에 특허를 냈고 거의 20년 동안 공개 표준과 오픈소스 소프트웨어에서 그것을
+쓰지 못하게 막았습니다. 1990년대 초 슈노르 서명 방식을 쓸 수 없었던 암호학자들은 _디지털 서명
+알고리즘_ (DSA)이라는 대안 구성을 개발했고, 이를 타원곡선에 맞춘 버전이 ECDSA입니다.
 
-The ECDSA scheme and standardized parameters for suggested curves it could be used
-with were widely implemented in cryptographic libraries by the time
-development on Bitcoin began in 2007.  This was almost certainly the
-reason why ECDSA was the only digital signature protocol that Bitcoin
-supported from its first release version until the activation of the
-taproot soft fork in 2021.  ECDSA remains supported today for all
-non-taproot transactions.  Some of the differences compared to schnorr
-signatures include:
+ECDSA 방식과 함께 쓸 수 있는 권장 곡선의 표준 매개변수는 2007년 비트코인 개발이 시작될 무렵 이미
+여러 암호 라이브러리에 널리 구현되어 있었습니다. 비트코인이 첫 릴리스부터 2021년 탭루트 소프트
+포크가 활성화될 때까지 ECDSA만을 유일한 디지털 서명 프로토콜로 지원한 것은 거의 틀림없이 그
+때문입니다. ECDSA는 오늘날에도 탭루트가 아닌 모든 트랜잭션에서 계속 지원됩니다. 슈노르 서명과
+비교한 차이 몇 가지는 다음과 같습니다.
 
-More complex::
-  As we'll see, ECDSA requires more operations to create or verify a
-  signature than the schnorr signature protocol.  It's not significantly
-  more complex from an implementation standpoint, but that extra
-  complexity makes ECDSA less flexible, less performant, and harder to
-  prove secure.
+더 복잡함::
+  앞으로 보겠지만 ECDSA는 서명을 만들거나 검증하는 데 슈노르 서명 프로토콜보다 더 많은 연산이
+  필요합니다. 구현 관점에서 크게 더 복잡하지는 않지만, 그 추가된 복잡성 때문에 ECDSA는 덜
+  유연하고 성능이 떨어지며 안전성을 증명하기가 더 어렵습니다.
 
-Less provable security::
-  The interactive schnorr signature identification protocol depends only
-  on the strength of the elliptic curve Discrete Logarithm Problem
-  (ECDLP).  The non-interactive authentication protocol used in Bitcoin
-  also relies on the random oracle model (ROM).  However, ECDSA's extra
-  complexity has prevented a complete proof of its security being
-  published (to the best of our knowledge).  We are not experts in
-  proving cryptographic algorithms, but it seems unlikely after 30 years
-  that ECDSA will be proven to only require the same two assumptions as
-  schnorr.
+증명 가능한 안전성이 덜함::
+  대화형 슈노르 서명 신원 확인 프로토콜은 타원곡선 이산로그 문제(ECDLP)의 어려움에만 의존합니다.
+  비트코인이 쓰는 비대화형 인증 프로토콜은 랜덤 오라클 모델(ROM)에도 의존합니다. 하지만 ECDSA는
+  추가된 복잡성 때문에 (우리가 아는 한) 안전성에 대한 완전한 증명이 발표되지 못했습니다. 우리는
+  암호 알고리즘을 증명하는 전문가는 아니지만, 30년이 지난 지금 ECDSA가 슈노르와 똑같은 두 가정만
+  필요로 한다고 증명될 가능성은 낮아 보입니다.
 
-Nonlinear::
-  ECDSA signatures cannot be easily combined to create scriptless
-  multisignatures or used in related advanced applications, such as
-  multiparty signature adaptors.  There are workarounds for this
-  problem, but they involve additional extra complexity that
-  significantly slows down operations and which, in some cases, has
-  resulted in software accidentally leaking private keys.
+비선형::
+  ECDSA 서명은 손쉽게 결합해 스크립트 없는 다중서명을 만들거나 다자간 서명 어댑터 같은 관련
+  고급 응용에 쓸 수 없습니다. 이 문제를 우회하는 방법이 있기는 하지만, 연산을 크게 느리게 만드는
+  추가 복잡성이 따르며 어떤 경우에는 소프트웨어가 실수로 비밀키를 흘리는 일로 이어지기도
+  했습니다.
 
-==== ECDSA Algorithm
+==== ECDSA 알고리즘
 
-Let's look at the math of ECDSA.
-Signatures are created by a mathematical function _F_~_sig_~
-that produces a signature composed of two values.  In ECDSA, those two
-values are _R_ and _s_.
+ECDSA의 수학을 살펴봅시다. 서명은 두 값으로 이루어진 서명을 만들어내는 수학 함수 _F_~_sig_~ 로
+생성됩니다. ECDSA에서 그 두 값은 _R_ 과 _s_ 입니다.
 
-The signature
-algorithm first generates a private nonce (_k_) and derives from it a public
-nonce (_K_).  The _R_ value of the digital signature is then the _x_
-coordinate of the nonce _K_.
+서명 알고리즘은 먼저 비밀 논스(_k_)를 생성하고 거기서 공개 논스(_K_)를 유도합니다. 그러면 디지털
+서명의 _R_ 값은 논스 _K_ 의 _x_ 좌표가 됩니다.
 
-From there, the algorithm calculates the _s_ value of the signature.  Like we did with schnorr signatures, operations involving
-integers are modulus p:
+거기서부터 알고리즘은 서명의 _s_ 값을 계산합니다. 슈노르 서명에서와 마찬가지로 정수가 관여하는
+연산은 모듈러스 p로 수행됩니다.
 
 [latexmath]
 ++++
@@ -878,17 +647,15 @@ s = k^{-1} (Hash(m) + x \times R)
 ++++
 
 
-where:
+여기서
 
-* _k_ is the private nonce
-* _R_ is the _x_ coordinate of the public nonce
-* _x_ is the Alice's private key
-* _m_ is the message (transaction data)
+* _k_ 는 비밀 논스
+* _R_ 은 공개 논스의 _x_ 좌표
+* _x_ 는 앨리스의 비밀키
+* _m_ 은 메시지(트랜잭션 데이터)
 
-Verification is the inverse of the signature generation function, using
-the _R_, _s_ values and the public key to calculate a value _K_, which
-is a point on the elliptic curve (the public nonce used in
-signature creation):
+검증은 서명 생성 함수의 역으로, _R_ 과 _s_ 값, 그리고 공개키를 사용해 값 _K_ 를 계산합니다.
+_K_ 는 타원곡선 위의 점(서명 생성에 쓰인 공개 논스)입니다.
 
 [latexmath]
 ++++
@@ -897,138 +664,101 @@ K = s^{-1} \times Hash(m) \times G + s^{-1} \times R \times X
 \end{equation}
 ++++
 
-where:
+여기서
 
-- _R_ and _s_ are the signature values
-- _X_ is Alice's public key
-- _m_ is the message (the transaction data that was signed)
-- _G_ is the elliptic curve generator point
+- _R_ 과 _s_ 는 서명 값
+- _X_ 는 앨리스의 공개키
+- _m_ 은 메시지(서명된 트랜잭션 데이터)
+- _G_ 는 타원곡선 생성점
 
-If the _x_ coordinate of the calculated point _K_ is equal to _R_, then
-the verifier can conclude that the signature is valid.
+계산된 점 _K_ 의 _x_ 좌표가 _R_ 과 같으면 검증자는 그 서명이 유효하다고 결론지을 수 있습니다.
 
 [TIP]
 ====
-ECDSA is necessarily a fairly complicated piece of math; a full
-explanation is beyond the scope of this book. A number of great guides
-online take you through it step by step: search for "ECDSA explained."
+ECDSA는 어쩔 수 없이 꽤 복잡한 수학이며, 완전한 설명은 이 책의 범위를 벗어납니다. 온라인에 단계별로
+짚어주는 훌륭한 안내가 여럿 있으니 "ECDSA explained"로 검색해 보세요.
 ====
 
 [[serialization_of_signatures_der]]
-==== Serialization of ECDSA Signatures (DER)
+==== ECDSA 서명의 직렬화(DER)
 
-Let's ((("serialization", "ECDSA signatures")))look at
-the following DER-encoded signature:
+다음 ((("serialization", "ECDSA signatures")))DER 인코딩 서명을 봅시다.
 
 ----
 3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204
 b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
 ----
 
-That signature is a serialized byte stream of the _R_ and _s_ values
-produced by the signer to prove control of the private key authorized
-to spend an output. The serialization format consists of nine elements
-as follows:
+이 서명은 출력을 쓸 권한이 있는 비밀키를 통제한다는 것을 증명하기 위해 서명자가 만들어낸 _R_ 과
+_s_ 값을 직렬화한 바이트 스트림입니다. 직렬화 형식은 다음 아홉 개 요소로 이루어집니다.
 
-* +0x30+, indicating the start of a DER sequence
-* +0x45+, the length of the sequence (69 bytes)
-  * +0x02+, an integer value follows
-  * +0x21+, the length of the integer (33 bytes)
+* +0x30+, DER 시퀀스의 시작을 나타냄
+* +0x45+, 시퀀스의 길이(69바이트)
+  * +0x02+, 정수 값이 이어짐
+  * +0x21+, 그 정수의 길이(33바이트)
   * +R+, ++00884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb++
-  * +0x02+, another integer follows
-  * +0x20+, the length of the integer (32 bytes)
+  * +0x02+, 또 다른 정수가 이어짐
+  * +0x20+, 그 정수의 길이(32바이트)
   * +S+, ++4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813++
-* A suffix (+0x01+) indicating the type of hash((("digital signatures", "ECDSA", startref="digital-signature-ecdsa")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)", startref="ecdsa"))) used (+SIGHASH_ALL+)
-
+* 사용된 해시 유형(+SIGHASH_ALL+)을 나타내는 ((("digital signatures", "ECDSA", startref="digital-signature-ecdsa")))((("ECDSA (Elliptic Curve Digital Signature Algorithm)", startref="ecdsa")))접미사(+0x01+)
 [[nonce_warning]]
-=== The Importance of Randomness in Signatures
+=== 서명에서 무작위성의 중요성
 
-As we((("digital signatures", "randomness, importance of", id="digital-signature-random")))((("randomness, importance in digital signatures", id="random-digital-signature"))) saw in <<schnorr_signatures>> and <<ecdsa_signatures>>,
-the signature generation algorithm uses a random number _k_ as the basis
-for a private/public nonce pair. The value of _k_ is not
-important, _as long as it is random_. If signatures from the same
-private key use the private nonce _k_ with different messages
-(transactions), then the
-signing _private key_ can be calculated by anyone. Reuse of the same
-value for _k_ in a signature algorithm leads to exposure of the private
-key!
+((("digital signatures", "randomness, importance of", id="digital-signature-random")))((("randomness, importance in digital signatures", id="random-digital-signature")))<<schnorr_signatures>>와 <<ecdsa_signatures>>에서 보았듯이, 서명 생성
+알고리즘은 비밀/공개 논스 쌍의 바탕으로 무작위 수 _k_ 를 사용합니다. _k_ 의 값이 무엇인지는
+중요하지 않습니다. _무작위이기만 하다면_ 말입니다. 같은 비밀키로 만든 서명들이 서로 다른
+메시지(트랜잭션)에 같은 비밀 논스 _k_ 를 쓴다면, 서명에 쓰인 _비밀키_ 를 누구나 계산해낼 수
+있습니다. 서명 알고리즘에서 같은 _k_ 값을 재사용하면 비밀키가 노출됩니다!
 
 [WARNING]
 ====
-If the same value _k_
-is used in the signing algorithm on two different transactions, the
-private key can be calculated and exposed to the world!
+서로 다른 두 트랜잭션의 서명 알고리즘에 같은 _k_ 값이 쓰이면, 비밀키가 계산되어 온 세상에 드러날
+수 있습니다!
 ====
 
-This is not just a theoretical possibility. We have seen this issue lead
-to exposure of private keys in a few different implementations of
-transaction-signing algorithms in Bitcoin. People have had funds stolen
-because of inadvertent reuse of a _k_ value. The most common reason for
-reuse of a _k_ value is an improperly initialized random-number
-generator.
+이는 단지 이론적인 가능성이 아닙니다. 비트코인의 트랜잭션 서명 알고리즘을 구현한 여러 사례에서
+이 문제가 비밀키 노출로 이어지는 것을 보아 왔습니다. _k_ 값을 무심코 재사용한 탓에 자금을 도둑맞은
+사람들도 있습니다. _k_ 값을 재사용하는 가장 흔한 이유는 난수 생성기를 제대로 초기화하지 않는
+것입니다.
 
-To avoid this
-vulnerability, the industry best practice is to not generate _k_ with a
-random-number generator seeded only with entropy, but instead to use a
-process seeded in part with the transaction data itself plus the
-private key being used to sign.
-This ensures that each transaction produces a different _k_. The
-industry-standard algorithm for deterministic initialization of _k_ for
-ECDSA is defined in https://oreil.ly/yuabl[RFC6979], published by
-the Internet Engineering Task Force.  For schnorr signatures, BIP340
-recommends a default signing algorithm.
+이 취약점을 피하기 위한 업계 모범 사례는, 엔트로피만으로 시드를 준 난수 생성기로 _k_ 를 만드는 것이
+아니라 트랜잭션 데이터 자체와 서명에 쓰는 비밀키를 시드의 일부로 삼는 과정을 쓰는 것입니다. 이렇게
+하면 트랜잭션마다 서로 다른 _k_ 가 나옵니다. ECDSA에서 _k_ 를 결정적으로 초기화하는 업계 표준
+알고리즘은 국제 인터넷 표준화 기구가 발표한 https://oreil.ly/yuabl[RFC6979]에 정의되어 있습니다.
+슈노르 서명의 경우 BIP340이 기본 서명 알고리즘을 권장합니다.
 
-BIP340 and RFC6979 can generate _k_ entirely deterministically, meaning the same
-transaction data will always produce the same _k_.  Many wallets do this
-because it makes it easy to write tests to verify their safety-critical
-signing code is producing _k_ values correctly.  BIP340 and RFC6979 both also allow
-including additional data in the calculation.  If that data is entropy,
-then a different _k_ will be produced even if the exact same transaction
-data is signed.  This can increase protection against sidechannel and
-fault-injection attacks.
+BIP340과 RFC6979는 _k_ 를 완전히 결정적으로 생성할 수 있는데, 이는 같은 트랜잭션 데이터라면 항상
+같은 _k_ 가 나온다는 뜻입니다. 많은 지갑이 이렇게 하는데, 안전에 결정적인 서명 코드가 _k_ 값을
+올바르게 만들어내는지 검증하는 테스트를 작성하기 쉬워지기 때문입니다. BIP340과 RFC6979 모두 계산에
+추가 데이터를 넣는 것도 허용합니다. 그 데이터가 엔트로피라면 정확히 같은 트랜잭션 데이터에 서명해도
+다른 _k_ 가 나옵니다. 이는 부채널 공격과 결함 주입 공격에 대한 보호를 높여줍니다.
 
-If you are implementing an algorithm to sign transactions in Bitcoin,
-you _must_ use BIP340, RFC6979, or a similar algorithm to
-ensure you generate a different _k_ for each ((("digital signatures", "randomness, importance of", startref="digital-signature-random")))((("randomness, importance in digital signatures", startref="random-digital-signature")))transaction.
+비트코인에서 트랜잭션에 서명하는 알고리즘을 구현한다면, 트랜잭션마다 서로 다른 _k_ 를 생성하도록
+BIP340이나 RFC6979, 또는 그와 비슷한 알고리즘을 _반드시_ ((("digital signatures", "randomness, importance of", startref="digital-signature-random")))((("randomness, importance in digital signatures", startref="random-digital-signature")))사용해야 합니다.
 
-=== Segregated Witness's New Signing Algorithm
+=== 분리된 증인의 새 서명 알고리즘
 
-Signatures in((("digital signatures", "segregated witness and")))((("segregated witness (segwit)", "digital signatures and")))((("commitment hash"))) Bitcoin transactions are applied on a _commitment hash_,
-which is calculated from the transaction data, locking specific parts of
-the data indicating the signer's commitment to those values. For
-example, in a simple +SIGHASH_ALL+ type signature, the commitment hash
-includes all inputs and outputs.
+비트코인((("digital signatures", "segregated witness and")))((("segregated witness (segwit)", "digital signatures and")))((("commitment hash"))) 트랜잭션의 서명은 _커밋먼트 해시_ 에 적용되며, 이는 트랜잭션
+데이터로부터 계산되어 서명자가 그 값들에 커밋했음을 나타내는 데이터의 특정 부분을 잠급니다. 예를
+들어 단순한 +SIGHASH_ALL+ 유형의 서명에서 커밋먼트 해시에는 모든 입력과 출력이 포함됩니다.
 
-Unfortunately, the way the legacy commitment hashes were calculated introduced the
-possibility that a node verifying a signature can be forced to perform
-a significant number of hash computations. Specifically, the hash
-operations increase roughly quadratically with respect to the number of
-inputs in the transaction. An attacker could therefore create a
-transaction with a very large number of signature operations, causing
-the entire Bitcoin network to have to perform hundreds or thousands of
-hash operations to verify the transaction.
+안타깝게도 레거시 커밋먼트 해시를 계산하는 방식은 서명을 검증하는 노드가 상당히 많은 해시 연산을
+수행하도록 강제당할 수 있는 가능성을 만들었습니다. 구체적으로 해시 연산은 트랜잭션의 입력 수에 대해
+대략 제곱에 비례해 늘어납니다. 따라서 공격자는 서명 연산이 아주 많은 트랜잭션을 만들어, 비트코인
+네트워크 전체가 그 트랜잭션을 검증하느라 수백 수천 번의 해시 연산을 수행하게 만들 수 있었습니다.
 
-Segwit represented an opportunity to address this problem by changing
-the way the commitment hash is calculated. For segwit version 0 witness
-programs, signature verification occurs using an improved commitment
-hash algorithm as specified in BIP143.
+세그윗은 커밋먼트 해시를 계산하는 방식을 바꿔 이 문제를 해결할 기회였습니다. 세그윗 버전 0 위트니스
+프로그램에서는 BIP143에 규정된 개선된 커밋먼트 해시 알고리즘으로 서명 검증이 이루어집니다.
 
-The new algorithm allows the number of
-hash operations to increase by a much more gradual O(n) to the number of
-signature operations, reducing the opportunity to create
-denial-of-service attacks with overly complex transactions.
+새 알고리즘은 해시 연산이 서명 연산 수에 대해 훨씬 완만한 O(n)으로 늘어나게 해, 지나치게 복잡한
+트랜잭션으로 서비스 거부 공격을 만들어낼 여지를 줄입니다.
 
-In this chapter, we learned about schnorr and ECDSA signatures for
-Bitcoin.  This explains how full nodes authenticate transactions to
-ensure that only someone controlling the key to which bitcoins were
-received can spend those bitcoins.  We also examined several advanced
-applications of signatures, such as scriptless multisignatures and
-scriptless threshold signatures that can be used to improve the
-efficiency and privacy of Bitcoin.  In the past few chapters, we've
-learned how to create transactions, how to secure them with
-authorization and authentication, and how to sign them.  We will next
-learn how to encourage miners to confirm them by adding fees to the
-transactions we create.
+이 장에서는 비트코인의 슈노르 서명과 ECDSA 서명을 배웠습니다. 이는 비트코인을 받은 키를 통제하는
+사람만이 그 비트코인을 쓸 수 있도록 풀 노드가 트랜잭션을 인증하는 방식을 설명해 줍니다. 또한 비트코인의
+효율과 프라이버시를 높이는 데 쓸 수 있는 스크립트 없는 다중서명과 스크립트 없는 임계 서명 같은 서명의
+고급 응용도 살펴봤습니다. 지난 몇 장에 걸쳐 트랜잭션을 만드는 방법과, 권한 부여 및 인증으로 그것을
+지키는 방법, 그리고 서명하는 방법을 배웠습니다. 다음에는 우리가 만든 트랜잭션에 수수료를 붙여 채굴자가
+그것을 확인하도록 유도하는 방법을 배웁니다.
 
 //FIXME: mention segwit v0 and v1 coverage of values to aid hardware
 //wallets
