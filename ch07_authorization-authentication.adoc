@@ -1,1004 +1,798 @@
 [[c_authorization_authentication]]
-== Authorization and Authentication
+== 권한 부여와 인증
 
-When you receive bitcoins, you have to decide who will have permission
-to spend them, ((("authorization")))((("authentication")))called _authorization_.  You also have to decide how full
-nodes will distinguish the authorized spenders from everyone else,
-called _authentication_.  Your authorization instructions and the
-spender proof of authentication will be checked by thousands of
-independent full nodes, which all need to come to the same conclusion
-that a spend was authorized and authenticated in order for the transaction
-containing it to be valid.
+비트코인을 받으면 누가 그것을 쓸 수 있는지 정해야 하는데, 이를
+((("authorization")))((("authentication")))_권한 부여_ 라고 합니다. 또한 권한을 받은 지출자를 풀 노드가 나머지
+사람들과 어떻게 구별할지도 정해야 하는데, 이를 _인증_ 이라고 합니다. 여러분의 권한 부여
+지시와 지출자의 인증 증명은 수천 개의 독립적인 풀 노드가 검사하며, 그 지출이 권한을
+부여받고 인증되었다는 같은 결론에 모두가 이르러야 그것을 담은 트랜잭션이 유효해집니다.
 
-The original description of Bitcoin used a public key for authorization.
-Alice paid Bob by putting his public key in the output of a transaction.
-Authentication came from Bob in the form of a signature that committed to a
-spending transaction, such as from Bob to Carol.
+비트코인에 대한 최초의 설명은 권한 부여에 공개키를 사용했습니다. 앨리스는 밥의 공개키를
+트랜잭션의 출력에 넣어 밥에게 지불했습니다. 인증은 밥이 지출 트랜잭션에 커밋하는 서명의
+형태로 제공했는데, 예를 들어 밥이 캐럴에게 보내는 트랜잭션이 그렇습니다.
 
-The actual version of Bitcoin that was originally released provided a
-more flexible mechanism for both authorization and authentication.
-Improvements since then have only increased that flexibility.  In this
-chapter, we'll explore those features and see how they're most commonly
-used.
+실제로 처음 공개된 버전의 비트코인은 권한 부여와 인증 모두에 더 유연한 방식을
+제공했습니다. 그 이후의 개선은 유연성을 더 높이기만 했습니다. 이 장에서는 그 기능들을
+살펴보고 가장 흔히 어떻게 쓰이는지 알아봅니다.
 
 [[tx_script]]
-=== Transaction Scripts and Script Language
+=== 트랜잭션 스크립트와 스크립트 언어
 
-The((("transaction scripts", see="scripts")))((("Script programming language"))) original version of Bitcoin introduced a new
-programming language called _Script_, a Forth-like stack-based
-language.  Both the script placed in an output and the legacy
-input script used in a spending transaction are written in this scripting
-language.
+((("transaction scripts", see="scripts")))((("Script programming language")))비트코인의 최초 버전은 _스크립트(Script)_ 라는 새 프로그래밍 언어를
+도입했는데, Forth를 닮은 스택 기반 언어입니다. 출력에 놓이는 스크립트와 지출 트랜잭션에
+쓰이는 레거시 입력 스크립트 모두 이 스크립팅 언어로 작성됩니다.
 
-Script is a very simple language.  It requires minimal processing and
-cannot easily do many of the fancy things modern programming languages
-can do.
+스크립트는 매우 단순한 언어입니다. 처리에 드는 비용이 적고, 현대 프로그래밍 언어가 하는
+근사한 일들을 손쉽게 해내지는 못합니다.
 
-When legacy transactions were the
-most commonly used type of transaction, the majority of transactions processed
-through the Bitcoin network had the form "Payment to Bob's Bitcoin
-address" and used a script called a pay to public key hash (P2PKH) script.
-However, Bitcoin transactions are not limited to the "Payment to Bob's
-Bitcoin address" script. In fact, scripts can be written to express a
-vast variety of complex conditions. In order to understand these more
-complex scripts, we must first understand the basics of transaction
-scripts and Script language.
+레거시 트랜잭션이 가장 흔히 쓰이던 시절, 비트코인 네트워크에서 처리되는 트랜잭션의
+대부분은 "밥의 비트코인 주소로 지불" 형태였고 공개키 해시로 지불(P2PKH) 스크립트를
+사용했습니다. 하지만 비트코인 트랜잭션이 "밥의 비트코인 주소로 지불" 스크립트에 한정되는
+것은 아닙니다. 사실 스크립트는 아주 다양한 복잡한 조건을 표현하도록 작성할 수 있습니다.
+이런 더 복잡한 스크립트를 이해하려면 먼저 트랜잭션 스크립트와 스크립트 언어의 기본을
+알아야 합니다.
 
-In this section, we will demonstrate the basic components of the Bitcoin
-transaction scripting language and show how it can be used to express
-conditions for spending and how those conditions can be satisfied.
+이 절에서는 비트코인 트랜잭션 스크립팅 언어의 기본 구성 요소를 보여주고, 그것으로 지출
+조건을 어떻게 표현하며 그 조건을 어떻게 충족시킬 수 있는지 설명합니다.
 
 [TIP]
 ====
-Bitcoin transaction validation((("transactions", "validating")))((("validating", "transactions"))) is not based on
-a static pattern but instead is achieved through the execution of a
-scripting language. This language allows for a nearly infinite variety
-of conditions to be expressed.
+비트코인 트랜잭션 검증은((("transactions", "validating")))((("validating", "transactions"))) 고정된 패턴에 기반하지 않고 스크립팅 언어의 실행을
+통해 이루어집니다. 이 언어 덕분에 사실상 무한에 가까운 다양한 조건을 표현할 수 있습니다.
 ====
 
-==== Turing Incompleteness
+==== 튜링 불완전성
 
-The ((("scripts", "Turing incompleteness")))((("Turing Complete")))Bitcoin transaction script language
-contains many operators, but is deliberately limited in one important
-way--there are no loops or complex flow control capabilities other than
-conditional flow control. This ensures that the language is not _Turing
-Complete_, meaning that scripts have limited complexity and predictable
-execution times. Script is not a general-purpose language.
-These
-limitations ensure that the language cannot be used to create an
-infinite loop or other form of "logic bomb" that could be embedded in a
-transaction in a way that causes a denial-of-service attack against the
-Bitcoin network. Remember, every transaction is validated by every full
-node on the Bitcoin network. A limited language prevents the transaction
-validation mechanism from being used as a vulnerability.
+((("scripts", "Turing incompleteness")))((("Turing Complete")))비트코인 트랜잭션 스크립트 언어에는 연산자가 많지만, 한 가지 중요한
+점에서 의도적으로 제한되어 있습니다. 조건부 흐름 제어 외에는 반복문이나 복잡한 흐름 제어
+기능이 없다는 점입니다. 이는 이 언어가 _튜링 완전_ 하지 않게 만들어, 스크립트의 복잡도가
+제한되고 실행 시간이 예측 가능하도록 보장합니다. 스크립트는 범용 언어가 아닙니다. 이런
+제한 덕분에 이 언어로는 무한 루프나 그 밖의 "논리 폭탄"을 만들어 트랜잭션에 심어 비트코인
+네트워크에 서비스 거부 공격을 가하는 일이 불가능합니다. 모든 트랜잭션은 비트코인
+네트워크의 모든 풀 노드가 검증한다는 점을 기억하세요. 제한된 언어는 트랜잭션 검증 장치가
+취약점으로 악용되는 것을 막아 줍니다.
 
-==== Stateless Verification
+==== 무상태 검증
 
-The ((("scripts", "stateless verification")))((("stateless script verification")))((("verifying", "scripts")))Bitcoin transaction script language is
-stateless, in that there is no state prior to execution of the script
-or state saved after execution of the script. All the
-information needed to execute a script is contained within the script
-and the transaction executing the script.  A
-script will predictably execute the same way on any system. If your
-system verified a script, you can be sure that every other system in the
-Bitcoin network will also verify the script, meaning that a valid
-transaction is valid for everyone and everyone knows this. This
-predictability of outcomes is an essential benefit of the Bitcoin
-system.
-
+((("scripts", "stateless verification")))((("stateless script verification")))((("verifying", "scripts")))비트코인 트랜잭션 스크립트 언어는 무상태입니다. 즉 스크립트 실행
+전에 어떤 상태도 없고, 실행 후에 저장되는 상태도 없습니다. 스크립트를 실행하는 데 필요한
+모든 정보는 그 스크립트와 그것을 실행하는 트랜잭션 안에 들어 있습니다. 스크립트는 어떤
+시스템에서든 예측 가능하게 똑같이 실행됩니다. 여러분의 시스템이 어떤 스크립트를 검증했다면
+비트코인 네트워크의 다른 모든 시스템도 그 스크립트를 검증하리라고 확신할 수 있으며, 이는
+유효한 트랜잭션은 모두에게 유효하고 모두가 그 사실을 안다는 뜻입니다. 이렇게 결과가
+예측 가능하다는 점은 비트코인 시스템의 핵심적인 이점입니다.
 [[tx_lock_unlock]]
-==== Script Construction
+==== 스크립트 구성
 
-Bitcoin's ((("scripts", "input/output", "constructing", id="script-input-output-construct")))((("input scripts", "constructing", id="input-script-construct")))((("output scripts", "constructing", id="output-script-construct")))legacy transaction validation engine relies on two parts of scripts
-to validate transactions: an output script and an input script.
+비트코인의 ((("scripts", "input/output", "constructing", id="script-input-output-construct")))((("input scripts", "constructing", id="input-script-construct")))((("output scripts", "constructing", id="output-script-construct")))레거시 트랜잭션 검증 엔진은 트랜잭션을 검증하는 데 스크립트의
+두 부분, 즉 출력 스크립트와 입력 스크립트에 의존합니다.
 
-An output script
-specifies the conditions that must be met to spend the output in the
-future, such as who is authorized to spend the output and how they will
-be authenticated.
+출력 스크립트는 앞으로 그 출력을 쓰기 위해 충족해야 하는 조건을 지정합니다. 누가 그
+출력을 쓸 권한이 있고 어떻게 인증할 것인지 같은 내용입니다.
 
-An input script is a script that satisfies the
-conditions placed in an output script and allows the output
-to be spent. Input scripts are part of every transaction input. Most
-of the time in legacy transactions they contain a digital signature produced by the user's
-wallet from his or her private key, but not all input scripts
-must contain signatures.
+입력 스크립트는 출력 스크립트에 놓인 조건을 충족해 그 출력을 쓸 수 있게 하는
+스크립트입니다. 입력 스크립트는 모든 트랜잭션 입력의 일부입니다. 레거시 트랜잭션에서는
+대개 사용자의 지갑이 비밀키로 만들어낸 디지털 서명을 담지만, 모든 입력 스크립트가 서명을
+담아야 하는 것은 아닙니다.
 
-Every Bitcoin((("transactions", "validating")))((("validating", "transactions"))) validating node will validate transactions by executing
-the output and input scripts.  As we saw in
-<<c_transactions>>, each input contains an outpoint that refers to a
-previous transaction output.  The input also contains an input script.  The
-validation software will copy the input script, retrieve the UTXO
-referenced by the input, and copy the output script from that UTXO. The
-input and output scripts are then executed together. The input is
-valid if the input script satisfies the output script's conditions
-(see <<script_exec>>). All the inputs are validated independently as
-part of the overall validation of the transaction.
+비트코인을((("transactions", "validating")))((("validating", "transactions"))) 검증하는 모든 노드는 출력 스크립트와 입력 스크립트를 실행해
+트랜잭션을 검증합니다. <<c_transactions>>에서 보았듯이 각 입력에는 이전 트랜잭션 출력을
+가리키는 아웃포인트가 들어 있습니다. 입력에는 입력 스크립트도 들어 있습니다. 검증
+소프트웨어는 입력 스크립트를 복사하고, 그 입력이 참조하는 UTXO를 가져온 다음, 그
+UTXO에서 출력 스크립트를 복사합니다. 그런 다음 입력 스크립트와 출력 스크립트를 함께
+실행합니다. 입력 스크립트가 출력 스크립트의 조건을 충족하면 그 입력은 유효합니다
+(<<script_exec>> 참고). 모든 입력은 트랜잭션 전체 검증의 일부로 각각 독립적으로
+검증됩니다.
 
-Note that the preceding steps involve making copies of all data.  The
-original data in the previous output and current input is never changed.
-In particular, the previous output is invariable and unaffected by
-failed attempts to spend it.  Only a valid transaction that correctly
-satisfies the conditions of the output script results in the output being
-considered as "spent."
+앞의 단계들은 모든 데이터의 사본을 만드는 과정임에 유의하세요. 이전 출력과 현재 입력의
+원본 데이터는 결코 바뀌지 않습니다. 특히 이전 출력은 불변이며, 그것을 쓰려다 실패한
+시도에 아무 영향도 받지 않습니다. 출력 스크립트의 조건을 올바르게 충족한 유효한 트랜잭션만이
+그 출력을 "쓰였다"고 간주되게 만듭니다.
 
-<<input_and_output_scripts_legacy>> is an example of the output and
-input scripts for the most common type of legacy Bitcoin transaction (a
-payment to a public key hash), showing the combined script resulting
-from the concatenation of the scripts prior to
-validation.
+<<input_and_output_scripts_legacy>>는 가장 흔한 유형의 레거시 비트코인 트랜잭션(공개키
+해시로 지불)에 대한 출력 스크립트와 입력 스크립트의 예이며, 검증 전에 두 스크립트를 이어
+붙여 만든 결합 스크립트를 함께 보여줍니다.
 
 [[input_and_output_scripts_legacy]]
-.Combining input and output scripts to evaluate a transaction script.
+.트랜잭션 스크립트를 평가하기 위해 입력 스크립트와 출력 스크립트를 결합하기.
 image::images/mbc3_0701.png["input_and_output_scripts"]
 
 
-===== The script execution stack
+===== 스크립트 실행 스택
 
-Bitcoin's ((("scripts", "stack", id="script-stack")))((("stack", id="stack")))scripting language is called a stack-based language because it
-uses a data structure called a _stack_. A stack is a very simple data
-structure that can be visualized as a stack of cards. A stack has two
-base operations: push and pop. Push adds an item on top of the stack. Pop
-removes the top item from the stack.
+비트코인의 ((("scripts", "stack", id="script-stack")))((("stack", id="stack")))스크립팅 언어는 _스택_ 이라는 자료 구조를 사용하기 때문에 스택 기반
+언어라고 불립니다. 스택은 카드 더미로 그려볼 수 있는 아주 단순한 자료 구조입니다. 스택에는
+push와 pop이라는 두 가지 기본 연산이 있습니다. push는 스택 맨 위에 항목을 올립니다. pop은
+스택 맨 위의 항목을 제거합니다.
 
-The scripting language executes the script by processing each item from
-left to right. Numbers (data constants) are pushed onto the stack.
-Operators push or pop one or more parameters from the stack, act on
-them, and might push a result onto the stack. For example, +OP_ADD+ will
-pop two items from the stack, add them, and push the resulting sum onto
-the stack.
+스크립팅 언어는 각 항목을 왼쪽에서 오른쪽으로 처리하며 스크립트를 실행합니다. 숫자(데이터
+상수)는 스택에 올려집니다. 연산자는 스택에서 하나 이상의 매개변수를 올리거나 꺼내어 그것에
+작용하고, 결과를 스택에 올리기도 합니다. 예를 들어 +OP_ADD+ 는 스택에서 두 항목을 꺼내
+더한 뒤 그 합을 스택에 올립니다.
 
-Conditional operators evaluate a condition, producing a boolean result
-of +TRUE+ or +FALSE+. For example, +OP_EQUAL+ pops two items from the stack
-and pushes +TRUE+ (+TRUE+ is represented by the number 1) if they are equal
-or +FALSE+ (represented by 0) if they are not equal. Bitcoin
-transaction scripts usually contain a conditional operator so that they
-can produce the +TRUE+ result that signifies a valid ((("scripts", "stack", startref="script-stack")))((("stack", startref="stack")))transaction.
+조건 연산자는 조건을 평가해 +TRUE+ 또는 +FALSE+ 라는 불리언 결과를 만들어냅니다. 예를
+들어 +OP_EQUAL+ 은 스택에서 두 항목을 꺼내, 둘이 같으면 +TRUE+ (+TRUE+ 는 숫자 1로
+표현됩니다)를, 같지 않으면 +FALSE+ (0으로 표현)를 올립니다. 비트코인 트랜잭션 스크립트는
+보통 조건 연산자를 담고 있어서, 유효한 트랜잭션임을 뜻하는 +TRUE+ 결과를 만들어낼 수
+((("scripts", "stack", startref="script-stack")))((("stack", startref="stack")))있습니다.
 
-===== A simple script
+===== 간단한 스크립트
 
-Now let's ((("scripts", "input/output", "examples of", id="script-input-output-example")))((("input scripts", "examples of", id="input-script-example")))((("output scripts", "examples of", id="output-script-example")))apply what we've learned about scripts and stacks to some simple examples.
+이제 ((("scripts", "input/output", "examples of", id="script-input-output-example")))((("input scripts", "examples of", id="input-script-example")))((("output scripts", "examples of", id="output-script-example")))스크립트와 스택에 대해 배운 것을 간단한 예제 몇 가지에 적용해 봅시다.
 
-As we will see in <<simplemath_script>>, the script +2 3 OP_ADD 5 OP_EQUAL+
-demonstrates the arithmetic addition operator +OP_ADD+, adding two
-numbers and putting the result on the stack, followed by the conditional
-operator +OP_EQUAL+, which checks that the resulting sum is equal to
-+5+. For brevity, the +OP_+ prefix may sometimes be omitted in examples
-in this book. For more details on the available script operators and
-functions, see https://oreil.ly/21vH9[Bitcoin Wiki's script
-page].
+<<simplemath_script>>에서 보겠지만, 스크립트 +2 3 OP_ADD 5 OP_EQUAL+ 은 두 수를 더해 그
+결과를 스택에 올리는 산술 덧셈 연산자 +OP_ADD+ 를 보여주고, 이어서 그 합이 +5+ 와 같은지
+확인하는 조건 연산자 +OP_EQUAL+ 을 보여줍니다. 간결하게 쓰기 위해 이 책의 예제에서는
++OP_+ 접두사를 생략하기도 합니다. 사용할 수 있는 스크립트 연산자와 함수에 대한 자세한
+내용은 https://oreil.ly/21vH9[비트코인 위키의 스크립트 페이지]를 참고하세요.
 
-Although most legacy output scripts refer to a public key hash (essentially, a
-legacy Bitcoin address), thereby requiring proof of ownership to spend the
-funds, the script does not have to be that complex. Any combination of
-output and input scripts that results in a +TRUE+ value is valid. The
-simple arithmetic we used as an example of the scripting language is
-also a valid script.
+대부분의 레거시 출력 스크립트는 공개키 해시(사실상 레거시 비트코인 주소)를 가리켜 자금을
+쓰려면 소유권 증명을 요구하지만, 스크립트가 꼭 그렇게 복잡할 필요는 없습니다. 결과가
++TRUE+ 가 되는 출력 스크립트와 입력 스크립트의 조합이라면 무엇이든 유효합니다. 스크립팅
+언어의 예로 사용한 간단한 산술도 유효한 스크립트입니다.
 
-Use part of the arithmetic example script as the output script:
+산술 예제 스크립트의 일부를 출력 스크립트로 써봅시다.
 
 ----
 3 OP_ADD 5 OP_EQUAL
 ----
 
-which can be satisfied by a transaction containing an input with the
-input script:
+이는 다음 입력 스크립트를 담은 입력이 있는 트랜잭션으로 충족할 수 있습니다.
 
 ----
 2
 ----
 
-The validation software combines the scripts:
+검증 소프트웨어는 두 스크립트를 결합합니다.
 
 ----
 2 3 OP_ADD 5 OP_EQUAL
 ----
 
-As we see in <<simplemath_script>>, when
-this script is executed, the result is +OP_TRUE+, making the transaction valid.  Although this is a valid transaction
-output script, note that the resulting UTXO can be spent by anyone with
-the arithmetic skills
-to know that the number 2 satisfies the script.
+<<simplemath_script>>에서 보듯 이 스크립트를 실행하면 결과는 +OP_TRUE+ 가 되어 트랜잭션이
+유효해집니다. 이것이 유효한 트랜잭션 출력 스크립트이긴 하지만, 그 결과 나온 UTXO는 숫자 2가
+그 스크립트를 충족한다는 것을 알아낼 산술 능력이 있는 사람이면 누구나 쓸 수 있다는 점에
+유의하세요.
 
 
 [[simplemath_script]]
-.Bitcoin's script validation doing simple math.
+.간단한 산술을 수행하는 비트코인의 스크립트 검증.
 image::images/mbc3_0702.png["TxScriptSimpleMathExample"]
 
 [TIP]
 ====
-Transactions are valid if the
-top result on the stack is +TRUE+, which is any
-nonzero value.
-Transactions are invalid if the top value on the stack is +FALSE+ (the
-value zero or an empty stack), the script
-execution is halted explicitly by an operator (such as +VERIFY+,
-+OP_RETURN+), or the script was not semantically valid (such as
-containing an +OP_IF+ statement that was not terminated by an +OP_ENDIF+
-opcode).  For details, see https://oreil.ly/J2DXt[Bitcoin
-Wiki's script page].
+스택 맨 위의 결과가 +TRUE+ 이면(0이 아닌 어떤 값이든) 트랜잭션은 유효합니다. 스택 맨 위의
+값이 +FALSE+ 이거나(값이 0이거나 스택이 비어 있는 경우), 연산자(+VERIFY+, +OP_RETURN+
+등)가 스크립트 실행을 명시적으로 중단시켰거나, 스크립트가 의미상 유효하지 않으면(예:
++OP_IF+ 문이 +OP_ENDIF+ 옵코드로 끝나지 않은 경우) 트랜잭션은 유효하지 않습니다. 자세한
+내용은 https://oreil.ly/J2DXt[비트코인 위키의 스크립트 페이지]를 참고하세요.
 ====
 
 
-The following is a slightly more complex script, which calculates
-2 + 7 – 3 + 1. Notice that when the script contains several operators in
-a row, the stack allows the results of one operator to be acted upon by
-the next operator:
+다음은 2 + 7 – 3 + 1을 계산하는, 조금 더 복잡한 스크립트입니다. 스크립트에 연산자가 연달아
+여러 개 있을 때, 한 연산자의 결과에 다음 연산자가 작용할 수 있도록 스택이 받쳐준다는 점에
+주목하세요.
 
 ----
 2 7 OP_ADD 3 OP_SUB 1 OP_ADD 7 OP_EQUAL
 ----
 
-Try validating the preceding script yourself using pencil and paper.
-When the script execution ends, you should be left with a +TRUE+ value
-on the ((("scripts", "input/output", "examples of", startref="script-input-output-example")))((("input scripts", "examples of", startref="input-script-example")))((("output scripts", "examples of", startref="output-script-example")))stack.
+앞의 스크립트를 연필과 종이로 직접 검증해 보세요. 스크립트 실행이 끝나면 스택에 +TRUE+
+값이 ((("scripts", "input/output", "examples of", startref="script-input-output-example")))((("input scripts", "examples of", startref="input-script-example")))((("output scripts", "examples of", startref="output-script-example")))남아 있어야 합니다.
 
 [[script_exec]]
-===== Separate execution of output and input scripts
+===== 출력 스크립트와 입력 스크립트의 분리 실행
 
-In the ((("scripts", "input/output", "separate execution")))((("input scripts", "separate execution from output scripts")))((("output scripts", "separate execution from input scripts")))original Bitcoin
-client, output and input scripts were concatenated and executed
-in sequence. For security reasons, this was changed in 2010 because of
-a vulnerability known as the +1 OP_RETURN+ bug.  In the current
-implementation, the scripts are executed separately with the stack
-transferred between the two executions.
+((("scripts", "input/output", "separate execution")))((("input scripts", "separate execution from output scripts")))((("output scripts", "separate execution from input scripts")))최초의 비트코인 클라이언트에서는 출력 스크립트와 입력 스크립트를
+이어 붙여 순서대로 실행했습니다. 보안상의 이유로 2010년에 이 방식이 바뀌었는데,
++1 OP_RETURN+ 버그로 알려진 취약점 때문이었습니다. 현재 구현에서는 두 스크립트를 따로
+실행하되 두 실행 사이에 스택을 넘겨줍니다.
 
-First, the input script is executed using the stack execution
-engine. If the input script is executed without errors and has
-no operations left over, the stack is copied and the
-output script is executed. If the result of executing the output script
-with the stack data copied from the input script is +TRUE+,
-the input script has succeeded in resolving the conditions imposed
-by the output script and, therefore, the input is a valid authorization
-to spend the UTXO. If any result other than +TRUE+ remains after
-execution of the combined script, the input is invalid because it has
-failed to satisfy the spending conditions placed on the output.
+먼저 스택 실행 엔진으로 입력 스크립트를 실행합니다. 입력 스크립트가 오류 없이 실행되고
+남은 연산이 없으면 스택을 복사해 출력 스크립트를 실행합니다. 입력 스크립트에서 복사해 온
+스택 데이터로 출력 스크립트를 실행한 결과가 +TRUE+ 이면, 입력 스크립트가 출력 스크립트가
+부과한 조건을 풀어낸 것이고 따라서 그 입력은 UTXO를 쓰기 위한 유효한 권한 부여입니다.
+결합된 스크립트를 실행한 뒤 +TRUE+ 가 아닌 다른 결과가 남으면, 출력에 놓인 지출 조건을
+충족하지 못한 것이므로 그 입력은 유효하지 않습니다.
 
 //SOMEDAY:implications of not being able to use script in input script
-
 [[p2pkh]]
-==== Pay to Public Key Hash
+==== 공개키 해시로 지불
 
 
-A ((("P2PKH (pay to public key hash)")))((("addresses", "P2PKH (pay to public key hash)")))((("scripts", "P2PKH (pay to public key hash)")))pay to public key hash (P2PKH) script uses an output script that
-contains a hash that commits to a public key.  P2PKH is best known as
-the basis for a legacy Bitcoin address. A P2PKH output can be spent by
-presenting a public key that matches the hash commitment and a digital
-signature created by the corresponding private key (see
-<<c_signatures>>).  Let's look at an example of a P2PKH output script:
+((("P2PKH (pay to public key hash)")))((("addresses", "P2PKH (pay to public key hash)")))((("scripts", "P2PKH (pay to public key hash)")))공개키 해시로 지불(P2PKH) 스크립트는 공개키에 커밋하는 해시를 담은
+출력 스크립트를 사용합니다. P2PKH는 레거시 비트코인 주소의 바탕으로 가장 잘 알려져
+있습니다. P2PKH 출력은 해시 커밋먼트와 일치하는 공개키와, 그에 대응하는 비밀키로 만든
+디지털 서명을 제시해 쓸 수 있습니다(<<c_signatures>> 참고). P2PKH 출력 스크립트의 예를
+봅시다.
 
 ----
 OP_DUP OP_HASH160 <Key Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
 [role="less_space pagebreak-before"]
-The +Key Hash+ is the data that would be encoded into a legacy base58check
-address.  Most applications would show the _public key hash_ in a script
-using hexadecimal encoding and not the familiar Bitcoin
-address base58check format that begins with [.keep-together]#a "1."#
++Key Hash+ 는 레거시 base58check 주소로 인코딩될 데이터입니다. 대부분의 애플리케이션은
+스크립트 안의 _공개키 해시_ 를, [.keep-together]#"1"로# 시작하는 익숙한 비트코인 주소
+base58check 형식이 아니라 16진수 인코딩으로 보여줍니다.
 
-The preceding output script can be satisfied with an input script
-of the form:
+앞의 출력 스크립트는 다음 형태의 입력 스크립트로 충족할 수 있습니다.
 
 ----
 <Signature> <Public Key>
 ----
 
-The two scripts together would form the following combined validation
-script:
+두 스크립트를 합치면 다음과 같은 결합 검증 스크립트가 됩니다.
 
 ----
 <Sig> <Pubkey> OP_DUP OP_HASH160 <Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-The result will be +TRUE+ if the input script
-has a valid signature from Bob's private key that corresponds to
-the public key hash set as an encumbrance.
+입력 스크립트에 제약 조건으로 설정된 공개키 해시에 대응하는 밥의 비밀키로 만든 유효한
+서명이 들어 있다면 결과는 +TRUE+ 가 됩니다.
 
-Figures pass:[<a data-type="xref" href="#P2PubKHash1"
-data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] and pass:[<a
+pass:[<a data-type="xref" href="#P2PubKHash1"
+data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] 과 pass:[<a
 data-type="xref" href="#P2PubKHash2" data-xrefstyle="select:
-labelnumber">#P2PubKHash2</a>] show (in two parts) a step-by-step
-execution of the combined script, which will prove this is a valid
-transaction.
+labelnumber">#P2PubKHash2</a>] 그림은 결합 스크립트의 단계별 실행을 두 부분으로 나누어
+보여주며, 이것이 유효한 트랜잭션임을 증명합니다.
 
 [[P2PubKHash1]]
-.Evaluating a script for a P2PKH transaction (part 1 of 2).
+.P2PKH 트랜잭션의 스크립트 평가 (2부 중 1부).
 image::images/mbc3_0703.png["Tx_Script_P2PubKeyHash_1"]
 
 [[P2PubKHash2]]
-.Evaluating a script for a P2PKH transaction (part 2 of 2).
+.P2PKH 트랜잭션의 스크립트 평가 (2부 중 2부).
 image::images/mbc3_0704.png["Tx_Script_P2PubKeyHash_2"]
-
 [[multisig]]
-=== Scripted Multisignatures
+=== 스크립트 다중서명
 
-Multisignature scripts((("scripted multisignatures", id="script-multisignature")))((("multisignature scripts", id="multi-script"))) set a condition where _k_ public keys
-are recorded in the script and at least _t_ of those must provide
-signatures to spend the funds, called _t_-of-_k_.
-For example, a 2-of-3 multisignature is one
-where three public keys are listed as potential signers and at least two
-of those must be used to create signatures for a valid transaction to
-spend the funds.
+다중서명 스크립트는((("scripted multisignatures", id="script-multisignature")))((("multisignature scripts", id="multi-script"))) 스크립트에 공개키 _k_ 개를 기록해 두고 자금을 쓰려면 그중
+최소 _t_ 개가 서명을 제공해야 한다는 조건을 설정하며, 이를 _t_-of-_k_ 라고 합니다. 예를
+들어 2-of-3 다중서명은 서명자가 될 수 있는 공개키 세 개를 나열해 두고, 자금을 쓰는 유효한
+트랜잭션을 만들려면 그중 최소 두 개로 서명을 만들어야 하는 방식입니다.
 
 [TIP]
 ====
-Some Bitcoin documentation, including earlier editions of this book,
-uses the term "m-of-n" for a traditional multisignature.  However, it's hard
-to tell "m" and "n" apart when they're spoken, so we use the alternative
-_t_-of-_k_.  Both phrases refer to the same type of signature scheme.
+이 책의 이전 판을 포함해 일부 비트코인 문서는 전통적인 다중서명에 "m-of-n"이라는 용어를
+씁니다. 하지만 소리 내어 말할 때 "m"과 "n"을 구별하기 어려워서, 우리는 대안으로
+_t_-of-_k_ 를 씁니다. 두 표현 모두 같은 종류의 서명 방식을 가리킵니다.
 ====
 
-The general form of an output script setting a _t_-of-_k_ multisignature
-condition is:
+_t_-of-_k_ 다중서명 조건을 설정하는 출력 스크립트의 일반적인 형태는 다음과 같습니다.
 
 ----
 t <Public Key 1> <Public Key 2> ... <Public Key k> k OP_CHECKMULTISIG
 ----
 
-where _k_ is the total number of listed public keys and _t_ is the threshold
-of required signatures to spend the output.
+여기서 _k_ 는 나열된 공개키의 총 개수이고, _t_ 는 출력을 쓰는 데 필요한 서명의
+임계값입니다.
 
-An output script setting a 2-of-3 multisignature condition looks like
-this:
+2-of-3 다중서명 조건을 설정하는 출력 스크립트는 다음과 같습니다.
 
 ----
 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
-The preceding output script can be satisfied with an input script
-containing [.keep-together]#signatures:#
+앞의 출력 스크립트는 [.keep-together]#서명을# 담은 입력 스크립트로 충족할 수 있습니다.
 
 ----
 <Signature B> <Signature C>
 ----
 
-or any combination of two signatures from the private keys corresponding
-to the three listed public keys.
+또는 나열된 세 공개키에 대응하는 비밀키로 만든 서명 두 개의 어떤 조합이든 가능합니다.
 
-The two scripts together would form the combined validation script:
+두 스크립트를 합치면 다음과 같은 결합 검증 스크립트가 됩니다.
 
 ----
 <Sig B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
-When executed, this combined script will evaluate to +TRUE+ if
-the input script has
-two valid signatures from private keys that correspond to two of
-the three public keys set as an encumbrance.
+실행했을 때, 제약 조건으로 설정된 세 공개키 중 두 개에 대응하는 비밀키로 만든 유효한
+서명 두 개가 입력 스크립트에 들어 있다면 이 결합 스크립트는 +TRUE+ 로 평가됩니다.
 
-At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to, at most, three
-listed public keys, meaning you can do anything from a 1-of-1 to a
-3-of-3 multisignature or any combination within that range.
-You may want to check the +IsStandard()+ function to see what is currently
-accepted by the network. Note that the limit of three keys applies only to
-standard (also known as "bare") multisignature scripts, not to
-scripts wrapped in another structure like P2SH, P2WSH, or P2TR.
-P2SH multisignature scripts are limited by both policy and consensus to
-15 keys, allowing for up to a 15-of-15 multisignature. We will learn about
-P2SH in <<p2sh>>.   All other scripts are consensus limited to 20 keys
-per +OP_CHECKMULTISIG+ or +OP_CHECKMULTISIGVERIFY+ opcode, although one
-script may include multiple of those opcodes.
+현재 비트코인 코어의 트랜잭션 중계 정책은 다중서명 출력 스크립트에 나열할 수 있는 공개키를
+최대 세 개로 제한합니다. 즉 1-of-1부터 3-of-3까지, 그리고 그 범위 안의 어떤 조합이든 쓸
+수 있다는 뜻입니다. 현재 네트워크가 무엇을 받아들이는지 확인하려면 +IsStandard()+ 함수를
+살펴보면 됩니다. 키 세 개 제한은 표준("베어(bare)"라고도 합니다) 다중서명 스크립트에만
+적용되며, P2SH나 P2WSH, P2TR 같은 다른 구조로 감싼 스크립트에는 적용되지 않는다는 점에
+유의하세요. P2SH 다중서명 스크립트는 정책과 합의 양쪽에서 키 15개로 제한되어 최대 15-of-15
+다중서명까지 가능합니다. P2SH는 <<p2sh>>에서 배웁니다. 그 밖의 모든 스크립트는
++OP_CHECKMULTISIG+ 또는 +OP_CHECKMULTISIGVERIFY+ 옵코드당 키 20개로 합의상 제한되지만,
+한 스크립트에 그런 옵코드가 여러 개 들어갈 수는 있습니다.
 
 [role="less_space pagebreak-before"]
 [[multisig_bug]]
-==== An Oddity in CHECKMULTISIG Execution
+==== CHECKMULTISIG 실행의 기이한 점
 
-There ((("OP_CHECKMULTISIG execution", id="op-checkmultisig")))is an oddity in
-++OP_CHECKMULTISIG++'s execution that requires a slight workaround. When
-+OP_CHECKMULTISIG+ executes, it should consume _t_ + _k_ + 2 items on the stack as
-parameters. However, due to the oddity, +OP_CHECKMULTISIG+ will pop an extra
-value or one value more than expected.
+((("OP_CHECKMULTISIG execution", id="op-checkmultisig")))++OP_CHECKMULTISIG++ 의 실행에는 약간의 우회가 필요한 기이한 점이
+있습니다. +OP_CHECKMULTISIG+ 가 실행되면 스택에서 _t_ + _k_ + 2 개의 항목을 매개변수로
+소비해야 합니다. 그런데 이 기이한 점 때문에 +OP_CHECKMULTISIG+ 는 값을 하나 더, 즉 예상보다
+하나 많이 꺼냅니다.
 
-Let's look at this in greater detail using the previous validation
-example:
+앞의 검증 예제로 좀 더 자세히 살펴봅시다.
 
 ----
 <Sig B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
-First, +OP_CHECKMULTISIG+ pops the top item, which is _k_ (in this example
-"3"). Then it pops _k_ items, which are the public keys that can sign;
-in this example, public keys A, B, and C. Then, it pops one item, which
-is _t_, the quorum (how many signatures are needed). Here _t_ = 2. At this
-point, +OP_CHECKMULTISIG+ should pop the final _t_ items, which are the
-signatures, and see if they are valid. However, unfortunately, an oddity in
-the implementation causes +OP_CHECKMULTISIG+ to pop one more item (_t_ + 1
-total) than it should. The extra item is called((("dummy stack element"))) the _dummy stack
-element_, and it is disregarded when checking the
-signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
-However, the dummy element must be present because, if it isn't present
-when +OP_CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a
-stack error and script failure (marking the transaction as invalid).
-Because the dummy element is disregarded, it can be anything. It became the custom early on to use +OP_0+, which later became a
-relay policy rule and eventually a consensus rule (with the enforcement of BIP147).
+먼저 +OP_CHECKMULTISIG+ 는 맨 위 항목인 _k_ (이 예에서는 "3")를 꺼냅니다. 그다음 _k_ 개의
+항목, 즉 서명할 수 있는 공개키들을 꺼냅니다. 이 예에서는 공개키 A, B, C입니다. 그다음 항목
+하나를 꺼내는데, 이는 정족수(서명이 몇 개 필요한지)인 _t_ 입니다. 여기서는 _t_ = 2입니다.
+이 시점에 +OP_CHECKMULTISIG+ 는 마지막으로 _t_ 개의 항목, 즉 서명들을 꺼내 유효한지
+확인해야 합니다. 그런데 안타깝게도 구현상의 기이한 점 때문에 +OP_CHECKMULTISIG+ 는 원래보다
+항목을 하나 더(총 _t_ + 1 개) 꺼냅니다. 이 여분의 항목을 ((("dummy stack element")))_더미 스택 요소_
+라고 하며, 서명을 확인할 때 무시되므로 +OP_CHECKMULTISIG+ 자체에 직접적인 영향은 없습니다.
+하지만 더미 요소는 반드시 있어야 합니다. 없으면 +OP_CHECKMULTISIG+ 가 빈 스택에서 꺼내려
+할 때 스택 오류가 나고 스크립트가 실패해 그 트랜잭션이 유효하지 않게 되기 때문입니다.
+더미 요소는 무시되므로 무엇이든 될 수 있습니다. 초기부터 +OP_0+ 을 쓰는 것이 관례가
+되었고, 이후 중계 정책 규칙이 되었다가 결국 (BIP147의 집행과 함께) 합의 규칙이 되었습니다.
 
-Because popping the dummy element is part of the consensus rules, it must now be
-replicated forever. Therefore a script should look
-like this:
+더미 요소를 꺼내는 것이 합의 규칙의 일부가 되었으므로, 이제는 영원히 그대로 따라야 합니다.
+따라서 스크립트는 다음과 같아야 합니다.
 
 ----
 OP_0 <Sig B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
-Thus the input script actually used in multisig is not:
+그래서 멀티시그에서 실제로 쓰이는 입력 스크립트는 다음이 아니라
 
 ----
 <Signature B> <Signature C>
 ----
 
-but instead it is:
+다음과 같습니다.
 
 ----
 OP_0 <Sig B> <Sig C>
 ----
 
-Some people believe this oddity was a bug in the original code for
-Bitcoin, but a plausible alternative explanation exists.  Verifying
-_t_-of-_k_ signatures can require many more than _t_ or _k_ signature checking
-operations.  Let's consider a simple example of 1-in-5, with the
-following combined script:
+어떤 사람들은 이 기이한 점이 비트코인 원래 코드의 버그였다고 보지만, 그럴듯한 다른 설명도
+있습니다. _t_-of-_k_ 서명을 검증하려면 _t_ 나 _k_ 보다 훨씬 많은 서명 검사 연산이 필요할
+수 있습니다. 1-in-5의 간단한 예를 다음 결합 스크립트로 생각해 봅시다.
 
 ----
 <dummy> <Sig4> 1 <key0> <key1> <key2> <key3> <key4> 5 OP_CHECKMULTISIG
 ----
 
-The signature is checked first against +key0+, then +key1+, and then
-the other keys before it is finally compared to its corresponding
-+key4+.  That means five signature checking operations need to be
-performed even though there's only one signature.  One way to eliminate
-this redundancy would have been to provide +OP_CHECKMULTISIG+ a map
-indicating which provided signature corresponds to which public key,
-allowing the +OP_CHECKMULTISIG+ operation to only perform exactly _t_
-signature-checking operations.  It's possible that Bitcoin's original
-developer added the extra element (which we now call the dummy stack
-element) in the original version of Bitcoin so they could add the
-feature for allowing a map to be passed in a later soft fork.  However,
-that feature was never implemented, and the BIP147 update to the
-consensus rules in 2017 makes it impossible to add that feature in the
-future.
+그 서명은 먼저 +key0+ 에 대해, 그다음 +key1+ 에 대해, 이어서 나머지 키들에 대해 확인된
+뒤에야 마침내 대응하는 +key4+ 와 비교됩니다. 즉 서명이 하나뿐인데도 서명 검사 연산을 다섯
+번 수행해야 합니다. 이 중복을 없애는 한 가지 방법은 +OP_CHECKMULTISIG+ 에 어떤 서명이 어떤
+공개키에 대응하는지 나타내는 맵을 제공해, +OP_CHECKMULTISIG+ 연산이 정확히 _t_ 번의 서명
+검사 연산만 수행하도록 하는 것이었습니다. 비트코인의 원 개발자가 나중에 소프트 포크로 맵을
+넘길 수 있는 기능을 추가하려고 비트코인 최초 버전에 여분의 요소(지금 우리가 더미 스택
+요소라고 부르는 것)를 넣었을 가능성도 있습니다. 하지만 그 기능은 끝내 구현되지 않았고,
+2017년 합의 규칙에 대한 BIP147 갱신으로 앞으로도 그 기능을 추가하는 것은 불가능해졌습니다.
 
-Only Bitcoin's original developer could tell us whether the dummy stack
-element was the result of a bug or a plan for a future upgrade.  In this
-book, we simply call it an oddity.
+더미 스택 요소가 버그의 결과였는지 미래 업그레이드를 위한 계획이었는지는 비트코인의 원
+개발자만이 말해줄 수 있습니다. 이 책에서는 그저 기이한 점이라고 부르겠습니다.
 
-From now on, if you see a multisig script, you should expect
-to see an extra +OP_0+ in the beginning, whose only purpose is as a
-workaround to an oddity in the ((("scripted multisignatures", startref="script-multisignature")))((("multisignature scripts", startref="multi-script")))((("OP_CHECKMULTISIG execution", startref="op-checkmultisig")))consensus rules.
-
+앞으로 멀티시그 스크립트를 보게 되면 맨 앞에 여분의 +OP_0+ 이 있으리라 예상하면 됩니다.
+그것의 유일한 목적은 합의 규칙의 기이한 점을 우회하는 ((("scripted multisignatures", startref="script-multisignature")))((("multisignature scripts", startref="multi-script")))((("OP_CHECKMULTISIG execution", startref="op-checkmultisig")))것입니다.
 [[p2sh]]
-=== Pay to Script Hash
+=== 스크립트 해시로 지불
 
-Pay to script hash (P2SH) was((("scripts", "P2SH (pay to script hash)", id="script-p2sh")))((("addresses", "P2SH (pay to script hash)", id="address-p2sh-ch7")))((("P2SH (pay to script hash)", id="p2sh-ch7")))
-introduced in 2012 as a powerful new type of operation that greatly
-simplifies the use of complex scripts. To explain the need
-for P2SH, let's look at a practical example.
+스크립트 해시로 지불(P2SH)은((("scripts", "P2SH (pay to script hash)", id="script-p2sh")))((("addresses", "P2SH (pay to script hash)", id="address-p2sh-ch7")))((("P2SH (pay to script hash)", id="p2sh-ch7")))
+2012년에 도입된 강력한 새 연산 방식으로, 복잡한 스크립트의 사용을 크게 단순화합니다.
+P2SH가 왜 필요한지 설명하기 위해 실제 예를 봅시다.
 
 
-Mohammed is an electronics importer based in Dubai. Mohammed's
-company uses Bitcoin's multisignature feature extensively for its
-corporate accounts. Multisignature scripts are one of the most common
-uses of Bitcoin's advanced scripting capabilities and are a very
-powerful feature. Mohammed's company
-uses a multisignature script for all customer payments.
-Any payments made by customers are locked in such
-a way that they require at least two signatures to release.  Mohammed,
-his three partners, and their attorney can each provide one signature.
-A multisignature scheme like that offers corporate governance
-controls and protects against theft, embezzlement, or loss.
+모하메드는 두바이에 있는 전자제품 수입업자입니다. 모하메드의 회사는 법인 계정에 비트코인의
+다중서명 기능을 폭넓게 사용합니다. 다중서명 스크립트는 비트코인의 고급 스크립팅 기능 중
+가장 흔히 쓰이는 축에 들며 매우 강력한 기능입니다. 모하메드의 회사는 모든 고객 지불에
+다중서명 스크립트를 사용합니다. 고객이 하는 지불은 모두 해제하려면 서명이 최소 두 개
+필요하도록 잠깁니다. 모하메드와 세 명의 동업자, 그리고 그들의 변호사가 각각 서명 하나를
+제공할 수 있습니다. 이런 다중서명 방식은 기업 지배구조 통제 수단이 되고 도난과 횡령, 분실을
+막아줍니다.
 
-The resulting script is quite long and looks like this:
+그렇게 만들어진 스크립트는 꽤 길고 다음과 같습니다.
 
 ----
 2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> 
 <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
 
-Although multisignature scripts are a powerful feature, they are
-cumbersome to use. Given the preceding script, Mohammed would have to
-communicate this script to every customer prior to payment. Each
-customer would have to use special Bitcoin wallet software with the
-ability to create custom transaction scripts.
-Furthermore, the resulting transaction would be about five times larger
-than a simple payment transaction, because this script contains very
-long public keys. The burden of that extra data would be
-borne by the customer in the form of extra transaction fees. Finally, a large transaction
-script like this would be carried in the UTXO set in every full
-node, until it was spent. All of these issues make using complex output scripts
-difficult in practice.
+다중서명 스크립트는 강력한 기능이지만 쓰기가 번거롭습니다. 앞의 스크립트라면 모하메드는
+지불 전에 이 스크립트를 모든 고객에게 전달해야 합니다. 고객은 저마다 맞춤 트랜잭션
+스크립트를 만들 수 있는 특별한 비트코인 지갑 소프트웨어를 써야 합니다. 게다가 이 스크립트에는
+아주 긴 공개키가 들어 있어서, 그 결과 나오는 트랜잭션은 단순 지불 트랜잭션보다 약 다섯 배
+커집니다. 그 추가 데이터의 부담은 추가 트랜잭션 수수료 형태로 고객이 지게 됩니다. 마지막으로
+이렇게 큰 트랜잭션 스크립트는 그것이 쓰일 때까지 모든 풀 노드의 UTXO 집합에 담겨 있게
+됩니다. 이런 문제들 때문에 복잡한 출력 스크립트를 실제로 쓰기는 어렵습니다.
 
-P2SH was developed to resolve these practical difficulties and to make
-the use of complex scripts as easy as a payment to a single-key Bitcoin address.
-With P2SH payments, the complex script is replaced with a
-commitment, the digest of a cryptographic hash. When a transaction attempting
-to spend the UTXO is presented later, it must contain the script that
-matches the commitment in addition to the data that satisfies the script. In simple terms,
-P2SH means "pay to a script matching this hash, a script that will be
-presented later when this output is spent."
+P2SH는 이런 실질적인 어려움을 해결하고, 복잡한 스크립트를 단일 키 비트코인 주소로 지불하는
+것만큼 쉽게 쓸 수 있도록 개발되었습니다. P2SH 지불에서는 복잡한 스크립트가 커밋먼트, 즉
+암호학적 해시의 다이제스트로 대체됩니다. 나중에 그 UTXO를 쓰려는 트랜잭션이 제시될 때는,
+스크립트를 충족하는 데이터에 더해 그 커밋먼트와 일치하는 스크립트도 함께 담아야 합니다.
+간단히 말해 P2SH는 "이 해시와 일치하는 스크립트로 지불하라, 그 스크립트는 이 출력을 쓸 때
+제시될 것이다"라는 뜻입니다.
 
-In P2SH
-transactions, the script that is replaced by a hash is ((("redeem scripts")))referred
-to as the _redeem script_ because it is presented to the system at
-redemption time rather than as an output script. <<without_p2sh>> shows
-the script without P2SH and <<with_p2sh>> shows the same script encoded
-with P2SH.
+P2SH 트랜잭션에서 해시로 대체되는 스크립트를 ((("redeem scripts")))_리딤 스크립트_ 라고 부르는데,
+출력 스크립트가 아니라 상환(redemption) 시점에 시스템에 제시되기 때문입니다.
+<<without_p2sh>>는 P2SH를 쓰지 않은 스크립트를, <<with_p2sh>>는 같은 스크립트를 P2SH로
+인코딩한 것을 보여줍니다.
 
 ++++
 <table id="without_p2sh">
-<caption>Complex script without P2SH</caption>
+<caption>P2SH를 쓰지 않은 복잡한 스크립트</caption>
 <tbody>
 <tr>
-<td><p>Output script</p></td>
+<td><p>출력 스크립트</p></td>
 <td><p>2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG</p></td>
 </tr>
 <tr>
-<td><p>Input script</p></td>
+<td><p>입력 스크립트</p></td>
 <td><p>Sig1 Sig2</p></td>
 </tr>
 </tbody>
 </table>
 <table id="with_p2sh">
-<caption>Complex script as P2SH</caption>
+<caption>P2SH로 나타낸 복잡한 스크립트</caption>
 <tbody>
 <tr>
-<td><p>Redeem script</p></td>
+<td><p>리딤 스크립트</p></td>
 <td><p>2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG</p></td>
 </tr>
 <tr>
-<td><p>Output script</p></td>
+<td><p>출력 스크립트</p></td>
 <td><p>OP_HASH160 &lt;20-byte hash of redeem script&gt; OP_EQUAL</p></td>
 </tr>
 <tr>
-<td><p>Input script</p></td>
+<td><p>입력 스크립트</p></td>
 <td><p>Sig1 Sig2 &lt;redeem script&gt;</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-As you can see from the tables, with P2SH, the complex script that
-details the conditions for spending the output (redeem script) is not
-presented in the output script. Instead, only a hash of it is in the
-output script, and the redeem script itself is presented later as part
-of the input script when the output is spent. This shifts the burden
-in fees and complexity from the spender to the receiver of the
-transaction.
+표에서 보듯이 P2SH에서는 출력을 쓰기 위한 조건을 상세히 담은 복잡한 스크립트(리딤
+스크립트)가 출력 스크립트에 제시되지 않습니다. 대신 그 해시만 출력 스크립트에 들어가고,
+리딤 스크립트 자체는 나중에 출력이 쓰일 때 입력 스크립트의 일부로 제시됩니다. 이로써
+수수료와 복잡성의 부담이 지불하는 쪽에서 트랜잭션을 받는 쪽으로 옮겨갑니다.
 
-Let's look at Mohammed's company, the complex multisignature script, and
-the resulting P2SH scripts.
+모하메드의 회사와 복잡한 다중서명 스크립트, 그리고 그 결과 나오는 P2SH 스크립트를 봅시다.
 
-First, the multisignature script that Mohammed's company uses for all
-incoming payments from customers:
+먼저 모하메드의 회사가 고객에게서 들어오는 모든 지불에 사용하는 다중서명 스크립트입니다.
 
 ----
 2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> 
 <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
 
-This entire script can instead be represented by a 20-byte cryptographic
-hash by first applying the SHA256 hashing algorithm and then applying
-the RIPEMD-160 algorithm on the result.  For example, starting with the
-hash of Mohammed's redeem script:
+이 스크립트 전체를, 먼저 SHA256 해시 알고리즘을 적용하고 그 결과에 RIPEMD-160 알고리즘을
+적용해 얻은 20바이트 암호학적 해시로 대신 나타낼 수 있습니다. 예를 들어 모하메드의 리딤
+스크립트의 해시는 다음과 같습니다.
 
 ----
 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
 ----
 
-A P2SH transaction locks the output to this hash instead of the longer
-redeem script, using a special output script template:
+P2SH 트랜잭션은 더 긴 리딤 스크립트 대신 이 해시로 출력을 잠그며, 특별한 출력 스크립트
+형판을 사용합니다.
 
 ----
 OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
 
-which, as you can see, is much shorter. Instead of "pay to this 5-key
-multisignature script," the P2SH equivalent transaction is "pay to a
-script with this hash." A customer making a payment to Mohammed's
-company need only include this much shorter output script in his
-payment. When Mohammed and his partners want to spend this UTXO, they
-must present the original redeem script (the one whose hash locked the
-UTXO) and the signatures necessary to unlock it, like this:
+보다시피 훨씬 짧습니다. "이 5키 다중서명 스크립트로 지불하라" 대신, 그에 해당하는 P2SH
+트랜잭션은 "이 해시를 가진 스크립트로 지불하라"가 됩니다. 모하메드의 회사에 지불하는 고객은
+훨씬 짧은 이 출력 스크립트만 지불에 담으면 됩니다. 모하메드와 동업자들이 이 UTXO를 쓰려면,
+원래의 리딤 스크립트(그 해시로 UTXO가 잠긴 바로 그 스크립트)와 그것을 해제하는 데 필요한
+서명들을 다음과 같이 제시해야 합니다.
 
 ----
 <Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
 ----
 
-The two scripts are combined in two stages. First, the redeem script is
-checked against the output script to make sure the hash matches:
+두 스크립트는 두 단계에 걸쳐 결합됩니다. 먼저 리딤 스크립트를 출력 스크립트와 대조해
+해시가 일치하는지 확인합니다.
 
 ----
 <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <script hash> OP_EQUAL
 ----
 
-If the redeem script hash matches, the redeem script is executed:
+리딤 스크립트의 해시가 일치하면 리딤 스크립트를 실행합니다.
 
 ----
 <Sig1> <Sig2> 2 <PK1> <PK2> <PK3> <PK4> <PK5> 5 OP_CHECKMULTISIG
 ----
 
-==== P2SH Addresses
+==== P2SH 주소
 
-Another
-important part of the P2SH feature is the ability to encode a script
-hash as an address, as defined in BIP13. P2SH addresses are base58check
-encodings of the 20-byte hash of a script, just like Bitcoin addresses
-are base58check encodings of the 20-byte hash of a public key. P2SH
-addresses use the version prefix "5," which results in
-base58check-encoded addresses that start with a "3."
+P2SH 기능의 또 다른 중요한 부분은 BIP13에 정의된 대로 스크립트 해시를 주소로 인코딩할 수
+있다는 점입니다. 비트코인 주소가 공개키의 20바이트 해시를 base58check로 인코딩한 것이듯,
+P2SH 주소는 스크립트의 20바이트 해시를 base58check로 인코딩한 것입니다. P2SH 주소는 버전
+접두사 "5"를 사용하며, 그 결과 base58check로 인코딩된 주소가 "3"으로 시작합니다.
 
-For example, Mohammed's complex script, hashed and base58check-encoded
-as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+.
+예를 들어 모하메드의 복잡한 스크립트를 해시해 P2SH 주소로 base58check 인코딩하면
++39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+ 가 됩니다.
 
-Now, Mohammed can give this "address" to his customers, and they can use
-almost any Bitcoin wallet to make a simple payment, like any other
-Bitcoin address. The 3 prefix gives them a hint that this is a special
-type of address, one corresponding to a script instead of a public key,
-but otherwise it works in exactly the same way as a payment to any other Bitcoin
-address.
+이제 모하메드는 이 "주소"를 고객에게 주면 되고, 고객은 다른 비트코인 주소와 마찬가지로 거의
+어떤 비트코인 지갑으로든 간단히 지불할 수 있습니다. 접두사 3은 이것이 공개키가 아니라
+스크립트에 대응하는 특별한 유형의 주소라는 힌트를 주지만, 그 외에는 다른 어떤 비트코인
+주소로 지불하는 것과 정확히 똑같이 동작합니다.
 
-P2SH addresses hide all of the complexity so the person making a
-payment does not see the script.
+P2SH 주소는 모든 복잡함을 감추므로 지불하는 사람은 스크립트를 볼 일이 없습니다.
 
-==== Benefits of P2SH
+==== P2SH의 이점
 
-The P2SH feature
-offers the following benefits compared to the direct use of complex
-scripts in outputs:
+P2SH 기능은 복잡한 스크립트를 출력에 직접 쓰는 것에 비해 다음과 같은 이점이 있습니다.
 
-- The similarity to original legacy addresses means the sender and the sender's
-  wallet don't need complex engineering to implement P2SH.
+- 기존 레거시 주소와 비슷하므로, 보내는 쪽과 그 지갑이 P2SH를 구현하는 데 복잡한 작업이
+  필요하지 않습니다.
 
-- P2SH shifts the burden in data storage for the long script from the
-  output (which additionally to being stored on the blockchain is in the
-  UTXO set) to the input (only stored on the blockchain).
+- 긴 스크립트의 데이터 저장 부담을 출력(블록체인에 저장될 뿐 아니라 UTXO 집합에도 들어감)
+  에서 입력(블록체인에만 저장됨)으로 옮깁니다.
 
-- P2SH shifts the burden in data storage for the long script from the
-  present time (payment) to a future time (when it is spent).
+- 긴 스크립트의 데이터 저장 부담을 현재(지불 시점)에서 미래(그것이 쓰이는 시점)로
+  옮깁니다.
 
-- P2SH shifts the transaction fee cost of a long script from the sender
-  to the recipient, who has to include the long redeem script to spend
-  it.
+- 긴 스크립트에 대한 트랜잭션 수수료 비용을 보내는 쪽에서, 그것을 쓰려면 긴 리딤 스크립트를
+  담아야 하는 받는 쪽으로 옮깁니다.
 
-==== Redeem Script and Validation
+==== 리딤 스크립트와 검증
 
-You are((("redeem scripts", "validating")))((("validating", "redeem scripts"))) not able to put a P2SH inside a P2SH redeem script because the
-P2SH specification is not recursive. Also, while it is technically
-possible to include +OP_RETURN+ (see <<op_return>>) in a redeem script, as
-nothing in the rules prevents you from doing so, it is of no practical
-use because executing +OP_RETURN+ during validation will cause the
-transaction to be marked invalid.
+P2SH ((("redeem scripts", "validating")))((("validating", "redeem scripts")))규격은 재귀적이지 않으므로 P2SH 리딤 스크립트 안에 다시 P2SH를
+넣을 수는 없습니다. 또한 규칙상 이를 막는 것은 없으므로 리딤 스크립트에 +OP_RETURN+
+(<<op_return>> 참고)을 넣는 것이 기술적으로는 가능하지만, 검증 중에 +OP_RETURN+ 을
+실행하면 그 트랜잭션이 유효하지 않다고 표시되므로 실질적인 쓸모는 없습니다.
 
-Note that because the redeem script is not presented to the network
-until you attempt to spend a P2SH output, if you create an output with the
-hash of an invalid redeem script, you will not be able to spend
-it.  The spending transaction, which includes the redeem script,
-will not be accepted because it is an invalid script. This creates a
-risk because you can send bitcoin to a P2SH address that cannot be spent later.
+리딤 스크립트는 P2SH 출력을 쓰려고 시도하기 전까지 네트워크에 제시되지 않으므로, 유효하지
+않은 리딤 스크립트의 해시로 출력을 만들면 그것을 쓸 수 없게 된다는 점에 유의하세요. 리딤
+스크립트를 담은 지출 트랜잭션은 유효하지 않은 스크립트이므로 받아들여지지 않습니다. 이는
+나중에 쓸 수 없는 P2SH 주소로 비트코인을 보낼 수 있다는 위험을 만듭니다.
 
 [WARNING]
 ====
-P2SH output scripts
-contain the hash of a redeem script, which gives no clues as to
-the content of the redeem script. The P2SH output will be
-considered valid and accepted even if the redeem script is invalid. You
-might accidentally receive bitcoin in such a way that it cannot later((("scripts", "P2SH (pay to script hash)", startref="script-p2sh")))((("P2SH (pay to script hash)", startref="p2sh-ch7")))((("addresses", "P2SH (pay to script hash)", startref="address-p2sh-ch7"))) be
-spent.
+P2SH 출력 스크립트는 리딤 스크립트의 해시를 담고 있어서 그 리딤 스크립트의 내용에 대해
+아무런 단서도 주지 않습니다. 리딤 스크립트가 유효하지 않더라도 P2SH 출력은 유효한 것으로
+간주되어 받아들여집니다. 그래서 나중에 쓸 수 없는 방식으로 비트코인을 실수로 받게 될 수도
+((("scripts", "P2SH (pay to script hash)", startref="script-p2sh")))((("P2SH (pay to script hash)", startref="p2sh-ch7")))((("addresses", "P2SH (pay to script hash)", startref="address-p2sh-ch7")))있습니다.
 ====
-
 [[op_return]]
-=== Data Recording Output (OP_RETURN)
+=== 데이터 기록 출력(OP_RETURN)
 
-Bitcoin's
-distributed ((("scripts", "OP_RETURN", id="script-op-return")))((("OP_RETURN scripts", id="op-return")))((("nonpayment data", id="nonpayment-data")))((("blockchain", "nonpayment data in", id="blockchain-nonpayment")))((("output scripts", "OP_RETURN", id="output-script-op-return")))and timestamped blockchain has potential uses
-beyond payments. Many developers have tried to use the transaction
-scripting language to take advantage of the security and resilience of
-the system for applications such as digital notary services.
-Early attempts to use Bitcoin's
-script language for these purposes involved creating transaction outputs
-that recorded data on the blockchain; for example, to record a commitment
-to a file in such a way that anyone could establish
-proof-of-existence of that file on a specific date by reference to that
-transaction.
+비트코인의
+분산되고 ((("scripts", "OP_RETURN", id="script-op-return")))((("OP_RETURN scripts", id="op-return")))((("nonpayment data", id="nonpayment-data")))((("blockchain", "nonpayment data in", id="blockchain-nonpayment")))((("output scripts", "OP_RETURN", id="output-script-op-return")))타임스탬프가 찍힌 블록체인은 지불 외의 용도로도 쓰일 수
+있습니다. 많은 개발자가 디지털 공증 서비스 같은 애플리케이션에 이 시스템의 보안성과
+회복력을 활용하려고 트랜잭션 스크립팅 언어를 써보려 했습니다. 이런 목적으로 비트코인의
+스크립트 언어를 쓰려 한 초기 시도들은 블록체인에 데이터를 기록하는 트랜잭션 출력을 만드는
+방식이었습니다. 예를 들어 어떤 파일에 대한 커밋먼트를 기록해 두면, 누구나 그 트랜잭션을
+참조해 특정 날짜에 그 파일이 존재했다는 증명을 확립할 수 있게 하는 식입니다.
 
 [role="less_space pagebreak-before"]
-The use of Bitcoin's blockchain to store data
-unrelated to Bitcoin payments is a controversial subject. Many
-people consider such use abusive and want to discourage it. Others
-view it as a demonstration of the powerful capabilities of blockchain
-technology and want to encourage such experimentation. Those who object
-to the inclusion of nonpayment data argue that it
-burdens those running full Bitcoin nodes with carrying the
-cost of disk storage for data that the blockchain was not intended to
-carry. Moreover, such transactions may create UTXOs that cannot be spent,
-using a legacy Bitcoin address as a freeform 20-byte field.
-Because the address is used for data, it doesn't correspond to a private
-key and the resulting UTXO can _never_ be spent; it's a fake payment.
-These transactions that can never be spent are therefore never removed
-from the UTXO set and cause the size of the UTXO database to forever
-increase, or "bloat."
+비트코인 지불과 무관한 데이터를 저장하는 데 비트코인 블록체인을 쓰는 것은 논쟁적인
+주제입니다. 많은 사람이 그런 사용을 남용으로 여겨 억제하고 싶어 합니다. 다른 사람들은
+블록체인 기술의 강력한 능력을 보여주는 사례로 보고 그런 실험을 장려하고 싶어 합니다.
+지불과 무관한 데이터를 넣는 데 반대하는 쪽은, 블록체인이 담으려던 것이 아닌 데이터의 디스크
+저장 비용을 비트코인 풀 노드 운영자에게 지운다고 주장합니다. 더구나 그런 트랜잭션은 레거시
+비트코인 주소를 자유 형식 20바이트 필드처럼 써서 쓸 수 없는 UTXO를 만들어낼 수 있습니다.
+그 주소가 데이터로 쓰였으므로 대응하는 비밀키가 없고, 그 결과 나온 UTXO는 _결코_ 쓸 수
+없습니다. 가짜 지불인 셈입니다. 이렇게 결코 쓸 수 없는 트랜잭션은 UTXO 집합에서 절대
+제거되지 않아 UTXO 데이터베이스의 크기를 영원히 키우는, 이른바 "비대화"를 일으킵니다.
 
-A compromise was reached
-that allows an output script starting with +OP_RETURN+ to
-add nonpayment data to a transaction output. However, unlike
-the use of "fake" UTXOs, the +OP_RETURN+ operator creates an explicitly
-_provably unspendable_ output, which does not need to be stored in the
-UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they
-consume disk space and contribute to the increase in the blockchain's
-size, but they are not stored in the UTXO set and therefore do not bloat
-full nodes with the cost of more
-expensive database operations.
+절충안이 마련되어, +OP_RETURN+ 으로 시작하는 출력 스크립트로 지불과 무관한 데이터를 트랜잭션
+출력에 넣을 수 있게 되었습니다. 다만 "가짜" UTXO를 쓰는 것과 달리, +OP_RETURN+ 연산자는
+명시적으로 _증명 가능하게 사용 불가능한_ 출력을 만들며 이는 UTXO 집합에 저장할 필요가
+없습니다. +OP_RETURN+ 출력은 블록체인에 기록되므로 디스크 공간을 쓰고 블록체인 크기를
+키우는 데 기여하지만, UTXO 집합에는 저장되지 않으므로 더 비싼 데이터베이스 연산의 비용으로
+풀 노드를 비대하게 만들지는 않습니다.
 
-+OP_RETURN+ scripts look like this:
++OP_RETURN+ 스크립트는 다음과 같습니다.
 
 ----
 OP_RETURN <data>
 ----
 
-The data portion
-often represents a hash, such as the output
-from the SHA256 algorithm (32 bytes). Some applications put a prefix in
-front of the data to help identify the application. For example, the
-https://proofofexistence.com[Proof of Existence] digital notarization
-service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44
-4f 43 50 52 4f 4f 46+ in hexadecimal.
+데이터 부분은 흔히 SHA256 알고리즘의 출력(32바이트) 같은 해시를 나타냅니다. 어떤
+애플리케이션은 자신을 식별하기 쉽도록 데이터 앞에 접두사를 붙입니다. 예를 들어
+https://proofofexistence.com[Proof of Existence] 디지털 공증 서비스는 8바이트 접두사
++DOCPROOF+ 를 쓰는데, 이는 16진수로 +44 4f 43 50 52 4f 4f 46+ 으로 ASCII 인코딩됩니다.
 
-Keep in mind that there is no input script that corresponds to
-+OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The
-whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
-output, and therefore it does not need to be held in the UTXO set as
-potentially spendable: +OP_RETURN+ outputs are _provably unspendable_. +OP_RETURN+ outputs
-usually have a zero amount because any bitcoins
-assigned to such an output are effectively lost forever. If an +OP_RETURN+ output is
-referenced as an input in a transaction, the script validation engine
-will halt the execution of the validation script and mark the
-transaction as invalid. The execution of +OP_RETURN+ essentially causes the
-script to "RETURN" with a +FALSE+ and halt. Thus, if you accidentally
-reference an +OP_RETURN+ output as an input in a transaction, that
-transaction((("scripts", "OP_RETURN", startref="script-op-return")))((("OP_RETURN scripts", startref="op-return")))((("nonpayment data", startref="nonpayment-data")))((("blockchain", "nonpayment data in", startref="blockchain-nonpayment")))((("output scripts", "OP_RETURN", startref="output-script-op-return"))) is invalid.
++OP_RETURN+ 출력을 "쓸" 수 있게 해줄 +OP_RETURN+ 에 대응하는 입력 스크립트는 존재하지
+않는다는 점을 기억하세요. +OP_RETURN+ 출력의 요점은 그 출력에 잠긴 돈을 쓸 수 없다는 것이고,
+따라서 쓸 수 있을지도 모르는 것으로 UTXO 집합에 담아둘 필요가 없다는 것입니다. +OP_RETURN+
+출력은 _증명 가능하게 사용 불가능_ 합니다. 그런 출력에 할당된 비트코인은 사실상 영원히
+사라지므로 +OP_RETURN+ 출력의 금액은 보통 0입니다. +OP_RETURN+ 출력이 어떤 트랜잭션의
+입력으로 참조되면, 스크립트 검증 엔진은 검증 스크립트의 실행을 멈추고 그 트랜잭션을
+유효하지 않다고 표시합니다. +OP_RETURN+ 의 실행은 본질적으로 스크립트가 +FALSE+ 와 함께
+"RETURN"하고 멈추게 만듭니다. 따라서 실수로 +OP_RETURN+ 출력을 트랜잭션의 입력으로
+참조하면 그 트랜잭션은((("scripts", "OP_RETURN", startref="script-op-return")))((("OP_RETURN scripts", startref="op-return")))((("nonpayment data", startref="nonpayment-data")))((("blockchain", "nonpayment data in", startref="blockchain-nonpayment")))((("output scripts", "OP_RETURN", startref="output-script-op-return"))) 유효하지 않습니다.
 
 [[lock_time_limitations]]
-==== Transaction Lock Time Limitations
+==== 트랜잭션 잠금 시간의 한계
 
-Use of the ((("transactions", "timelocks", "limitations of")))((("timelocks", "limitations of")))((("lock time", "limitations of")))((("scripts", "timelocks", "limitations of")))lock time allows a spender to restrict a transaction from
-being included in a block until a specific block height, but it does not
-prevent spending the funds in another transaction earlier than that.
-Let's explain that with the following example.
+((("transactions", "timelocks", "limitations of")))((("timelocks", "limitations of")))((("lock time", "limitations of")))((("scripts", "timelocks", "limitations of")))잠금 시간을 쓰면 지출자가 특정 블록 높이에 이를 때까지 트랜잭션이
+블록에 포함되지 못하도록 제한할 수 있지만, 그 전에 다른 트랜잭션으로 그 자금을 쓰는 것을
+막지는 못합니다. 다음 예로 설명해 봅시다.
 
-Alice signs a transaction spending one of her outputs to Bob's address and sets the transaction lock time to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
+앨리스가 자기 출력 하나를 밥의 주소로 쓰는 트랜잭션에 서명하고 트랜잭션 잠금 시간을 3개월 뒤로 설정합니다. 앨리스는 그 트랜잭션을 밥에게 보내 보관하게 합니다. 이 트랜잭션으로 앨리스와 밥은 다음을 알게 됩니다.
 
-* Bob cannot transmit the transaction to redeem the funds until 3 months have elapsed.
-* Bob may transmit the transaction after 3 months.
+* 밥은 3개월이 지나기 전에는 그 트랜잭션을 전송해 자금을 상환할 수 없습니다.
+* 밥은 3개월 뒤에 그 트랜잭션을 전송할 수 있습니다.
 
-However:
+하지만
 
-* Alice can create a conflicting transaction, spending the same inputs without a lock time. Thus, Alice can spend the same UTXO before the 3 months have elapsed.
-* Bob has no guarantee that Alice won't do that.
+* 앨리스는 잠금 시간 없이 같은 입력을 쓰는 충돌 트랜잭션을 만들 수 있습니다. 따라서 앨리스는 3개월이 지나기 전에 같은 UTXO를 쓸 수 있습니다.
+* 밥에게는 앨리스가 그러지 않으리라는 보장이 없습니다.
 
-It is important to understand the limitations of transaction lock time. The only guarantee is that Bob will not be able to redeem the presigned transaction before 3 months have elapsed. There is no guarantee that Bob will get the funds. One way to guarantee that Bob will receive the funds but cannot spend them until 3 months have elapsed is to place the timelock restriction on the UTXO itself as part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
+트랜잭션 잠금 시간의 한계를 이해하는 것이 중요합니다. 유일한 보장은 밥이 3개월이 지나기 전에는 사전 서명된 트랜잭션을 상환할 수 없다는 것뿐입니다. 밥이 그 자금을 받게 되리라는 보장은 없습니다. 밥이 자금을 반드시 받되 3개월이 지나기 전에는 쓸 수 없게 하는 한 가지 방법은, 타임락 제약을 트랜잭션이 아니라 스크립트의 일부로 UTXO 자체에 거는 것입니다. 이는 다음에 살펴볼 형태의 타임락인 Check Lock Time Verify로 할 수 있습니다.
 
 ==== Check Lock Time Verify (OP_CLTV)
 
-In ((("transactions", "timelocks", "verifying", id="transaction-timelock-op-cltv")))((("timelocks", "verifying", id="timelock-op-cltv")))((("lock time", "verifying", id="lock-time-op-cltv")))((("OP_CLTV  script operator", id="op-cltv")))((("verifying", "lock time", id="verify-lock-time")))((("scripts", "timelocks", "verifying", id="script-timelock-verify")))December 2015, a new form of
-timelock was introduced to Bitcoin as a soft fork upgrade. Based on a
-specification in BIP65, a new script operator called
-+OP_CHECKLOCKTIMEVERIFY+ (+OP_CLTV+) was added to the scripting language.
-+OP_CLTV+ is a per-output timelock rather than a per-transaction timelock,
-as is the case with lock time. This allows for additional
-flexibility in the way timelocks are applied.
+((("transactions", "timelocks", "verifying", id="transaction-timelock-op-cltv")))((("timelocks", "verifying", id="timelock-op-cltv")))((("lock time", "verifying", id="lock-time-op-cltv")))((("OP_CLTV  script operator", id="op-cltv")))((("verifying", "lock time", id="verify-lock-time")))((("scripts", "timelocks", "verifying", id="script-timelock-verify")))2015년 12월, 새로운 형태의 타임락이 소프트 포크 업그레이드로
+비트코인에 도입되었습니다. BIP65의 규격에 따라 +OP_CHECKLOCKTIMEVERIFY+ (+OP_CLTV+)라는
+새 스크립트 연산자가 스크립팅 언어에 추가되었습니다. 잠금 시간이 트랜잭션 단위 타임락인
+것과 달리 +OP_CLTV+ 는 출력 단위 타임락입니다. 덕분에 타임락을 적용하는 방식에 유연성이
+더해집니다.
 
-In simple terms, by committing to the +OP_CLTV+ opcode in an
-output, that output is restricted so that it can only be spent after the
-specified time has elapsed.
+간단히 말해 어떤 출력에서 +OP_CLTV+ 옵코드에 커밋하면, 그 출력은 지정된 시간이 지난 뒤에만
+쓸 수 있도록 제한됩니다.
 
-+OP_CLTV+ doesn't replace lock time, but rather restricts specific UTXOs
-such that they can only be spent in a future transaction with
-lock time set to a greater or equal value.
++OP_CLTV+ 는 잠금 시간을 대체하는 것이 아니라, 특정 UTXO를 잠금 시간이 그와 같거나 더 큰
+값으로 설정된 미래의 트랜잭션에서만 쓸 수 있도록 제한합니다.
 
 [role="less_space pagebreak-before"]
-The +OP_CLTV+ opcode takes one parameter as input, expressed as a number in
-the same format as lock time (either a block height or Unix epoch
-time). As indicated by the +VERIFY+ suffix, +OP_CLTV+ is the type of opcode
-that halts execution of the script if the outcome is +FALSE+. If it
-results in +TRUE+, execution continues.
++OP_CLTV+ 옵코드는 매개변수를 하나 입력으로 받는데, 잠금 시간과 같은 형식의 수(블록 높이
+또는 유닉스 에포크 시각)로 표현합니다. +VERIFY+ 접미사가 나타내듯 +OP_CLTV+ 는 결과가
++FALSE+ 이면 스크립트 실행을 멈추는 종류의 옵코드입니다. 결과가 +TRUE+ 이면 실행이
+계속됩니다.
 
-In order to use +OP_CLTV+, you insert it into the redeem script of the
-output in the transaction that creates the output. For
-example, if Alice is paying Bob, he might usually accept payment to 
-the following P2SH script:
++OP_CLTV+ 를 쓰려면 그 출력을 만드는 트랜잭션에서 출력의 리딤 스크립트에 넣습니다. 예를
+들어 앨리스가 밥에게 지불한다면, 밥은 보통 다음 P2SH 스크립트로 지불받을 것입니다.
 
 ----
 <Bob's public key> OP_CHECKSIG
 ----
 
-To lock it to a time, say 3 months from now, his P2SH script would
-instead be:
+이를 시간에, 이를테면 지금부터 3개월 뒤로 잠그려면 밥의 P2SH 스크립트는 대신 다음과 같이
+됩니다.
 
 ----
 <Bob's pubkey> OP_CHECKSIGVERIFY <now + 3 months> OP_CHECKLOCKTIMEVERIFY
 ----
 
-where +<now {plus} 3 months>+ is a block height or time value estimated
-3 months from the time the transaction is mined: current block height
-{plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000
-(seconds).
+여기서 +<now {plus} 3 months>+ 는 그 트랜잭션이 채굴된 시점부터 3개월 뒤로 추정되는 블록
+높이나 시각 값입니다. 현재 블록 높이 {plus} 12,960(블록)이거나 현재 유닉스 에포크 시각
+{plus} 7,760,000(초)입니다.
 
-When Bob tries to spend this UTXO, he constructs a transaction that
-references the UTXO as an input. He uses his signature and public key in
-the input script of that input and sets the transaction lock time
-to be equal or greater to the timelock in the +OP_CHECKLOCKTIMEVERIFY+
-Alice set. Bob then broadcasts the transaction on the Bitcoin network.
+밥이 이 UTXO를 쓰려 할 때는 그 UTXO를 입력으로 참조하는 트랜잭션을 만듭니다. 그 입력의 입력
+스크립트에 자기 서명과 공개키를 넣고, 트랜잭션 잠금 시간을 앨리스가 +OP_CHECKLOCKTIMEVERIFY+
+에 설정한 타임락과 같거나 더 큰 값으로 설정합니다. 그런 다음 밥은 그 트랜잭션을 비트코인
+네트워크에 방송합니다.
 
-Bob's transaction is evaluated as follows. If the +OP_CHECKLOCKTIMEVERIFY+
-parameter Alice set is less than or equal to the spending transaction's
-lock time, script execution continues (acts as if a _no
-operation_ or +OP_NOP+ opcode was executed). Otherwise, script
-execution halts and the transaction is deemed invalid.
+밥의 트랜잭션은 다음과 같이 평가됩니다. 앨리스가 설정한 +OP_CHECKLOCKTIMEVERIFY+ 매개변수가
+지출 트랜잭션의 잠금 시간보다 작거나 같으면 스크립트 실행이 계속됩니다(_무연산_ 또는
++OP_NOP+ 옵코드가 실행된 것처럼 동작합니다). 그렇지 않으면 스크립트 실행이 멈추고 그
+트랜잭션은 유효하지 않은 것으로 간주됩니다.
 
-More precisely, BIP65 explains that +OP_CHECKLOCKTIMEVERIFY+ fails and
-halts execution if one of the following occurs:
+더 정확히 말하면 BIP65는 다음 중 하나가 발생하면 +OP_CHECKLOCKTIMEVERIFY+ 가 실패하고 실행이
+멈춘다고 설명합니다.
 
-* The stack is empty.
-* The top item on the stack is less than 0.
-* The lock-time type (height versus timestamp) of the top stack item and the lock time field are not the same.
-* The top stack item is greater than the transaction's lock time field.
-* The sequence field of the input is 0xffffffff.
+* 스택이 비어 있다.
+* 스택 맨 위 항목이 0보다 작다.
+* 스택 맨 위 항목의 잠금 시간 유형(높이 대 타임스탬프)이 잠금 시간 필드와 같지 않다.
+* 스택 맨 위 항목이 트랜잭션의 잠금 시간 필드보다 크다.
+* 입력의 시퀀스 필드가 0xffffffff이다.
 
 [role="less_space pagebreak-before"]
 [[timelock_conflicts]]
-.Timelock Conflicts
+.타임락 충돌
 ****
-+OP_CLTV+ and ((("transactions", "timelocks", "conflicts")))((("timelocks", "conflicts")))((("lock time", "conflicts")))((("scripts", "timelocks", "conflicts")))lock time use the same format to describe timelocks, either
-a block height or the time elapsed in seconds since the Unix epoch.
-Critically, when used together, the format of lock time must match
-that of +OP_CLTV+ in the outputs--they must both reference either
-block height or time in seconds.
++OP_CLTV+ 와 ((("transactions", "timelocks", "conflicts")))((("timelocks", "conflicts")))((("lock time", "conflicts")))((("scripts", "timelocks", "conflicts")))잠금 시간은 타임락을 기술하는 데 같은 형식, 즉 블록 높이나
+유닉스 에포크 이후 경과한 초를 사용합니다. 결정적으로 이 둘을 함께 쓸 때는 잠금 시간의
+형식이 출력의 +OP_CLTV+ 형식과 일치해야 합니다. 둘 다 블록 높이를 참조하거나 둘 다 초 단위
+시각을 참조해야 합니다.
 
-This implies that a script can never be valid if it must execute
-two different calls to +OP_CLTV+, one that uses a height and one that
-uses a time.  It can be easy to make this mistake when writing advanced
-scripts, so be sure to thoroughly test your scripts on a test network or
-use a tool designed to prevent this issue, like a Miniscript compiler.
+이는 하나는 높이를, 다른 하나는 시각을 쓰는 서로 다른 +OP_CLTV+ 호출 두 개를 실행해야 하는
+스크립트는 결코 유효할 수 없다는 뜻입니다. 고급 스크립트를 작성할 때 이런 실수를 하기
+쉬우므로, 테스트 네트워크에서 스크립트를 철저히 시험하거나 미니스크립트 컴파일러처럼 이
+문제를 막도록 설계된 도구를 쓰세요.
 
-An additional implication is that only one variety of +OP_CLTV+ can be
-used in any of the scripts of a transaction.  If the script for one
-input uses the height variety and a different script for a different
-input uses the time variety, there is no way to construct a valid transaction
-that spends both inputs.
+또 하나의 함의는 한 트랜잭션의 어떤 스크립트에서든 +OP_CLTV+ 를 한 종류만 쓸 수 있다는
+것입니다. 한 입력의 스크립트가 높이 방식을 쓰고 다른 입력의 다른 스크립트가 시각 방식을
+쓴다면, 두 입력을 함께 쓰는 유효한 트랜잭션을 만들 방법이 없습니다.
 ****
 
-After execution, if +OP_CLTV+ is satisfied, the parameter that
-preceded it remains as the top item on the stack and may need to be
-dropped, with +OP_DROP+, for correct execution of subsequent script
-opcodes. You will often see +OP_CHECKLOCKTIMEVERIFY+ followed by +OP_DROP+ in
-scripts for this reason.  +OP_CLTV+, like +OP_CSV+ (see <<op_csv>>)
-are unlike other +CHECKVERIFY+ opcodes in leaving items on the stack
-because the soft forks that added them redefined existing opcodes that
-did not drop stack items, and the behavior of those previous
-no-operation (NOP) opcodes must be preserved.
+실행 후 +OP_CLTV+ 가 충족되면 그 앞에 있던 매개변수가 스택 맨 위 항목으로 남으므로, 이어지는
+스크립트 옵코드가 제대로 실행되려면 +OP_DROP+ 으로 버려야 할 수 있습니다. 그래서 스크립트에서
++OP_CHECKLOCKTIMEVERIFY+ 뒤에 +OP_DROP+ 이 오는 것을 자주 보게 됩니다. +OP_CLTV+ 와
++OP_CSV+ (<<op_csv>> 참고)는 다른 +CHECKVERIFY+ 옵코드와 달리 스택에 항목을 남기는데, 이들을
+추가한 소프트 포크가 스택 항목을 버리지 않던 기존 옵코드를 재정의했고 그 이전 무연산(NOP)
+옵코드의 동작을 보존해야 하기 때문입니다.
 
-By using lock time in conjunction with +OP_CLTV+, the scenario described in
-<<lock_time_limitations>> changes.  Alice sends her transaction
-immediately, assigning the funds to Bob’s key. Alice can no longer spend
-the money, but Bob cannot spend it before the 3-month lock time has
-expired.
+잠금 시간을 +OP_CLTV+ 와 함께 쓰면 <<lock_time_limitations>>에서 설명한 상황이 달라집니다.
+앨리스는 자금을 밥의 키에 할당해 트랜잭션을 곧바로 보냅니다. 이제 앨리스는 그 돈을 쓸 수
+없고, 밥도 3개월의 잠금 시간이 지나기 전에는 쓸 수 없습니다.
 
-By introducing timelock functionality directly into the scripting
-language, +OP_CLTV+ allows us to develop some very interesting complex
-scripts.
+타임락 기능을 스크립팅 언어에 직접 도입함으로써 +OP_CLTV+ 는 아주 흥미롭고 복잡한 스크립트를
+개발할 수 있게 해줍니다.
 
-The standard((("transactions", "timelocks", "verifying", startref="transaction-timelock-op-cltv")))((("timelocks", "verifying", startref="timelock-op-cltv")))((("lock time", "verifying", startref="lock-time-op-cltv")))((("OP_CLTV  script operator", startref="op-cltv")))((("verifying", "lock time", startref="verify-lock-time")))((("scripts", "timelocks", "verifying", startref="script-timelock-verify"))) is defined in
-https://oreil.ly/YmJGD[BIP65
-(OP_CHECKLOCKTIMEVERIFY)].
+((("transactions", "timelocks", "verifying", startref="transaction-timelock-op-cltv")))((("timelocks", "verifying", startref="timelock-op-cltv")))((("lock time", "verifying", startref="lock-time-op-cltv")))((("OP_CLTV  script operator", startref="op-cltv")))((("verifying", "lock time", startref="verify-lock-time")))((("scripts", "timelocks", "verifying", startref="script-timelock-verify")))표준은
+https://oreil.ly/YmJGD[BIP65 (OP_CHECKLOCKTIMEVERIFY)]에 정의되어 있습니다.
 
 [[op_csv]]
-==== Relative Timelocks
+==== 상대적 타임락
 
-Lock time((("absolute timelocks")))((("transactions", "timelocks", "relative", id="transaction-timelock-relative")))((("timelocks", "relative", id="timelock-relative")))((("lock time", "relative", id="locktime-relative")))((("scripts", "timelocks", "relative", id="script-timelock-relative")))((("relative timelocks", id="relative-timelock2"))) and +OP_CLTV+ are both
-_absolute timelocks_ in that they specify an absolute point in time. The
-next two timelock features we will examine are _relative timelocks_ in
-that they specify, as a condition of spending an output, an elapsed time
-from the confirmation of the output in the blockchain.
+잠금 시간과((("absolute timelocks")))((("transactions", "timelocks", "relative", id="transaction-timelock-relative")))((("timelocks", "relative", id="timelock-relative")))((("lock time", "relative", id="locktime-relative")))((("scripts", "timelocks", "relative", id="script-timelock-relative")))((("relative timelocks", id="relative-timelock2"))) +OP_CLTV+ 는 둘 다 시간상의 절대적인 지점을 지정한다는
+점에서 _절대 타임락_ 입니다. 다음에 살펴볼 두 가지 타임락 기능은 출력을 쓰기 위한 조건으로
+그 출력이 블록체인에서 확인된 뒤 경과한 시간을 지정한다는 점에서 _상대적 타임락_ 입니다.
 
 [role="less_space pagebreak-before"]
-Relative timelocks are useful because they allow
-imposing a time
-constraint on one transaction that is dependent on the elapsed time from
-the confirmation of a previous transaction. In other words, the clock
-doesn't start counting until the UTXO is recorded on the blockchain.
-This functionality is especially useful in bidirectional state channels
-and Lightning Networks (LNs), as we will see in <<state_channels>>.
+상대적 타임락은 이전 트랜잭션이 확인된 뒤 경과한 시간에 의존하는 시간 제약을 어떤 트랜잭션에
+걸 수 있게 해주므로 유용합니다. 다시 말해 UTXO가 블록체인에 기록되기 전까지는 시계가 돌기
+시작하지 않습니다. 이 기능은 <<state_channels>>에서 보게 될 양방향 상태 채널과 라이트닝
+네트워크(LN)에서 특히 유용합니다.
 
-Relative timelocks, like absolute timelocks, are implemented with both a
-transaction-level feature and a script-level opcode. The
-transaction-level relative timelock is implemented as a consensus rule
-on the value of +sequence+, a transaction field that is set in every
-transaction input. Script-level relative timelocks are implemented with
-the +OP_CHECKSEQUENCEVERIFY+ (+OP_CSV+) opcode.
+상대적 타임락도 절대 타임락처럼 트랜잭션 수준 기능과 스크립트 수준 옵코드 양쪽으로
+구현됩니다. 트랜잭션 수준 상대적 타임락은 모든 트랜잭션 입력에 설정되는 트랜잭션 필드인
++sequence+ 값에 대한 합의 규칙으로 구현됩니다. 스크립트 수준 상대적 타임락은
++OP_CHECKSEQUENCEVERIFY+ (+OP_CSV+) 옵코드로 구현됩니다.
 
-Relative timelocks are
-implemented according to the specifications in
-https://oreil.ly/ZuANb[BIP68,
-Relative Lock-Time Using Consensus-Enforced Sequence Numbers] and
-https://oreil.ly/dLA2r[BIP112,
-OP_CHECKSEQUENCEVERIFY].
+상대적 타임락은
+https://oreil.ly/ZuANb[BIP68, Relative Lock-Time Using Consensus-Enforced Sequence
+Numbers]와 https://oreil.ly/dLA2r[BIP112, OP_CHECKSEQUENCEVERIFY]의 규격에 따라
+구현됩니다.
 
-BIP68 and BIP112 were activated in May 2016 as a soft fork upgrade to
-the consensus rules.
+BIP68과 BIP112는 2016년 5월에 합의 규칙에 대한 소프트 포크 업그레이드로 활성화되었습니다.
 
-==== Relative Timelocks with OP_CSV
+==== OP_CSV를 이용한 상대적 타임락
 
-Just ((("OP_CSV script opcode", id="op-csv")))like +OP_CLTV+
-and lock time, there is a script opcode for relative timelocks that
-leverages the sequence value in scripts. That opcode is
-+OP_CHECKSEQUENCEVERIFY+, commonly referred to as +OP_CSV+ for short.
+((("OP_CSV script opcode", id="op-csv")))+OP_CLTV+ 와 잠금 시간처럼, 스크립트에서 시퀀스 값을 활용하는
+상대적 타임락용 스크립트 옵코드가 있습니다. 그 옵코드가 +OP_CHECKSEQUENCEVERIFY+ 이며 흔히
+줄여서 +OP_CSV+ 라고 합니다.
 
-The +OP_CSV+ opcode when evaluated in a UTXO's script allows
-spending only in a transaction whose input sequence value is greater
-than or equal to the +OP_CSV+ parameter. Essentially, this restricts
-spending the UTXO until a certain number of blocks or seconds have
-elapsed relative to the time the UTXO was mined.
++OP_CSV+ 옵코드는 UTXO의 스크립트에서 평가될 때, 입력 시퀀스 값이 +OP_CSV+ 매개변수보다
+크거나 같은 트랜잭션에서만 쓸 수 있게 허용합니다. 본질적으로 이는 UTXO가 채굴된 시점을
+기준으로 일정 수의 블록이나 초가 지날 때까지 그 UTXO를 쓰지 못하게 제한합니다.
 
-As with CLTV, the value in +OP_CSV+ must match the format in the
-corresponding sequence value. If +OP_CSV+ is specified in terms of
-blocks, then so must sequence. If +OP_CSV+ is specified in terms of
-seconds, then so must sequence.
+CLTV와 마찬가지로 +OP_CSV+ 의 값은 대응하는 시퀀스 값의 형식과 일치해야 합니다. +OP_CSV+ 가
+블록 단위로 지정되면 시퀀스도 그래야 합니다. +OP_CSV+ 가 초 단위로 지정되면 시퀀스도 그래야
+합니다.
 
 [WARNING]
 ====
-A script executing multiple +OP_CSV+ opcodes must only use the same
-variety, either time-based or height-based.  Mixing varieties will
-produce an invalid script that can never be spent, the same problem we
-saw with +OP_CLTV+ in <<timelock_conflicts>>.  However, +OP_CSV+ allows
-any two valid inputs to be included in the same transaction, so the problem
-of interaction across inputs that occurs with +OP_CLTV+ doesn't affect +OP_CSV+.
++OP_CSV+ 옵코드를 여러 개 실행하는 스크립트는 시간 기반이든 높이 기반이든 한 종류만 써야
+합니다. 종류를 섞으면 결코 쓸 수 없는 유효하지 않은 스크립트가 되는데,
+<<timelock_conflicts>>에서 +OP_CLTV+ 와 관련해 본 것과 같은 문제입니다. 다만 +OP_CSV+ 는
+유효한 두 입력을 같은 트랜잭션에 함께 넣는 것을 허용하므로, +OP_CLTV+ 에서 생기는 입력 간
+상호작용 문제는 +OP_CSV+ 에는 해당하지 않습니다.
 ====
 
 [role="less_space pagebreak-before"]
-Relative timelocks with +OP_CSV+ are especially useful when several
-(chained) transactions are created and signed but not propagated--that
-is, they're kept off the blockchain (_offchain_). A child transaction cannot be used until the
-parent transaction has been propagated, mined, and aged by the time
-specified in the relative timelock. One application of this use case is shown in <<state_channels>> and <<lightning_network>>.
++OP_CSV+ 를 이용한 상대적 타임락은 여러 개의 (사슬로 이어진) 트랜잭션을 만들고 서명해 두되
+전파하지는 않는, 즉 블록체인 바깥(_오프체인_)에 두는 경우에 특히 유용합니다. 자식 트랜잭션은
+부모 트랜잭션이 전파되고 채굴되어 상대적 타임락이 지정한 시간만큼 나이를 먹기 전까지는 쓸 수
+없습니다. 이 활용 사례 중 하나는 <<state_channels>>와 <<lightning_network>>에서 볼 수
+있습니다.
 
-+OP_CSV+ is defined((("transactions", "timelocks", "relative", startref="transaction-timelock-relative")))((("timelocks", "relative", startref="timelock-relative")))((("lock time", "relative", startref="locktime-relative")))((("scripts", "timelocks", "relative", startref="script-timelock-relative")))((("OP_CSV script opcode", startref="op-csv")))((("relative timelocks", startref="relative-timelock2"))) in detail in
-https://oreil.ly/z_Obw[BIP112,
-CHECKSEQUENCEVERIFY].
++OP_CSV+ 는((("transactions", "timelocks", "relative", startref="transaction-timelock-relative")))((("timelocks", "relative", startref="timelock-relative")))((("lock time", "relative", startref="locktime-relative")))((("scripts", "timelocks", "relative", startref="script-timelock-relative")))((("OP_CSV script opcode", startref="op-csv")))((("relative timelocks", startref="relative-timelock2")))
+https://oreil.ly/z_Obw[BIP112, CHECKSEQUENCEVERIFY]에 자세히 정의되어 있습니다.
+=== 흐름 제어가 있는 스크립트(조건절)
 
-=== Scripts with Flow Control (Conditional Clauses)
+비트코인((("scripts", "flow control", id="script-flow")))((("flow control in scripts", id="flow-control-script")))((("conditional clauses in scripts", id="conditional-clause-script"))) 스크립트의 더 강력한 기능 중 하나는 조건절이라고도 하는 흐름
+제어입니다. 여러 프로그래밍 언어에서 쓰는 +IF...THEN...ELSE+ 구문으로 흐름 제어를 이미
+알고 계실 것입니다. 비트코인의 조건절은 조금 달라 보이지만 본질적으로 같은 구문입니다.
 
-One of((("scripts", "flow control", id="script-flow")))((("flow control in scripts", id="flow-control-script")))((("conditional clauses in scripts", id="conditional-clause-script"))) the more
-powerful features of Bitcoin Script is flow control, also known as
-conditional clauses. You are probably familiar with flow control in
-various programming languages that use the construct +IF...THEN...ELSE+.
-Bitcoin conditional clauses look a bit different but are essentially
-the same construct.
+기본 수준에서 비트코인의 조건 옵코드는 논리 조건을 평가한 +TRUE+/+FALSE+ 결과에 따라 두
+가지 방식으로 해제할 수 있는 스크립트를 만들 수 있게 해줍니다. 예를 들어 x가 +TRUE+ 이면
+실행되는 코드 경로는 A이고, +ELSE+ 코드 경로는 B입니다.
 
-At a basic level, Bitcoin conditional opcodes allow us to construct a
-script that has two ways of being unlocked, depending on a
-+TRUE+/+FALSE+ outcome of evaluating a logical condition. For example,
-if x is +TRUE+, the executed code path is A and the +ELSE+ code path is B.
+또한 비트코인의 조건식은 무한히 "중첩"할 수 있습니다. 즉 조건절 안에 또 다른 조건절이
+들어가고 그 안에 또 다른 것이 들어가는 식입니다. 비트코인 스크립트의 흐름 제어로 실행 경로가
+수백 개에 이르는 매우 복잡한 스크립트를 만들 수 있습니다. 중첩에는 제한이 없지만, 합의
+규칙이 스크립트의 최대 크기를 바이트 단위로 제한합니다.
 
-Additionally, Bitcoin conditional expressions can be "nested"
-indefinitely, meaning that a conditional clause can contain another
-within it, which contains another, etc. Bitcoin Script flow control can
-be used to construct very complex scripts with hundreds
-of possible execution paths. There is no limit to nesting, but
-consensus rules impose a limit on the maximum size of a
-script in bytes.
+비트코인은 +OP_IF+, +OP_ELSE+, +OP_ENDIF+, +OP_NOTIF+ 옵코드로 흐름 제어를 구현합니다.
+또한 조건식에는 +OP_BOOLAND+, +OP_BOOLOR+, +OP_NOT+ 같은 불리언 연산자가 들어갈 수
+있습니다.
 
-Bitcoin implements flow control using the +OP_IF+, +OP_ELSE+, +OP_ENDIF+, and
-+OP_NOTIF+ opcodes. Additionally, conditional expressions can contain
-boolean operators such as +OP_BOOLAND+, +OP_BOOLOR+, and +OP_NOT+.
+비트코인의 흐름 제어 스크립트가 처음에는 헷갈릴 수 있습니다. 비트코인 스크립트가 스택
+언어이기 때문입니다. +1 {plus} 1+ 을 +1 1 OP_ADD+ 로 표현하면 "거꾸로" 보이듯, 비트코인의
+흐름 제어절도 "거꾸로" 보입니다.
 
-At first glance, you may find the Bitcoin's flow control scripts
-confusing. That is because Bitcoin Script is a stack language. The same
-way that +1 {plus} 1+ looks "backward" when expressed as +1 1 OP_ADD+, flow
-control clauses in Bitcoin also look "backward."
+대부분의 전통적인(절차적) 프로그래밍 언어에서 흐름 제어는 다음과 같습니다.
 
-In most traditional (procedural) programming languages, flow control
-looks like this:
-
-.Pseudocode of flow control in most programming languages
+.대부분의 프로그래밍 언어에서 흐름 제어의 의사 코드
 ----
 if (condition):
   code to run when condition is true
@@ -1008,11 +802,11 @@ endif
 code to run in either case
 ----
 
-In a stack-based language like Bitcoin Script, the logical condition
-comes before the +IF+, which makes it look "backward":
+비트코인 스크립트 같은 스택 기반 언어에서는 논리 조건이 +IF+ 앞에 오기 때문에 "거꾸로"
+보입니다.
 
 [role="less_space pagebreak-before"]
-.Bitcoin Script flow control
+.비트코인 스크립트의 흐름 제어
 ----
 condition
 IF
@@ -1023,45 +817,38 @@ OP_ENDIF
 code to run in either case
 ----
 
-When reading Bitcoin Script, remember that the condition being evaluated
-comes _before_ the +IF+ opcode.
+비트코인 스크립트를 읽을 때는 평가되는 조건이 +IF+ 옵코드 _앞에_ 온다는 점을 기억하세요.
 
-==== Conditional Clauses with VERIFY Opcodes
+==== VERIFY 옵코드를 이용한 조건절
 
-Another
-form of ((("VERIFY opcodes")))((("guard clauses in scripts")))conditional in Bitcoin Script is any opcode that ends in
-+VERIFY+. The +VERIFY+ suffix means that if the condition evaluated is
-not +TRUE+, execution of the script terminates immediately and the
-transaction is deemed invalid.
+비트코인 ((("VERIFY opcodes")))((("guard clauses in scripts")))스크립트에서 조건을 표현하는 또 다른 형태는 +VERIFY+ 로 끝나는
+옵코드입니다. +VERIFY+ 접미사는 평가된 조건이 +TRUE+ 가 아니면 스크립트 실행이 즉시
+종료되고 그 트랜잭션이 유효하지 않은 것으로 간주된다는 뜻입니다.
 
-Unlike an +IF+ clause, which offers alternative
-execution paths, the +VERIFY+ suffix acts as a _guard clause_,
-continuing only if a precondition is met.
+대안 실행 경로를 제공하는 +IF+ 절과 달리, +VERIFY+ 접미사는 _가드 절(guard clause)_ 처럼
+동작해 선행 조건이 충족될 때만 실행을 이어갑니다.
 
-For example, the following script requires Bob's signature and a
-preimage (secret) that produces a specific hash. Both conditions must
-be satisfied to unlock:
+예를 들어 다음 스크립트는 밥의 서명과, 특정 해시를 만들어내는 프리이미지(비밀값)를
+요구합니다. 해제하려면 두 조건을 모두 충족해야 합니다.
 
-.A script with an +OP_EQUALVERIFY+  guard clause.
+.+OP_EQUALVERIFY+ 가드 절이 있는 스크립트
 ----
 OP_HASH160 <expected hash> OP_EQUALVERIFY <Bob's Pubkey> OP_CHECKSIG
 ----
 
-To spend this, Bob must present a
-valid preimage and a signature:
+이를 쓰려면 밥은 유효한 프리이미지와 서명을 제시해야 합니다.
 
-.Satisfying the above script
+.위 스크립트를 충족하기
 ----
 <Bob's Sig> <hash pre-image>
 ----
 
-Without presenting the preimage, Bob can't get to the part of the
-script that checks for his signature.
+프리이미지를 제시하지 않으면 밥은 자기 서명을 검사하는 스크립트 부분까지 갈 수 없습니다.
 
 
-This script can be written with an +OP_IF+ instead:
+이 스크립트는 +OP_IF+ 를 써서 작성할 수도 있습니다.
 
-.A script with an +IF+ guard clause
+.+IF+ 가드 절이 있는 스크립트
 ----
 OP_HASH160 <expected hash> OP_EQUAL
 OP_IF
@@ -1069,33 +856,27 @@ OP_IF
 OP_ENDIF
 ----
 
-Bob's authentication data is identical:
+밥의 인증 데이터는 동일합니다.
 
-.Satisfying the above script
+.위 스크립트를 충족하기
 ----
 <Bob's Sig> <hash pre-image>
 ----
 
-The script with +OP_IF+ does the same thing as using an opcode with a
-+VERIFY+ suffix; they both operate as guard clauses. However, the
-+VERIFY+ construction is more efficient, using two fewer opcodes.
++OP_IF+ 를 쓴 스크립트는 +VERIFY+ 접미사가 붙은 옵코드를 쓰는 것과 같은 일을 합니다. 둘 다
+가드 절로 동작합니다. 다만 +VERIFY+ 구성이 옵코드를 두 개 덜 써서 더 효율적입니다.
 
-So, when do we use +VERIFY+ and when do we use +OP_IF+? If all we are
-trying to do is to attach a precondition (guard clause), then +VERIFY+
-is better. If, however, we want to have more than one execution path
-(flow control), then we need an +OP_IF...OP_ELSE+ flow control clause.
+그렇다면 언제 +VERIFY+ 를 쓰고 언제 +OP_IF+ 를 쓸까요? 선행 조건(가드 절)을 붙이는 것이
+전부라면 +VERIFY+ 가 낫습니다. 반면 실행 경로를 둘 이상 두고 싶다면(흐름 제어)
++OP_IF...OP_ELSE+ 흐름 제어절이 필요합니다.
 
-==== Using Flow Control in Scripts
+==== 스크립트에서 흐름 제어 사용하기
 
-A very common use for flow control in Bitcoin Script is to construct a
-script that offers multiple execution paths, each a different way
-of redeeming the UTXO.
+비트코인 스크립트에서 흐름 제어를 쓰는 아주 흔한 용도는, 저마다 UTXO를 상환하는 다른
+방법인 여러 실행 경로를 제공하는 스크립트를 만드는 것입니다.
 
-Let's look at a simple example where
-we have two signers, Alice and Bob, and either one is able to redeem.
-With multisig, this would be expressed as a 1-of-2 multisig script. For
-the sake of demonstration, we will do the same thing with an +OP_IF+
-clause:
+서명자가 앨리스와 밥 둘이고 둘 중 하나가 상환할 수 있는 간단한 예를 봅시다. 멀티시그라면
+이는 1-of-2 멀티시그 스크립트로 표현됩니다. 설명을 위해 같은 일을 +OP_IF+ 절로 해봅시다.
 
 ----
 OP_IF
@@ -1106,38 +887,33 @@ OP_ENDIF
 OP_CHECKSIG
 ----
 
-Looking at this redeem script, you may be wondering: "Where is the
-condition? There is nothing preceding the +IF+ clause!"
+이 리딤 스크립트를 보면 이런 의문이 들 수 있습니다. "조건은 어디 있지? +IF+ 절 앞에 아무
+것도 없는데!"
 
-The condition is not part of the script. Instead, the condition
-will be offered at spending time, allowing Alice and Bob to
-"choose" which execution path they want:
+조건은 스크립트의 일부가 아닙니다. 대신 조건은 쓰는 시점에 제시되며, 그래서 앨리스와 밥이
+원하는 실행 경로를 "고를" 수 있습니다.
 
-.Alice satisfies the above script:
+.앨리스가 위 스크립트를 충족하기:
 ----
 <Alice's Sig> OP_TRUE
 ----
 
-The +OP_TRUE+ at the end serves as the condition (+TRUE+) that will make
-the +OP_IF+ clause execute the fist redemption path.  This conditions
-puts the public key on the stack for which Alice has a signature.
-The +OP_TRUE+ opcode, also known as +OP_1+, will put the
-number 1 on the stack.
+끝에 있는 +OP_TRUE+ 가 조건(+TRUE+)으로 작용해 +OP_IF+ 절이 첫 번째 상환 경로를 실행하게
+합니다. 이 조건은 앨리스가 서명을 가지고 있는 공개키를 스택에 올립니다. +OP_1+ 이라고도
+하는 +OP_TRUE+ 옵코드는 숫자 1을 스택에 올립니다.
 
-For Bob to redeem this, he would have to choose the second execution
-path in +OP_IF+ by giving a +FALSE+ value.  The +OP_FALSE+ opcode, also
-known as +OP_0+, pushes an empty byte array to the stack:
+밥이 이를 상환하려면 +FALSE+ 값을 주어 +OP_IF+ 의 두 번째 실행 경로를 골라야 합니다.
++OP_0+ 이라고도 하는 +OP_FALSE+ 옵코드는 빈 바이트 배열을 스택에 올립니다.
 
 ----
 <Bob's Sig> OP_FALSE
 ----
 
-Bob's input script causes the +OP_IF+ clause
-to execute the second (+OP_ELSE+) script, which requires Bob's signature.
+밥의 입력 스크립트는 +OP_IF+ 절이 밥의 서명을 요구하는 두 번째(+OP_ELSE+) 스크립트를
+실행하게 만듭니다.
 
-Since +OP_IF+ clauses can be nested, we can create a "maze" of execution
-paths. The input script can provide a "map" selecting which
-execution path is actually executed:
++OP_IF+ 절은 중첩할 수 있으므로 실행 경로의 "미로"를 만들 수 있습니다. 입력 스크립트는 실제로
+어떤 실행 경로를 실행할지 고르는 "지도"를 제공할 수 있습니다.
 
 ----
 OP_IF
@@ -1151,46 +927,34 @@ OP_ELSE
 OP_ENDIF
 ----
 
-In this scenario, there are three execution paths (+subscript A+, +subscript
-B+, and +subscript C+). The input script provides a path in the form of
-a sequence of +TRUE+ or +FALSE+ values. To select path +subscript B+, for
-example, the input script must end in +OP_1 OP_0+ (+TRUE+, +FALSE+). These
-values will be pushed onto the stack so that the second value (+FALSE+)
-ends up at the top of the stack. The outer +OP_IF+ clause pops the +FALSE+
-value and executes the first +OP_ELSE+ clause. Then the +TRUE+ value moves
-to the top of the stack and is evaluated by the inner (nested) +OP_IF+,
-selecting the +B+ execution path.
+이 경우 실행 경로는 세 개(+subscript A+, +subscript B+, +subscript C+)입니다. 입력
+스크립트는 +TRUE+ 또는 +FALSE+ 값의 나열 형태로 경로를 제공합니다. 예를 들어 +subscript B+
+경로를 고르려면 입력 스크립트가 +OP_1 OP_0+ (+TRUE+, +FALSE+)으로 끝나야 합니다. 이 값들이
+스택에 올려지면서 두 번째 값(+FALSE+)이 스택 맨 위에 놓입니다. 바깥쪽 +OP_IF+ 절이 그
++FALSE+ 값을 꺼내 첫 번째 +OP_ELSE+ 절을 실행합니다. 그러면 +TRUE+ 값이 스택 맨 위로
+올라와 안쪽(중첩된) +OP_IF+ 가 이를 평가해 +B+ 실행 경로를 고릅니다.
 
-Using this construct, we can build redeem scripts with tens or hundreds
-of execution paths, each offering a different way to redeem the UTXO. To
-spend, we construct an input script that navigates the execution
-path by putting the appropriate +TRUE+ and +FALSE+ values on the stack
-at each flow control((("scripts", "flow control", startref="script-flow")))((("flow control in scripts", startref="flow-control-script")))((("conditional clauses in scripts", startref="conditional-clause-script"))) point.
+이 구성을 사용하면 저마다 UTXO를 상환하는 다른 방법을 제공하는 실행 경로가 수십, 수백 개인
+리딤 스크립트를 만들 수 있습니다. 이를 쓰려면 각 흐름 제어 지점에서 적절한 +TRUE+ 와
++FALSE+ 값을 스택에 올려 실행 경로를 따라가는 입력 스크립트를
+((("scripts", "flow control", startref="script-flow")))((("flow control in scripts", startref="flow-control-script")))((("conditional clauses in scripts", startref="conditional-clause-script")))구성합니다.
+=== 복합 스크립트 예제
 
-=== Complex Script Example
+이 ((("scripts", "examples of", id="script-example-complex")))절에서는 이 장에서 다룬 여러 개념을 하나의 예제로 엮어 봅니다.
 
-In this((("scripts", "examples of", id="script-example-complex"))) section we combine many of
-the concepts from this chapter into a single example.
+두바이에서 회사를 운영하는 모하메드는 수출입 사업을 합니다. 그는 유연한 규칙을 갖춘 회사
+자본 계정을 구성하고 싶어 합니다. 그가 만든 방식은 타임락에 따라 서로 다른 수준의 승인을
+요구합니다. 이 멀티시그 방식의 참여자는 모하메드와 두 동업자 사이드, 자이라, 그리고 회사
+변호사입니다. 세 동업자는 다수결로 결정하므로 셋 중 둘이 동의해야 합니다. 다만 키에 문제가
+생긴 경우에는 세 동업자 중 한 명의 서명과 함께 변호사가 자금을 되찾을 수 있기를 원합니다.
+마지막으로 동업자 모두가 한동안 연락이 닿지 않거나 활동할 수 없게 되면, 변호사가 자본 계정의
+트랜잭션 기록에 접근한 뒤 계정을 직접 관리할 수 있기를 원합니다.
 
-Mohammed, a company owner in Dubai, operates an import/export
-business; he
-wishes to construct a company capital account with flexible rules. The
-scheme he creates requires different levels of authorization depending
-on timelocks. The participants in the multisig scheme are Mohammed, his
-two partners Saeed and Zaira, and their company lawyer. The three
-partners make decisions based on a majority rule, so two of the three
-must agree. However, in the case of a problem with their keys, they want
-their lawyer to be able to recover the funds with one of the three
-partner signatures. Finally, if all partners are unavailable or
-incapacitated for a while, they want the lawyer to be able to manage the
-account directly after he gains access to the capital account's
-transaction records.
-
-<<variable_timelock_multisig>> is the redeem script that Mohammed designs to achieve this (line
-numbers have been prefixed).
+<<variable_timelock_multisig>>는 모하메드가 이를 위해 설계한 리딤 스크립트입니다(행 번호를
+앞에 붙였습니다).
 
 [[variable_timelock_multisig]]
-.Variable multi-signature with timelock
+.타임락이 있는 가변 다중서명
 ====
 ----
 01  OP_IF
@@ -1209,16 +973,14 @@ numbers have been prefixed).
 ----
 ====
 
-Mohammed's script implements three execution paths using nested
-+OP_IF...OP_ELSE+ flow control clauses.
+모하메드의 스크립트는 중첩된 +OP_IF...OP_ELSE+ 흐름 제어절로 세 개의 실행 경로를
+구현합니다.
 
-In the first execution path, this script operates as a simple 2-of-3
-multisig with the three partners. This execution path consists of lines
-3 and 9. Line 3 sets the quorum of the multisig to +2+ (2-of-3). This
-execution path can be selected by putting +OP_TRUE OP_TRUE+ at the end of the
-input script:
+첫 번째 실행 경로에서 이 스크립트는 세 동업자의 단순한 2-of-3 멀티시그로 동작합니다. 이
+실행 경로는 3행과 9행으로 이루어집니다. 3행은 멀티시그의 정족수를 +2+ (2-of-3)로 설정합니다.
+이 실행 경로는 입력 스크립트 끝에 +OP_TRUE OP_TRUE+ 를 놓아 고를 수 있습니다.
 
-.Spending data for the first execution path (2-of-3 multisig)
+.첫 번째 실행 경로(2-of-3 멀티시그)의 지출 데이터
 ----
 OP_0 <Mohammed's Sig> <Zaira's Sig> OP_TRUE OP_TRUE
 ----
@@ -1226,89 +988,74 @@ OP_0 <Mohammed's Sig> <Zaira's Sig> OP_TRUE OP_TRUE
 
 [TIP]
 ====
-The +OP_0+ at the beginning of this input script is because of an oddity in
-+OP_CHECKMULTISIG+ that pops an extra value from the stack. The extra value
-is disregarded by the +OP_CHECKMULTISIG+, but it must be present or the
-script fails. Pushing an empty byte array with +OP_0+ is a workaround to the oddity, as
-described in <<multisig_bug>>.
+이 입력 스크립트 맨 앞의 +OP_0+ 은 스택에서 값을 하나 더 꺼내는 +OP_CHECKMULTISIG+ 의
+기이한 점 때문입니다. 그 여분의 값은 +OP_CHECKMULTISIG+ 가 무시하지만, 없으면 스크립트가
+실패하므로 반드시 있어야 합니다. <<multisig_bug>>에서 설명한 대로 +OP_0+ 으로 빈 바이트
+배열을 올리는 것이 이 기이한 점에 대한 우회책입니다.
 ====
 
-The second execution path can only be used after 30 days have elapsed
-from the creation of the UTXO. At that time, it requires the signature
-of the lawyer and one of the three partners (a 1-of-3 multisig).
-This is achieved by line 7, which sets the quorum for the multisig to
-+1+. To select this execution path, the input script would end in
-+OP_FALSE OP_TRUE+:
+두 번째 실행 경로는 UTXO가 만들어진 뒤 30일이 지나야 쓸 수 있습니다. 그 시점에는 변호사의
+서명과 세 동업자 중 한 명의 서명(1-of-3 멀티시그)이 필요합니다. 이는 멀티시그의 정족수를
++1+ 로 설정하는 7행으로 이루어집니다. 이 실행 경로를 고르려면 입력 스크립트가
++OP_FALSE OP_TRUE+ 로 끝나야 합니다.
 
-.Spending data for the second execution path (Lawyer + 1-of-3)
+.두 번째 실행 경로(변호사 + 1-of-3)의 지출 데이터
 ----
 OP_0 <Saeed's Sig> <Lawer's Sig> OP_FALSE OP_TRUE
 ----
 
 [TIP]
 ====
-Why +OP_FALSE OP_TRUE+? Isn't that backward? +FALSE+ is pushed onto the
-stack, and +TRUE+ is pushed on top of it.
-+TRUE+ is therefore popped _first_ by the first +OP_IF+ opcode.
+왜 +OP_FALSE OP_TRUE+ 일까요? 거꾸로 된 것 아닌가요? +FALSE+ 가 스택에 올려지고, 그 위에
++TRUE+ 가 올려집니다. 그래서 첫 번째 +OP_IF+ 옵코드가 +TRUE+ 를 _먼저_ 꺼냅니다.
 ====
 
-Finally, the third execution path allows the lawyer to spend the
-funds alone, but only after 90 days. To select this execution path, the
-input script has to end in +OP_FALSE+:
+마지막으로 세 번째 실행 경로는 변호사가 혼자 자금을 쓸 수 있게 하되, 90일이 지난 뒤에만
+가능합니다. 이 실행 경로를 고르려면 입력 스크립트가 +OP_FALSE+ 로 끝나야 합니다.
 
-.Input script for the third execution path (Lawyer only)
+.세 번째 실행 경로(변호사 단독)의 입력 스크립트
 ----
 <Lawyer's Sig> OP_FALSE
 ----
 
-Try running the script on paper to see how it behaves on the stack.
+이 스크립트를 종이에 적어 실행해 보며 스택에서 어떻게 동작하는지 확인해 보세요.
+==== 분리된 증인 출력과 트랜잭션 예제
 
-==== Segregated Witness Output and Transaction Examples
-
-Let’s look at ((("scripts", "segregated witness", id="script-segwit")))((("segregated witness (segwit)", "scripts and", id="segwit-script")))some of our example transactions and see how they would
-change with segregated witness. We’ll first look at how a
- P2PKH payment can be accomplished as the
-segregated witness program. Then, we’ll look at the segregated witness
-equivalent for P2SH scripts. Finally, we’ll look at
-how both of the preceding segregated witness programs can be embedded
-inside a P2SH script.
+((("scripts", "segregated witness", id="script-segwit")))((("segregated witness (segwit)", "scripts and", id="segwit-script")))앞서 본 예제 트랜잭션 몇 가지가 분리된 증인에서는 어떻게 달라지는지
+살펴봅시다. 먼저 P2PKH 지불을 분리된 증인 프로그램으로 어떻게 처리하는지 봅니다. 그다음
+P2SH 스크립트에 대응하는 분리된 증인 방식을 봅니다. 마지막으로 앞의 두 분리된 증인
+프로그램을 P2SH 스크립트 안에 어떻게 넣을 수 있는지 살펴봅니다.
 
 [[p2wpkh]]
-===== Pay to witness public key hash (P2WPKH)
+===== 위트니스 공개키 해시로 지불(P2WPKH)
 
-Let's start ((("scripts", "segregated witness", "P2WPKH", id="script-segwit-p2wpkh")))((("segregated witness (segwit)", "scripts and", "P2WPKH", id="segwit-script-p2wpkh")))((("P2WPKH (pay to witness public key hash)", id="p2wpkh-ch7")))((("output scripts", "P2WPKH (pay to witness public key hash)", id="output-script-p2wpkh")))((("addresses", "P2WPKH (pay to witness public key hash)", id="address-p2wpkh")))by looking at the example of a P2PKH
-output script:
+((("scripts", "segregated witness", "P2WPKH", id="script-segwit-p2wpkh")))((("segregated witness (segwit)", "scripts and", "P2WPKH", id="segwit-script-p2wpkh")))((("P2WPKH (pay to witness public key hash)", id="p2wpkh-ch7")))((("output scripts", "P2WPKH (pay to witness public key hash)", id="output-script-p2wpkh")))((("addresses", "P2WPKH (pay to witness public key hash)", id="address-p2wpkh")))P2PKH 출력 스크립트의 예부터 봅시다.
 
-.Example P2PKH output script
+.P2PKH 출력 스크립트 예
 ----
 OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 
 OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-With segregated witness, Alice would create a
-P2WPKH script.  If that script commits
-to the same public key, it would look like this:
+분리된 증인에서 앨리스는 P2WPKH 스크립트를 만들게 됩니다. 그 스크립트가 같은 공개키에
+커밋한다면 다음과 같습니다.
 
-.Example P2WPKH output script
+.P2WPKH 출력 스크립트 예
 ----
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-As you can see, a P2WPKH output script is much
-simpler than the P2PKH equivalent. It consists of two values that are
-pushed onto the script evaluation stack. To an old (nonsegwit-aware)
-Bitcoin client, the two pushes would look like an output that anyone can
-spend. To a newer, segwit-aware client, the first number (0)
-is interpreted as a version number (the _witness version_) and the
-second part (20 bytes) is a
-_witness program_. The 20-byte witness program is simply the hash of the
-public key, as in a P2PKH script.
+보다시피 P2WPKH 출력 스크립트는 그에 대응하는 P2PKH보다 훨씬 단순합니다. 스크립트 평가
+스택에 올려지는 값 두 개로 이루어집니다. 옛(세그윗을 모르는) 비트코인 클라이언트에게 이 두
+푸시는 누구나 쓸 수 있는 출력처럼 보입니다. 세그윗을 아는 더 새로운 클라이언트에게는 첫
+번째 숫자(0)가 버전 번호(_위트니스 버전_)로 해석되고 두 번째 부분(20바이트)이 _위트니스
+프로그램_ 으로 해석됩니다. 20바이트 위트니스 프로그램은 P2PKH 스크립트에서처럼 그저 공개키의
+해시입니다.
 
-Now, let’s look at the corresponding transaction that Bob uses to spend
-this output. For the original script, the spending transaction
-would have to include a signature within the transaction input:
+이제 밥이 이 출력을 쓰는 트랜잭션을 봅시다. 원래 스크립트였다면 지출 트랜잭션은 트랜잭션
+입력 안에 서명을 담아야 했습니다.
 
-.Decoded transaction showing a P2PKH output being spent with a signature
+.P2PKH 출력을 서명으로 쓰는 것을 보여주는 디코딩된 트랜잭션
 ----
 [...]
 "vin" : [
@@ -1319,11 +1066,10 @@ would have to include a signature within the transaction input:
 [...]
 ----
 
-However, to spend the P2WPKH output, the transaction has no
-signature on that input. Instead, Bob’s transaction has an empty
-input script and includes a witness structure:
+하지만 P2WPKH 출력을 쓸 때 그 트랜잭션에는 해당 입력에 서명이 없습니다. 대신 밥의 트랜잭션은
+입력 스크립트가 비어 있고 위트니스 구조를 담습니다.
 
-.Decoded transaction showing a P2WPKH output being spent with a witness structure
+.P2WPKH 출력을 위트니스 구조로 쓰는 것을 보여주는 디코딩된 트랜잭션
 ----
 [...]
 "vin" : [
@@ -1336,52 +1082,44 @@ input script and includes a witness structure:
 [...]
 ----
 
-===== Wallet construction of P2WPKH
+===== 지갑에서 P2WPKH 구성하기
 
-It is extremely((("wallets", "P2WPKH (pay to witness public key hash)"))) important to note that P2WPKH witness programs should only be created by
-the receiver and not converted by the spender from a known
-public key, P2PKH script, or address. The spender has no way of knowing
-if the receiver's wallet has the ability to construct segwit
-transactions and spend P2WPKH outputs.
+((("wallets", "P2WPKH (pay to witness public key hash)")))P2WPKH 위트니스 프로그램은 반드시 받는 쪽이 만들어야 하며, 지불하는
+쪽이 알려진 공개키나 P2PKH 스크립트, 주소로부터 변환해서는 안 된다는 점이 대단히 중요합니다.
+지불하는 쪽은 받는 쪽의 지갑이 세그윗 트랜잭션을 만들고 P2WPKH 출력을 쓸 수 있는지 알 방법이
+없습니다.
 
-Additionally, P2WPKH outputs must be constructed from the hash of a
-_compressed_ public key. Uncompressed public keys are nonstandard in
-segwit and may be explicitly disabled by a future soft fork. If the hash
-used in the P2WPKH came from an uncompressed public key, it may be
-unspendable and you may lose funds. P2WPKH outputs should be created by
-the payee's wallet by deriving a compressed public key from their
-private key.
+또한 P2WPKH 출력은 _압축_ 공개키의 해시로 만들어야 합니다. 비압축 공개키는 세그윗에서
+비표준이며 앞으로의 소프트 포크에서 명시적으로 비활성화될 수 있습니다. P2WPKH에 쓰인 해시가
+비압축 공개키에서 나온 것이라면 그 출력을 쓰지 못해 자금을 잃을 수 있습니다. P2WPKH 출력은
+받는 쪽의 지갑이 자기 비밀키에서 압축 공개키를 유도해 만들어야 합니다.
 
 [WARNING]
 ====
-P2WPKH should be constructed by the receiver by converting a compressed
-public key to a P2WPKH hash. Neither the spender nor anyone else should
-ever transform a P2PKH script, Bitcoin address, or uncompressed public
-key to a P2WPKH witness script.  In general, a spender should only send
-to the receiver in the manner that the receiver indicated.
+P2WPKH는 받는 쪽이 압축 공개키를 P2WPKH 해시로 변환해 구성해야 합니다. 지불하는 쪽이든 다른
+누구든 P2PKH 스크립트나 비트코인 주소, 비압축 공개키를 P2WPKH 위트니스 스크립트로 변환해서는
+안 됩니다. 일반적으로 지불하는 쪽은 받는 쪽이 지정한 방식으로만 보내야 합니다.
 ====
 
 [[p2wsh]]
-===== Pay to witness script hash (P2WSH)
+===== 위트니스 스크립트 해시로 지불(P2WSH)
 
-The ((("scripts", "segregated witness", "P2WSH", id="script-segwit-p2wsh")))((("segregated witness (segwit)", "scripts and", "P2WSH", id="segwit-script-p2wsh")))((("P2WSH (pay to witness script hash)", id="p2wsh-ch7")))((("output scripts", "P2WSH (pay to witness script hash)", id="output-script-p2wsh")))((("addresses", "P2WSH (pay to witness script hash)", id="address-p2wsh")))second type of
-segwit v0 witness program corresponds to a P2SH script. We
-saw this type of script in <<p2sh>>. In that example, P2SH was used by
-Mohammed's company to express a multisignature script. Payments to
-Mohammed's company were encoded with a script like this:
+((("scripts", "segregated witness", "P2WSH", id="script-segwit-p2wsh")))((("segregated witness (segwit)", "scripts and", "P2WSH", id="segwit-script-p2wsh")))((("P2WSH (pay to witness script hash)", id="p2wsh-ch7")))((("output scripts", "P2WSH (pay to witness script hash)", id="output-script-p2wsh")))((("addresses", "P2WSH (pay to witness script hash)", id="address-p2wsh")))두 번째 유형의 세그윗 v0 위트니스 프로그램은 P2SH 스크립트에
+대응합니다. 이 유형의 스크립트는 <<p2sh>>에서 보았습니다. 그 예에서 P2SH는 모하메드의 회사가
+다중서명 스크립트를 표현하는 데 쓰였습니다. 모하메드의 회사로 가는 지불은 다음과 같은
+스크립트로 인코딩되었습니다.
 
-.Example P2SH output script
+.P2SH 출력 스크립트 예
 ----
 OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
 
-This P2SH script references the hash of a _redeem script_ that defines a
-2-of-3 multisignature requirement to spend funds. To spend this output,
-Mohammed's company would present the redeem script (whose hash matches
-the script hash in the P2SH output) and the signatures necessary to
-satisfy that redeem script, all inside the transaction input:
+이 P2SH 스크립트는 자금을 쓰는 데 2-of-3 다중서명을 요구하도록 정의한 _리딤 스크립트_ 의
+해시를 참조합니다. 이 출력을 쓰려면 모하메드의 회사는 (해시가 P2SH 출력의 스크립트 해시와
+일치하는) 리딤 스크립트와 그 리딤 스크립트를 충족하는 데 필요한 서명들을 모두 트랜잭션 입력
+안에 제시해야 합니다.
 
-.Decoded transaction showing a P2SH output being spent
+.P2SH 출력을 쓰는 것을 보여주는 디코딩된 트랜잭션
 ----
 [...]
 "vin" : [
@@ -1391,40 +1129,33 @@ satisfy that redeem script, all inside the transaction input:
 ]
 ----
 
-Now, let's look at how this entire example would be upgraded to segwit v0.
-If Mohammed's customers were using a segwit-compatible wallet, they
-would make a payment, creating a P2WSH output that would look like this:
+이제 이 예제 전체가 세그윗 v0으로 어떻게 업그레이드되는지 봅시다. 모하메드의 고객들이 세그윗
+호환 지갑을 쓰고 있다면, 그들은 다음과 같은 P2WSH 출력을 만들어 지불하게 됩니다.
 
-.Example P2WSH output script
+.P2WSH 출력 스크립트 예
 ----
 0 a9b7b38d972cabc7961dbfbcb841ad4508d133c47ba87457b4a0e8aae86dbb89
 ----
 
-Again, as with the example of P2WPKH, you can see that the segregated
-witness equivalent script is a lot simpler and reduces the template
-overhead that you see in P2SH scripts. Instead, the segregated witness
-output script consists of two values pushed to the stack: a witness version
-(0) and the 32-byte SHA256 hash of the witness script (the witness
-program).
+P2WPKH 예제에서와 마찬가지로, 분리된 증인에 해당하는 스크립트가 훨씬 단순하고 P2SH
+스크립트에서 보이던 형판 부담을 줄여준다는 것을 알 수 있습니다. 대신 분리된 증인 출력
+스크립트는 스택에 올려지는 값 두 개, 즉 위트니스 버전(0)과 위트니스 스크립트의 32바이트
+SHA256 해시(위트니스 프로그램)로 이루어집니다.
 
 [TIP]
 ====
-While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH
-witness program uses a 32-byte +SHA256(script)+ hash. This difference in
-the selection of the hashing algorithm is deliberate
-to provide stronger security to
-P2WSH in certain use cases (128 bits of security in P2WSH versus 80 bits
-of security in P2SH).  For details, see <<p2sh_collision_attacks>>.
+P2SH는 20바이트 +RIPEMD160(SHA256(script))+ 해시를 쓰는 반면, P2WSH 위트니스 프로그램은
+32바이트 +SHA256(script)+ 해시를 씁니다. 해시 알고리즘 선택의 이 차이는 특정 사용 사례에서
+P2WSH에 더 강한 보안을 제공하기 위한 의도적인 것입니다(P2WSH는 128비트 보안, P2SH는 80비트
+보안). 자세한 내용은 <<p2sh_collision_attacks>>를 참고하세요.
 ====
 
-Mohammed's company can spend the P2WSH output by presenting the
-correct witness script and sufficient signatures to satisfy it. The
-witness script and the signatures would be
-included as part of the witness structure. No data would be placed in the
-input script because this is a native witness program, which does not use
-the legacy input script field:
+모하메드의 회사는 올바른 위트니스 스크립트와 그것을 충족하기에 충분한 서명을 제시해 P2WSH
+출력을 쓸 수 있습니다. 위트니스 스크립트와 서명은 위트니스 구조의 일부로 담깁니다. 이것은
+레거시 입력 스크립트 필드를 쓰지 않는 네이티브 위트니스 프로그램이므로 입력 스크립트에는
+아무 데이터도 들어가지 않습니다.
 
-.Decoded transaction showing a P2WSH output being spent with witness structure
+.P2WSH 출력을 위트니스 구조로 쓰는 것을 보여주는 디코딩된 트랜잭션
 ----
 [...]
 "vin" : [
@@ -1437,568 +1168,446 @@ the legacy input script field:
 [...]
 ----
 
-===== Differentiating between P2WPKH and P2WSH
+===== P2WPKH와 P2WSH 구별하기
 
-In the((("scripts", "segregated witness", "P2WPKH", startref="script-segwit-p2wpkh")))((("segregated witness (segwit)", "scripts and", "P2WPKH", startref="segwit-script-p2wpkh")))((("P2WPKH (pay to witness public key hash)", startref="p2wpkh-ch7")))((("output scripts", "P2WPKH (pay to witness public key hash)", startref="output-script-p2wpkh")))((("addresses", "P2WPKH (pay to witness public key hash)", startref="address-p2wpkh"))) previous two sections, we demonstrated two types of witness
-programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs
-consist of the same version number followed by a data push. They
-look very similar, but are interpreted very differently: one is
-interpreted as a public key hash, which is satisfied by a signature and
-the other as a script hash, which is satisfied by a witness script. The
-critical difference between them is the length of the witness program:
+((("scripts", "segregated witness", "P2WPKH", startref="script-segwit-p2wpkh")))((("segregated witness (segwit)", "scripts and", "P2WPKH", startref="segwit-script-p2wpkh")))((("P2WPKH (pay to witness public key hash)", startref="p2wpkh-ch7")))((("output scripts", "P2WPKH (pay to witness public key hash)", startref="output-script-p2wpkh")))((("addresses", "P2WPKH (pay to witness public key hash)", startref="address-p2wpkh")))앞의 두 절에서 <<p2wpkh>>와 <<p2wsh>>라는 두 가지 유형의 위트니스
+프로그램을 살펴봤습니다. 두 유형 모두 같은 버전 번호 뒤에 데이터 푸시가 오는 형태입니다.
+아주 비슷해 보이지만 해석은 크게 다릅니다. 하나는 서명으로 충족되는 공개키 해시로 해석되고,
+다른 하나는 위트니스 스크립트로 충족되는 스크립트 해시로 해석됩니다. 둘의 결정적인 차이는
+위트니스 프로그램의 길이입니다.
 
-- The witness program in P2WPKH is 20 bytes.
-- The witness program in P2WSH is 32 bytes.
+- P2WPKH의 위트니스 프로그램은 20바이트입니다.
+- P2WSH의 위트니스 프로그램은 32바이트입니다.
 
-This is the one difference that allows a full node to differentiate between
-the two types of witness programs. By looking at the length of the hash,
-a node can determine what type of witness program it is, P2WPKH ((("P2WSH (pay to witness script hash)", startref="p2wsh-ch7")))((("output scripts", "P2WSH (pay to witness script hash)", startref="output-script-p2wsh")))((("addresses", "P2WSH (pay to witness script hash)", startref="address-p2wsh")))((("scripts", "segregated witness", "P2WSH", startref="script-segwit-p2wsh")))((("segregated witness (segwit)", "scripts and", "P2WSH", startref="segwit-script-p2wsh")))or
-P2WSH.
+풀 노드가 두 유형의 위트니스 프로그램을 구별할 수 있게 해주는 것이 바로 이 차이입니다. 해시의
+길이를 보고 노드는 그것이 P2WPKH인지 ((("P2WSH (pay to witness script hash)", startref="p2wsh-ch7")))((("output scripts", "P2WSH (pay to witness script hash)", startref="output-script-p2wsh")))((("addresses", "P2WSH (pay to witness script hash)", startref="address-p2wsh")))((("scripts", "segregated witness", "P2WSH", startref="script-segwit-p2wsh")))((("segregated witness (segwit)", "scripts and", "P2WSH", startref="segwit-script-p2wsh")))P2WSH인지
+판별할 수 있습니다.
+==== 분리된 증인으로 업그레이드하기
 
-==== Upgrading to Segregated Witness
+앞의 ((("scripts", "segregated witness", "upgrading to", id="script-segwit-upgrade")))((("segregated witness (segwit)", "scripts and", "upgrading to", id="segwit-script-upgrade")))((("upgrading to segregated witness", id="upgrade-segwit")))예제에서 보듯 분리된 증인으로 업그레이드하는 것은 두 단계 과정입니다.
+먼저 지갑이 세그윗 유형의 출력을 만들어야 합니다. 그다음 분리된 증인 트랜잭션을 구성할 줄
+아는 지갑이 그 출력을 쓸 수 있습니다. 예제에서 앨리스의 지갑은 분리된 증인 출력 스크립트로
+지불하는 출력을 만들 수 있습니다. 밥의 지갑도 세그윗을 알고 있어 그 출력을 쓸 수 있습니다.
 
-As we ((("scripts", "segregated witness", "upgrading to", id="script-segwit-upgrade")))((("segregated witness (segwit)", "scripts and", "upgrading to", id="segwit-script-upgrade")))((("upgrading to segregated witness", id="upgrade-segwit")))can see from the previous examples, upgrading to segregated
-witness is a two-step process. First, wallets must create segwit
-type outputs. Then, these outputs can be spent by wallets that know how
-to construct segregated witness transactions. In the examples, Alice's
-wallet is able to create outputs paying
-segregated witness output scripts. Bob's wallet is also segwit-aware and able
-to spend those outputs.
+분리된 증인은 _옛 클라이언트와 새 클라이언트가 공존할 수 있는_ 하위 호환 업그레이드로
+구현되었습니다. 지갑 개발자들은 각자 지갑 소프트웨어를 업그레이드해 세그윗 기능을
+추가했습니다. 레거시 P2PKH와 P2SH는 [.keep-together]#업그레이드하지# 않은 지갑에서도 계속
+동작합니다. 그러면 중요한 시나리오 두 가지가 남는데, 다음 절에서 다룹니다.
 
-Segregated witness was implemented as a
-backward-compatible upgrade, where _old and new clients can coexist_.
-Wallet developers independently upgraded wallet software to add
-segwit capabilities.
-Legacy P2PKH and
-P2SH continue to work for [.keep-together]#nonupgraded# wallets. That leaves two
-important scenarios, which are addressed in the next section:
+- 세그윗을 모르는 지불자의 지갑이, 세그윗 트랜잭션을 처리할 수 있는 수신자의 지갑으로
+  지불할 수 있는 능력.
 
-- Ability of a spender's wallet that is not segwit-aware to make a
-  payment to a recipient's wallet that can process segwit transactions.
+- 세그윗을 아는 지불자의 지갑이, _주소_ 만 보고 세그윗을 아는 수신자와 그렇지 않은 수신자를
+  알아보고 구별할 수 있는 능력.
 
-- Ability of a spender's wallet that is segwit-aware to recognize and
-  distinguish between recipients that are segwit-aware and ones that are
-  not, by their _addresses_.
+===== P2SH 안에 분리된 증인 넣기
 
-===== Embedding segregated witness inside P2SH
+예를 들어((("embedded segregated witness")))((("P2SH (pay to script hash)", "embedded segregated witness"))) 앨리스의 지갑은 세그윗으로 업그레이드되지 않았지만 밥의 지갑은
+업그레이드되어 세그윗 트랜잭션을 다룰 수 있다고 해봅시다. 앨리스와 밥은 레거시 비세그윗
+출력을 쓸 수 있습니다. 하지만 밥은 위트니스 구조의 비용이 낮다는 점을 활용해 트랜잭션
+수수료를 줄이려고 세그윗을 쓰고 싶을 것입니다.
 
-Let's assume,((("embedded segregated witness")))((("P2SH (pay to script hash)", "embedded segregated witness"))) for example, that Alice's wallet is not upgraded to
-segwit, but Bob's wallet is upgraded and can handle segwit transactions.
-Alice and Bob can use legacy non-segwit outputs. But Bob would
-likely want to use segwit to reduce transaction fees, taking advantage
-of the reduced cost of witness structure.
+이 경우 밥의 지갑은 세그윗 스크립트를 안에 담은 P2SH 주소를 구성할 수 있습니다. 앨리스의
+지갑은 세그윗을 전혀 몰라도 그 주소로 지불할 수 있습니다. 그런 다음 밥의 지갑은 세그윗
+트랜잭션으로 이 지불을 써서 세그윗의 이점을 누리고 트랜잭션 수수료를 줄일 수 있습니다.
 
-In this case, Bob's wallet can construct a P2SH address that contains a
-segwit script inside it. Alice's wallet can make payments to it without
-any knowledge of segwit.
-Bob's wallet can then spend this payment with a segwit transaction,
-taking advantage of segwit and reducing transaction fees.
+P2WPKH와 P2WSH 두 형태의 위트니스 스크립트 모두 P2SH 주소 안에 넣을 수 있습니다. 앞의 것을
+중첩 P2WPKH, 뒤의 것을 중첩 P2WSH라고 합니다.
 
-Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a
-P2SH address. The first is noted as nested P2WPKH, and the second is noted
-as nested P2WSH.
+===== 중첩 위트니스 공개키 해시로 지불
 
-===== Nested pay to witness public key hash
+((("P2WPKH (pay to witness public key hash)", "nesting", id="p2wpkh-nest")))((("nesting", "P2WPKH (pay to witness public key hash)", id="nest-p2wpkh-ch7")))((("addresses", "P2WPKH (pay to witness public key hash)", "nesting", id="address-p2wpkh-nest")))먼저 살펴볼 출력 스크립트 형태는 중첩 P2WPKH입니다. 이는 위트니스
+공개키 해시로 지불하는 위트니스 프로그램을 스크립트 해시로 지불하는 스크립트 안에 넣은
+것으로, 세그윗을 모르는 지갑도 그 출력 스크립트로 지불할 수 있게 해줍니다.
 
-The first((("P2WPKH (pay to witness public key hash)", "nesting", id="p2wpkh-nest")))((("nesting", "P2WPKH (pay to witness public key hash)", id="nest-p2wpkh-ch7")))((("addresses", "P2WPKH (pay to witness public key hash)", "nesting", id="address-p2wpkh-nest"))) form of output script we will examine is nested P2WPKH. This
-is a pay to witness public key hash witness program, embedded inside a
-pay to script hash script, so that a wallet that is
-not aware of segwit can pay the output script.
+밥의 지갑은 밥의 공개키로 P2WPKH 위트니스 프로그램을 구성합니다. 그런 다음 이 위트니스
+프로그램을 해시하고, 그 결과 해시를 P2SH 스크립트로 인코딩합니다. 그 P2SH 스크립트는
+<<p2sh>>에서 보았듯 "3"으로 시작하는 비트코인 주소로 변환됩니다.
 
-Bob's wallet constructs a P2WPKH witness program with Bob's public key.
-This witness program is then hashed and the resulting hash is encoded as
-a P2SH script. The P2SH script is converted to a Bitcoin address, one
-that starts with a "3," as we saw in <<p2sh>>.
+밥의 지갑은 앞서 본 P2WPKH 위트니스 버전과 위트니스 프로그램에서 시작합니다.
 
-Bob's wallet starts with the P2WPKH witness version and witness program we saw earlier:
-
-.Bob's P2WPKH witness version and witness program
+.밥의 P2WPKH 위트니스 버전과 위트니스 프로그램
 ----
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-The data consists of the witness version and Bob's
-20-byte public key hash.
+이 데이터는 위트니스 버전과 밥의 20바이트 공개키 해시로 이루어집니다.
 
-Bob's wallet then hashes the data, first with
-SHA256, then with RIPEMD-160, producing another 20-byte hash.
-Next, the redeem script hash is converted to a Bitcoin address.
-Finally, Alice's wallet can make a payment to
-+37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+, just as it would to any other
-Bitcoin address.
+그다음 밥의 지갑은 이 데이터를 먼저 SHA256으로, 이어서 RIPEMD-160으로 해시해 또 다른
+20바이트 해시를 만듭니다. 다음으로 그 리딤 스크립트 해시를 비트코인 주소로 변환합니다.
+마지막으로 앨리스의 지갑은 다른 어떤 비트코인 주소로 보내듯이
++37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+ 로 지불할 수 있습니다.
 
-To pay Bob, Alice's wallet would lock the output with a P2SH script:
+밥에게 지불하기 위해 앨리스의 지갑은 다음 P2SH 스크립트로 출력을 잠급니다.
 ----
 OP_HASH160 3e0547268b3b19288b3adef9719ec8659f4b2b0b OP_EQUAL
 ----
 
-Even though Alice's wallet has no support for segwit, the payment it
-creates can be spent by Bob with a segwit ((("P2WPKH (pay to witness public key hash)", "nesting", startref="p2wpkh-nest")))((("nesting", "P2WPKH (pay to witness public key hash)", startref="nest-p2wpkh-ch7")))((("addresses", "P2WPKH (pay to witness public key hash)", "nesting", startref="address-p2wpkh-nest")))transaction.
+앨리스의 지갑이 세그윗을 전혀 지원하지 않더라도, 앨리스가 만든 이 지불은 밥이 세그윗
+트랜잭션으로 쓸 수 ((("P2WPKH (pay to witness public key hash)", "nesting", startref="p2wpkh-nest")))((("nesting", "P2WPKH (pay to witness public key hash)", startref="nest-p2wpkh-ch7")))((("addresses", "P2WPKH (pay to witness public key hash)", "nesting", startref="address-p2wpkh-nest")))있습니다.
 
-===== Nested pay to witness script hash
+===== 중첩 위트니스 스크립트 해시로 지불
 
-Similarly, ((("P2WSH (pay to witness script hash)", "nesting", id="p2wsh-nest")))((("nesting", "P2WSH (pay to witness script hash)", id="nest-p2wsh-ch7")))((("addresses", "P2WSH (pay to witness script hash)", "nesting", id="address-p2wsh-nest")))a P2WSH witness program for a multisig script or other
-complicated script can be embedded inside a P2SH script and address,
-making it possible for any wallet to make payments that are segwit
-compatible.
+((("P2WSH (pay to witness script hash)", "nesting", id="p2wsh-nest")))((("nesting", "P2WSH (pay to witness script hash)", id="nest-p2wsh-ch7")))((("addresses", "P2WSH (pay to witness script hash)", "nesting", id="address-p2wsh-nest")))마찬가지로 멀티시그 스크립트나 그 밖의 복잡한 스크립트를 위한 P2WSH
+위트니스 프로그램도 P2SH 스크립트와 주소 안에 넣을 수 있어, 어떤 지갑이든 세그윗과 호환되는
+지불을 할 수 있게 됩니다.
 
-As we saw in <<p2wsh>>, Mohammed's company is using segregated witness payments to
-multisignature scripts. To make it possible for any client to pay his
-company, regardless of whether their wallets are upgraded for segwit,
-Mohammed's wallet can embed the P2WSH witness program inside a P2SH
-script.
+<<p2wsh>>에서 보았듯 모하메드의 회사는 다중서명 스크립트로 분리된 증인 지불을 받고 있습니다.
+지갑이 세그윗으로 업그레이드되었든 아니든 어떤 클라이언트라도 그의 회사에 지불할 수 있게
+하려고, 모하메드의 지갑은 P2WSH 위트니스 프로그램을 P2SH 스크립트 안에 넣을 수 있습니다.
 
-First, Mohammed's wallet hashes the witness script with SHA256 (just
-once), producing the hash:
+먼저 모하메드의 지갑은 위트니스 스크립트를 SHA256으로 (한 번만) 해시해 다음 해시를
+만듭니다.
 
 ----
 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Next, the hashed witness script is turned into a version-prefixed P2WSH witness program:
+다음으로 해시된 위트니스 스크립트를 버전 접두사가 붙은 P2WSH 위트니스 프로그램으로 바꿉니다.
 
 ----
 0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Then, the witness program itself is hashed with SHA256 and RIPEMD-160,
-producing a new 20-byte hash:
+그런 다음 그 위트니스 프로그램 자체를 SHA256과 RIPEMD-160으로 해시해 새 20바이트 해시를
+만듭니다.
 
 ----
 86762607e8fe87c0c37740cddee880988b9455b2
 ----
 
-Next, the wallet constructs a P2SH Bitcoin address from this hash:
+다음으로 지갑은 이 해시로 P2SH 비트코인 주소를 구성합니다.
 
-.P2SH Bitcoin address
+.P2SH 비트코인 주소
 ----
 3Dwz1MXhM6EfFoJChHCxh1jWHb8GQqRenG
 ----
 
-Now, Mohammed's clients can make payments to this address even if they
-don't support segwit. To send a payment to Mohammed, a wallet would
-lock the output with the following P2SH script:
+이제 모하메드의 고객들은 세그윗을 지원하지 않더라도 이 주소로 지불할 수 있습니다. 모하메드에게
+지불하려면 지갑이 다음 P2SH 스크립트로 출력을 잠급니다.
 
-.P2SH script used to lock payments to Mohammed's multisig
+.모하메드의 멀티시그로 가는 지불을 잠그는 데 쓰이는 P2SH 스크립트
 ----
 OP_HASH160 86762607e8fe87c0c37740cddee880988b9455b2 OP_EQUAL
 ----
 
-Mohammed's company can then construct segwit transactions to spend these
-payments, taking advantage of segwit features including ((("scripts", "examples of", startref="script-example-complex")))((("scripts", "segregated witness", startref="script-segwit")))((("segregated witness (segwit)", "scripts and", startref="segwit-script")))((("scripts", "segregated witness", "upgrading to", startref="script-segwit-upgrade")))((("segregated witness (segwit)", "scripts and", "upgrading to", startref="segwit-script-upgrade")))((("upgrading to segregated witness", startref="upgrade-segwit")))((("P2WSH (pay to witness script hash)", "nesting", startref="p2wsh-nest")))((("nesting", "P2WSH (pay to witness script hash)", startref="nest-p2wsh-ch7")))((("addresses", "P2WSH (pay to witness script hash)", "nesting", startref="address-p2wsh-nest")))lower
-transaction fees.
-
+그러면 모하메드의 회사는 세그윗 트랜잭션을 구성해 이 지불들을 쓰면서, 더 낮은 트랜잭션
+수수료를 비롯한 세그윗의 ((("scripts", "examples of", startref="script-example-complex")))((("scripts", "segregated witness", startref="script-segwit")))((("segregated witness (segwit)", "scripts and", startref="segwit-script")))((("scripts", "segregated witness", "upgrading to", startref="script-segwit-upgrade")))((("segregated witness (segwit)", "scripts and", "upgrading to", startref="segwit-script-upgrade")))((("upgrading to segregated witness", startref="upgrade-segwit")))((("P2WSH (pay to witness script hash)", "nesting", startref="p2wsh-nest")))((("nesting", "P2WSH (pay to witness script hash)", startref="nest-p2wsh-ch7")))((("addresses", "P2WSH (pay to witness script hash)", "nesting", startref="address-p2wsh-nest")))기능을
+활용할 수 있습니다.
 [[mast]]
-=== Merklized Alternative Script Trees (MAST)
+=== 머클화된 대안 스크립트 트리(MAST)
 
-Using +OP_IF+, you ((("scripts", "MAST", id="script-mast")))((("MAST (merklized alternative script trees)", id="mast-ch7")))((("merkle trees", "MAST", id="merkle-tree-mast")))can authorize multiple different spending conditions,
-but this approach has several undesirable aspects:
++OP_IF+ 를 쓰면 ((("scripts", "MAST", id="script-mast")))((("MAST (merklized alternative script trees)", id="mast-ch7")))((("merkle trees", "MAST", id="merkle-tree-mast")))서로 다른 여러 지출 조건을 승인할 수 있지만, 이 방식에는
+바람직하지 않은 면이 몇 가지 있습니다.
 
-Weight (cost)::
-Every condition you add increases the size of the
-  script, increasing the weight of the transaction and the amount of fee
-  that will need to be paid in order to spend bitcoins protected by
-  that script.
+가중치(비용)::
+조건을 하나 추가할 때마다 스크립트의 크기가 커지고, 그만큼 트랜잭션의 가중치와 그
+  스크립트로 보호된 비트코인을 쓰는 데 내야 하는 수수료도 늘어납니다.
 
-Limited size::
-Even if you're willing to pay for extra conditions,
-  there's a limit to the maximum number you can put in a script.  For
-  example, legacy script is limited to 10,000 bytes, practically
-  limiting you to a few hundred conditional branches at most.  Even if
-  you could create a script as large as an entire block, it could still
-  only contain about 20,000 useful branches.  That's a lot for simple
-  payments but tiny compared to some imagined uses of Bitcoin.
+제한된 크기::
+추가 조건에 비용을 기꺼이 치르겠다 해도, 스크립트에 넣을 수 있는 최대 개수에는 한계가
+  있습니다. 예를 들어 레거시 스크립트는 10,000바이트로 제한되어, 실질적으로 조건 분기를
+  많아야 수백 개 정도만 넣을 수 있습니다. 블록 하나만큼 큰 스크립트를 만들 수 있다 해도
+  쓸모 있는 분기는 약 20,000개밖에 담기지 못합니다. 단순한 지불에는 넉넉하지만, 상상 속
+  비트코인 활용 사례들에 비하면 보잘것없습니다.
 
-Lack of privacy:: 
-Every condition you add to your script becomes
-  public knowledge when you spend bitcoins protected by that script.
-  For example, Mohammed's lawyer and business partners will be able to
-  see the entire script in <<variable_timelock_multisig>> whenever
-  anyone spends from it.  That means their lawyer, even if he's not
-  needed for signing, will be able to track all of their transactions.
+프라이버시 부족::
+스크립트에 추가한 모든 조건은 그 스크립트로 보호된 비트코인을 쓰는 순간 공개 정보가
+  됩니다. 예를 들어 모하메드의 변호사와 동업자들은 누군가 거기서 지출할 때마다
+  <<variable_timelock_multisig>>의 스크립트 전체를 볼 수 있게 됩니다. 즉 서명에 필요하지
+  않은 경우에도 변호사가 그들의 모든 트랜잭션을 추적할 수 있다는 뜻입니다.
 
-However, Bitcoin already uses a data structure known as a merkle tree
-that allows verifying an element is a member of a set without
-needing to identify every other member of the set.
+그런데 비트코인은 이미 머클 트리라는 자료 구조를 쓰고 있는데, 이는 어떤 집합의 다른 모든
+구성원을 밝히지 않고도 어떤 요소가 그 집합의 구성원임을 검증할 수 있게 해줍니다.
 
-We'll learn more about merkle trees in <<merkle_trees>>, but the
-essential information is that members of the set of data we want
-(e.g., authorization conditions of any length) can be passed into a hash
-function to create a short commitment (called a _leaf_ of the merkle
-tree).  Each of those leaves is then paired with another leaf
-and hashed again, creating a commitment to the leaves, called a
-_branch_ commitment.  A commitment to a pair of branches can be created
-the same way.  This step is repeated for the branches until only one
-identifier remains, called the _merkle root_.  Using our example script
-from <<variable_timelock_multisig>>, we construct a merkle tree for each
-of the three authorization conditions in <<diagram_mast1>>.
+머클 트리는 <<merkle_trees>>에서 더 자세히 배우겠지만, 핵심은 우리가 원하는 데이터 집합의
+구성원(예: 길이에 상관없는 승인 조건들)을 해시 함수에 넣어 짧은 커밋먼트를 만들 수 있다는
+것입니다. 이를 머클 트리의 _잎(leaf)_ 이라고 합니다. 그런 다음 각 잎을 다른 잎과 짝지어
+다시 해시해 그 잎들에 대한 커밋먼트를 만드는데, 이를 _가지(branch)_ 커밋먼트라고 합니다.
+가지 한 쌍에 대한 커밋먼트도 같은 방식으로 만들 수 있습니다. 식별자가 하나만 남을 때까지
+가지에 대해 이 단계를 반복하며, 마지막에 남는 것을 _머클 루트_ 라고 합니다.
+<<variable_timelock_multisig>>의 예제 스크립트를 사용해 <<diagram_mast1>>에서 세 가지 승인
+조건 각각에 대한 머클 트리를 구성합니다.
 
 [[diagram_mast1]]
-.A MAST with three subscripts.
+.하위 스크립트 세 개를 가진 MAST.
 image::images/mbc3_0705.png["A MAST with three sub-scripts"]
 
-We can now create a compact membership proof that proves a particular
-authorization condition is a member of the merkle tree without
-disclosing any details about the other members of the merkle tree.  See
-<<diagram_mast2>>, and note that the shaded nodes can be
-computed from other data provided by the user, so they don't need to be
-specified at spend time.
+이제 머클 트리의 다른 구성원에 대해서는 아무것도 드러내지 않으면서 특정 승인 조건이 그
+트리의 구성원임을 증명하는 간결한 멤버십 증명을 만들 수 있습니다. <<diagram_mast2>>를
+보세요. 음영 처리된 노드는 사용자가 제공하는 다른 데이터로 계산할 수 있으므로 지출 시점에
+따로 지정할 필요가 없다는 점에 유의하세요.
 
 [[diagram_mast2]]
-.A MAST membership proof for one of the subscripts.
+.하위 스크립트 하나에 대한 MAST 멤버십 증명.
 image::images/mbc3_0706.png["A MAST membership proof for one of the sub-scripts"]
 
 [role="less_space pagebreak-before"]
-The hash digests used to create the commitments are each 32 bytes, so
-proving that a spend of <<diagram_mast2>> is authorized (using a merkle tree and the
-particular conditions) and authenticated (using signatures) uses 383
-bytes.  By comparison, the same spend without a merkle tree (i.e., providing all possible authorization conditions) uses 412 bytes.
+커밋먼트를 만드는 데 쓰이는 해시 다이제스트는 각각 32바이트이므로, <<diagram_mast2>>의
+지출이 (머클 트리와 특정 조건으로) 승인되고 (서명으로) 인증되었음을 증명하는 데 383바이트가
+듭니다. 비교하자면 머클 트리 없이 같은 지출을 하면(즉 가능한 승인 조건을 모두 제공하면)
+412바이트가 듭니다.
 
-Saving 29 bytes (7%) in this example doesn't fully
-capture the potential savings.  The binary-tree nature of a merkle tree
-means that you only need an additional 32-byte commitment every time
-you double the number of members in the set (in this case, authorization
-conditions).  In this instance, with three conditions, we need to use three
-commitments (one of them being the merkle root, which will need to be
-included in the authorization data); we could also have four
-commitments for the same cost.  An extra commitment would give us up to
-eight conditions.  With just 16 commitments--512 bytes of commitments--we could have
-over 32,000 authorization conditions, far more than could be effectively
-used in an entire block of transactions filled with +OP_IF+ statements.  With 128 commitments
-(4,096 bytes), the number of conditions we could create in theory far
-exceeds the number of conditions that all the computers in the world
-could create.
+이 예에서 29바이트(7%)를 아끼는 것만으로는 절약 가능성을 온전히 보여주지 못합니다. 머클
+트리는 이진 트리이므로 집합(여기서는 승인 조건)의 구성원 수를 두 배로 늘릴 때마다 32바이트
+커밋먼트를 하나씩만 더 쓰면 됩니다. 이 경우 조건이 셋이라 커밋먼트 세 개를 써야 하는데(그중
+하나는 승인 데이터에 포함되어야 하는 머클 루트입니다), 같은 비용으로 커밋먼트 네 개를 쓸
+수도 있었습니다. 커밋먼트를 하나 더 쓰면 조건을 최대 여덟 개까지 둘 수 있습니다. 커밋먼트
+16개, 즉 512바이트의 커밋먼트만으로 승인 조건을 32,000개 넘게 둘 수 있는데, 이는 +OP_IF+
+문으로 가득 채운 블록 하나에서 실질적으로 쓸 수 있는 것보다 훨씬 많습니다. 커밋먼트
+128개(4,096바이트)라면 이론적으로 만들 수 있는 조건의 수가 전 세계 모든 컴퓨터가 만들어낼
+수 있는 조건의 수를 훨씬 뛰어넘습니다.
 
-It's commonly the case that not every authorization condition is equally
-as likely to be used.  In the our example case, we expect Mohammed and
-his partners to spend their money frequently; the time delayed
-conditions only exist in case something goes wrong.  We can restructure
-our tree with this knowledge as shown in <<diagram_mast3>>.
+모든 승인 조건이 똑같은 확률로 쓰이지는 않는 것이 보통입니다. 우리 예에서 모하메드와
+동업자들은 돈을 자주 쓸 것으로 예상되고, 시간 지연 조건은 문제가 생겼을 때에만 존재합니다.
+이 점을 알고 트리를 <<diagram_mast3>>처럼 재구성할 수 있습니다.
 
 [[diagram_mast3]]
-.A MAST with the most-expected script in the best position.
+.가장 자주 쓰일 스크립트를 가장 좋은 자리에 둔 MAST.
 image::images/mbc3_0707.png["A MAST with the most-expected script in the best position"]
 
 [role="less_space pagebreak-before"]
-Now we only need to provide two commitments for the common case (saving 32
-bytes), although we still need three commitments for the less common cases.
-If you know (or can guess) the probabilities of
-using the different authorization conditions, you can use the Huffman
-algorithm to place them into a maximally efficient tree; see BIP341 for
-details.
+이제 흔한 경우에는 커밋먼트를 두 개만 제공하면 되지만(32바이트 절약), 덜 흔한 경우에는
+여전히 세 개가 필요합니다. 서로 다른 승인 조건이 쓰일 확률을 알거나 추측할 수 있다면,
+허프만 알고리즘으로 그것들을 최대한 효율적인 트리에 배치할 수 있습니다. 자세한 내용은
+BIP341을 참고하세요.
 
-Regardless of how the tree is constructed, we can see in the previous
-examples that we're only revealing the actual authorization conditions
-that get used.  The other conditions remain private.  Also remaining
-private are the number of conditions: a tree could have a single condition
-or a trillion conditions--there's no way for someone looking only at the
-onchain data for a single transaction to tell.
+트리를 어떻게 구성하든, 앞의 예제들에서 실제로 쓰인 승인 조건만 드러난다는 것을 알 수
+있습니다. 다른 조건들은 비공개로 남습니다. 조건의 개수 역시 비공개로 남습니다. 트리에 조건이
+하나뿐일 수도, 1조 개일 수도 있지만, 트랜잭션 하나의 온체인 데이터만 보는 사람은 알 도리가
+없습니다.
 
-Except for increasing the complexity of Bitcoin slightly, there are no
-significant downsides of MAST for Bitcoin and there were two solid
-proposals for it, BIP114 and BIP116, before an improved approach was
-discovered, which we'll see in <<taproot>>.
+비트코인을 약간 더 복잡하게 만든다는 점을 빼면 MAST에 비트코인 입장에서 큰 단점은 없으며,
+BIP114와 BIP116이라는 두 가지 탄탄한 제안이 있었습니다. 그러다 더 나은 방식이 발견되었는데,
+<<taproot>>에서 살펴봅니다.
 
-.MAST Versus MAST
+.MAST 대 MAST
 ****
-The earliest((("abstract syntax trees (AST)")))((("AST (abstract syntax trees)"))) idea for what we now know as _MAST_ in Bitcoin was
-_merklized abstract syntax trees_.  In an abstract syntax tree (AST),
-every condition in a script creates a new branch, as show in <<ast>>.
+지금 ((("abstract syntax trees (AST)")))((("AST (abstract syntax trees)")))비트코인에서 _MAST_ 라고 부르는 것에 대한 가장 초기 아이디어는
+_머클화된 추상 구문 트리(merklized abstract syntax trees)_ 였습니다. 추상 구문 트리(AST)
+에서는 <<ast>>에서 보듯 스크립트의 모든 조건이 새 가지를 만듭니다.
 
 [[ast]]
-.An abstract syntax tree (AST) for a script.
+.스크립트에 대한 추상 구문 트리(AST).
 image::images/mbc3_0708.png["An Abstract Syntax Tree (AST) for a script"]
 
-ASTs are widely used by programs that parse and optimize code for other
-programs, such as compilers.  A merklized AST would commit to every part
-of a program and enable the features described in 
-<<mast>>, but it would require revealing at least one 32-byte digest for
-every separate part of the program, which would not be very space
-efficient on the blockchain for most programs.
+AST는 컴파일러처럼 다른 프로그램의 코드를 파싱하고 최적화하는 프로그램에서 널리 쓰입니다.
+머클화된 AST는 프로그램의 모든 부분에 커밋해 <<mast>>에서 설명한 기능을 가능하게 하지만,
+프로그램의 분리된 부분마다 최소 32바이트 다이제스트 하나씩을 드러내야 해서 대부분의
+프로그램에서는 블록체인 공간을 그리 효율적으로 쓰지 못합니다.
 
-What people in most cases call _MAST_ in Bitcoin today is
-_merklized alternative script trees_, a backronym coined by developer
-Anthony Towns.  An alternative script tree is a set of scripts, each
-one of them complete by itself, where only one can be selected--making
-them alternatives for each other, as shown in <<alt_script>>.
+오늘날 비트코인에서 사람들이 대개 _MAST_ 라고 부르는 것은 _머클화된 대안 스크립트
+트리(merklized alternative script trees)_ 이며, 개발자 앤서니 타운스가 만든 역두문자어입니다.
+대안 스크립트 트리는 각각이 그 자체로 완결된 스크립트들의 집합으로, 그중 하나만 선택할 수
+있어 서로 대안이 됩니다. <<alt_script>>에 나타냈습니다.
 
 [[alt_script]]
-.An alternative script tree.
+.대안 스크립트 트리.
 image::images/mbc3_0709.png["An alternative script tree"]
 
-Alternative script trees only require revealing one 32-byte digest for
-each level of depth between the spender's chosen script and the root of
-the tree.  For most scripts, this is a much more efficient use of space
-in the((("scripts", "MAST", startref="script-mast")))((("MAST (merklized alternative script trees)", startref="mast-ch7")))((("merkle trees", "MAST", startref="merkle-tree-mast"))) blockchain.
+대안 스크립트 트리는 지출자가 고른 스크립트와 트리의 루트 사이의 깊이 단계마다 32바이트
+다이제스트를 하나씩만 드러내면 됩니다. 대부분의 스크립트에서 이는 블록체인 공간을 훨씬 더
+효율적으로 ((("scripts", "MAST", startref="script-mast")))((("MAST (merklized alternative script trees)", startref="mast-ch7")))((("merkle trees", "MAST", startref="merkle-tree-mast")))쓰는 방법입니다.
 ****
-
 [[pay_to_contract]]
-=== Pay to Contract (P2C)
+=== 계약으로 지불(P2C)
 
-As we((("P2C (pay to contract)", id="p2c")))((("key tweaks", id="key-tweak")))((("public key cryptography", "key tweaks", id="pub-key-tweak"))) saw in <<public_child_key_derivation>>, the math of elliptic curve
-cryptography (ECC) allows Alice to use a private key to derive a public
-key that she gives to Bob.  He can add an arbitrary value to that public
-key to create a derived public key.  If he gives that arbitrary value to Alice, she can
-add it to her private key to derive the private key for the derived
-public key.  In short, Bob can create child public keys for which only
-Alice can create the corresponding private keys.  This is useful for
-BIP32-style Hierarchical Deterministic (HD) wallet recovery, but it can
-also serve another use.
+<<public_child_key_derivation>>에서((("P2C (pay to contract)", id="p2c")))((("key tweaks", id="key-tweak")))((("public key cryptography", "key tweaks", id="pub-key-tweak"))) 보았듯이 타원곡선 암호(ECC)의 수학은
+앨리스가 비밀키로 공개키를 유도해 밥에게 줄 수 있게 해줍니다. 밥은 그 공개키에 임의의 값을
+더해 유도된 공개키를 만들 수 있습니다. 그 임의의 값을 앨리스에게 알려주면, 앨리스는 그것을
+자기 비밀키에 더해 그 유도된 공개키에 대응하는 비밀키를 유도할 수 있습니다. 요컨대 밥은
+앨리스만이 대응하는 비밀키를 만들 수 있는 자식 공개키를 만들 수 있습니다. 이는 BIP32 방식의
+계층 결정적(HD) 지갑 복구에 유용하지만, 또 다른 쓰임새도 있습니다.
 
-Let's imagine Bob wants to buy something from Alice but he also wants to
-be able prove later what he paid for in case there's any dispute.  Alice
-and Bob agree on the name of the item or service being sold (e.g.,
-"Alice's podcast episode #123"), and transform that description into a
-number by hashing it and interpreting the hash digest as a number.  Bob
-adds that number to Alice's public key and pays it.  The process is
-called _key tweaking_, and the number is known as a _tweak_.
+밥이 앨리스에게서 무언가를 사고 싶은데, 나중에 분쟁이 생길 경우에 대비해 자신이 무엇에
+대해 지불했는지 증명할 수 있기를 바란다고 상상해 봅시다. 앨리스와 밥은 판매되는 상품이나
+서비스의 이름(예: "앨리스의 팟캐스트 에피소드 #123")에 합의하고, 그 설명을 해시해 그 해시
+다이제스트를 수로 해석함으로써 숫자로 바꿉니다. 밥은 그 수를 앨리스의 공개키에 더해 그리로
+지불합니다. 이 과정을 _키 트위킹(key tweaking)_ 이라고 하고, 그 수를 _트윅(tweak)_ 이라고
+합니다.
 
-Alice can spend the funds by tweaking her private key using the same
-number (tweak).
+앨리스는 같은 수(트윅)로 자기 비밀키를 트위킹해 그 자금을 쓸 수 있습니다.
 
-Later, Bob can prove to anyone what he paid Alice by revealing her
-underlying key and the description they used.  Anyone can verify that
-the public key, which was paid, equals the underlying key plus the
-hash commitment to the description.  If Alice admits that key is hers,
-then she received the payment.  If Alice spent the funds, this further
-proves she knew the description at the time she signed the spending
-transaction since she could only create a valid signature for the
-tweaked public key if she knew the tweak (the description).
+나중에 밥은 앨리스의 기반 키와 두 사람이 사용한 설명을 공개함으로써 자신이 앨리스에게 무엇에
+대해 지불했는지 누구에게든 증명할 수 있습니다. 지불이 이루어진 그 공개키가 기반 키에 그
+설명에 대한 해시 커밋먼트를 더한 것과 같다는 사실은 누구나 검증할 수 있습니다. 앨리스가 그
+키가 자기 것이라고 인정한다면 그 지불을 받은 것입니다. 앨리스가 그 자금을 썼다면, 이는 그가
+지출 트랜잭션에 서명한 시점에 그 설명을 알고 있었다는 것까지 증명합니다. 트윅(설명)을 알아야만
+트위킹된 공개키에 대한 유효한 서명을 만들 수 있기 때문입니다.
 
-If neither Alice nor Bob decided to publicly reveal the description they
-use, the payment between them looks like any other payment.  There's no
-privacy loss.
+앨리스도 밥도 자신들이 쓴 설명을 공개적으로 밝히지 않기로 한다면, 둘 사이의 지불은 다른 여느
+지불과 똑같아 보입니다. 프라이버시 손실이 전혀 없습니다.
 
-Because P2C is private by default, we can't know how often it is used
-for its original purpose--in theory every payment could be using it,
-although we consider that unlikely.  However, P2C is widely used today
-in a slightly different form, which we'll((("P2C (pay to contract)", startref="p2c")))((("key tweaks", startref="key-tweak")))((("public key cryptography", "key tweaks", startref="pub-key-tweak"))) see in <<taproot>>.
+P2C는 기본적으로 비공개이므로 원래 목적으로 얼마나 자주 쓰이는지는 알 수 없습니다. 이론적으로
+모든 지불이 이를 쓰고 있을 수도 있지만 그럴 가능성은 낮다고 봅니다. 다만 P2C는 오늘날 조금
+다른 형태로 널리 쓰이고 있으며, 이는((("P2C (pay to contract)", startref="p2c")))((("key tweaks", startref="key-tweak")))((("public key cryptography", "key tweaks", startref="pub-key-tweak"))) <<taproot>>에서 살펴봅니다.
 
 [[scriptless_multisignatures_and_threshold_signatures]]
-=== Scriptless Multisignatures and Threshold Signatures
+=== 스크립트 없는 다중서명과 임계 서명
 
-In <<multisig>>, we ((("scriptless multisignatures", id="scriptless-multi")))((("multisignature scripts", "scriptless", id="multisignature-scriptless")))((("threshold signatures", id="threshold-signature")))((("public key cryptography", "scriptless multisignatures", id="pub-key-scriptless")))looked at scripts that require signatures from
-multiple keys.  However, there's another way to require cooperation from
-multiple keys, which is also confusingly called _multisignature_.  To
-distinguish between the two types in this section, we'll call the
-version involving `OP_CHECKSIG`-style opcodes _script multisignatures_
-and the other version _scriptless multisignatures_.
+<<multisig>>에서 ((("scriptless multisignatures", id="scriptless-multi")))((("multisignature scripts", "scriptless", id="multisignature-scriptless")))((("threshold signatures", id="threshold-signature")))((("public key cryptography", "scriptless multisignatures", id="pub-key-scriptless")))여러 키의 서명을 요구하는 스크립트를 살펴봤습니다. 그런데
+여러 키의 협력을 요구하는 또 다른 방법이 있는데, 이 역시 혼란스럽게도 _다중서명_ 이라고
+불립니다. 이 절에서 둘을 구별하기 위해, `OP_CHECKSIG` 계열 옵코드를 쓰는 쪽을 _스크립트
+다중서명_, 다른 쪽을 _스크립트 없는 다중서명_ 이라고 부르겠습니다.
 
-Scriptless multisignatures involve each participant creating their own
-secret the same way they create a private key.  We'll call this ((("partial private keys")))((("private keys", "partial")))secret a
-_partial private key_, although we should note that it's the same length
-as a regular full private key.  From the partial private key, each
-participant derives a partial public key using the same algorithm used
-for regular public keys we described in <<public_key_derivation>>.  Each
-participant shares their partial public keys with all the other
-participants and then combines all of the keys together to create the
-scriptless multisignature public key.
+스크립트 없는 다중서명에서는 참여자 각자가 비밀키를 만드는 것과 같은 방식으로 자기 비밀값을
+만듭니다. 이 비밀값을 ((("partial private keys")))((("private keys", "partial")))_부분 비밀키_ 라고 부르겠습니다. 다만 길이는 보통의 완전한
+비밀키와 같다는 점을 짚어둡니다. 각 참여자는 <<public_key_derivation>>에서 설명한 보통의
+공개키 생성과 같은 알고리즘으로 부분 비밀키에서 부분 공개키를 유도합니다. 각 참여자는 자기
+부분 공개키를 다른 모든 참여자와 공유하고, 그 키들을 모두 합쳐 스크립트 없는 다중서명
+공개키를 만듭니다.
 
-This combined public key looks the same as any other Bitcoin public key.
-A third party can't distinguish between a multiparty public key and an
-ordinary key generated by a single user.
+이렇게 합쳐진 공개키는 다른 어떤 비트코인 공개키와도 똑같아 보입니다. 제삼자는 다자간
+공개키와 한 사용자가 만든 보통의 키를 구별할 수 없습니다.
 
-To spend bitcoins protected by the scriptless multisignature public key,
-each participant generates a partial signature.  The partial signatures
-are then combined to create a regular full signature.  There are
-many known methods for creating and combining the partial signatures;
-we'll look at this topic more in <<c_signatures>>.  Similar to the public
-keys for scriptless multisignatures, the signatures generated by this
-process look the same as any other Bitcoin signature.  Third parties
-can't determine whether a signature was created by a single person or a
-million people cooperating with each other.
+스크립트 없는 다중서명 공개키로 보호된 비트코인을 쓰려면 각 참여자가 부분 서명을 만듭니다.
+그런 다음 부분 서명들을 합쳐 보통의 완전한 서명을 만듭니다. 부분 서명을 만들고 합치는 방법은
+여러 가지가 알려져 있으며, 이 주제는 <<c_signatures>>에서 더 살펴봅니다. 스크립트 없는
+다중서명의 공개키와 마찬가지로 이 과정으로 만들어진 서명도 다른 어떤 비트코인 서명과 똑같아
+보입니다. 제삼자는 그 서명이 한 사람이 만든 것인지 백만 명이 협력해 만든 것인지 알아낼 수
+없습니다.
 
-Scriptless multisignatures are smaller and more private than scripted
-multisignatures.  For scripted multisignatures, the number of bytes
-placed in a transaction increases for every key and signature involved.
-For scriptless multisignatures, the size is constant--a million
-participants each providing their own partial key and partial signature
-puts exactly the same amount of data in a transaction as an individual
-using a single key and signature.  The story is the same for privacy:
-because each new key or signature adds data to a transaction, scripted
-multisignatures disclose data about how many keys and signatures are
-being used--which may make it easy to figure out which transactions were
-created by which group of participants.  However, because every scriptless
-multisignatures looks like every other scriptless
-multisignature and every single-signature, no privacy-reducing data is
-leaked.
+스크립트 없는 다중서명은 스크립트 다중서명보다 작고 프라이버시도 더 좋습니다. 스크립트
+다중서명에서는 관련된 키와 서명마다 트랜잭션에 들어가는 바이트 수가 늘어납니다. 스크립트
+없는 다중서명에서는 그 크기가 일정합니다. 백만 명이 각자 부분 키와 부분 서명을 제공해도
+한 사람이 키 하나와 서명 하나를 쓰는 것과 정확히 같은 양의 데이터만 트랜잭션에 들어갑니다.
+프라이버시도 마찬가지입니다. 키나 서명이 하나 늘 때마다 트랜잭션에 데이터가 추가되므로,
+스크립트 다중서명은 키와 서명이 몇 개나 쓰이는지에 대한 데이터를 드러냅니다. 그러면 어떤
+트랜잭션이 어떤 참여자 집단에 의해 만들어졌는지 알아내기 쉬워질 수 있습니다. 반면 스크립트
+없는 다중서명은 모두가 서로 똑같아 보이고 단일 서명과도 똑같아 보이므로, 프라이버시를
+떨어뜨리는 데이터가 새어 나가지 않습니다.
 
 ++++
 <p class="fix_tracking">
-There are two downsides of scriptless multisignatures.  The first is
-that all known secure algorithms for creating them for Bitcoin require more
-rounds of interaction or more careful management of state than
-scripted multisignatures.  This can be challenging in cases where
-signatures are being generated by nearly stateless hardware signing
-devices and the keys are physically distributed.  For example, if you
-keep a hardware signing device in a bank safe deposit box, you would
-need to visit that box once to create a scripted multisignature but
-possibly two or three times for a scriptless multisignature.
+스크립트 없는 다중서명에는 두 가지 단점이 있습니다. 첫째는 비트코인에서 이를 만드는 알려진
+모든 안전한 알고리즘이 스크립트 다중서명보다 더 많은 상호작용 라운드나 더 세심한 상태 관리를
+요구한다는 점입니다. 거의 무상태에 가까운 하드웨어 서명 장치로 서명을 만들고 키가 물리적으로
+흩어져 있는 경우라면 이는 까다로울 수 있습니다. 예를 들어 하드웨어 서명 장치를 은행 대여
+금고에 보관한다면, 스크립트 다중서명을 만드는 데는 금고를 한 번 방문하면 되지만 스크립트
+없는 다중서명에는 두세 번 방문해야 할 수도 있습니다.
 </p>
 ++++
 
-The other downside is that threshold signing doesn't reveal who signed.
-In scripted threshold signing, Alice, Bob, and Carol agree (for example)
-that any two of them signing will be sufficient to spend the funds.
-If Alice and Bob sign, this requires putting signatures from each of
-them on chain, proving to anyone who knows their keys that they signed
-and Carol didn't.  In scriptless threshold signing, a signature from
-Alice and Bob is indistinguishable from a signature between Alice and
-Carol or Bob and Carol.  This is beneficial for privacy, but it means
-that, even if Carol claims she didn't sign, she can't
-prove that she didn't, which may be bad for accountability and
-auditability.
+다른 단점은 임계 서명이 누가 서명했는지 드러내지 않는다는 점입니다. 스크립트 임계 서명에서는
+앨리스와 밥, 캐럴이 (예를 들어) 셋 중 둘이 서명하면 자금을 쓰기에 충분하다고 합의합니다.
+앨리스와 밥이 서명하면 각자의 서명을 체인에 올려야 하므로, 그들의 키를 아는 사람이라면 누구나
+두 사람이 서명했고 캐럴은 하지 않았다는 것을 알게 됩니다. 스크립트 없는 임계 서명에서는
+앨리스와 밥의 서명이 앨리스와 캐럴, 또는 밥과 캐럴의 서명과 구별되지 않습니다. 프라이버시에는
+이롭지만, 캐럴이 서명하지 않았다고 주장하더라도 그것을 증명할 수 없다는 뜻이기도 해서 책임
+소재와 감사 가능성 측면에서는 불리할 수 있습니다.
 
-For many users and use cases, the always reduced size and increased
-privacy of multisignatures outweighs its occasional challenges for
-creating and auditing((("scriptless multisignatures", startref="scriptless-multi")))((("multisignature scripts", "scriptless", startref="multisignature-scriptless")))((("threshold signatures", startref="threshold-signature")))((("public key cryptography", "scriptless multisignatures", startref="pub-key-scriptless"))) signatures.
-
+많은 사용자와 사용 사례에서, 다중서명의 언제나 줄어든 크기와 향상된 프라이버시가 서명을
+만들고 감사하는 데 따르는 ((("scriptless multisignatures", startref="scriptless-multi")))((("multisignature scripts", "scriptless", startref="multisignature-scriptless")))((("threshold signatures", startref="threshold-signature")))((("public key cryptography", "scriptless multisignatures", startref="pub-key-scriptless")))이따금의 어려움보다 더 큽니다.
 [[taproot]]
-=== Taproot
+=== 탭루트
 
-One reason ((("scripts", "MAST", "taproot", id="script-mast-taproot")))((("MAST (merklized alternative script trees)", "taproot", id="mast-taproot")))((("merkle trees", "MAST", "taproot", id="merkle-tree-mast-taproot")))((("taproot", id="taproot-ch7")))((("mutual satisfaction contracts", "taproot", id="mutual-satisfaction-taproot")))people choose to use Bitcoin is that it's possible to create
-contracts with highly predictable outcomes.  Legal contracts enforced by
-a court of law depend in part on decisions by the judges and jurors
-involved in the case.  By contrast, Bitcoin contracts often require
-actions by their participants but are otherwise enforced by thousands of
-full nodes all running functionally identical code.  When given the same
-contract and the same input, every full node will always produce the
-same result.  Any deviation would mean that Bitcoin was broken.
-Human judges and juries can be much more flexible than software, but
-when that flexibility isn't wanted or needed, the predictability of
-Bitcoin contracts is a major asset.
+사람들이 ((("scripts", "MAST", "taproot", id="script-mast-taproot")))((("MAST (merklized alternative script trees)", "taproot", id="mast-taproot")))((("merkle trees", "MAST", "taproot", id="merkle-tree-mast-taproot")))((("taproot", id="taproot-ch7")))((("mutual satisfaction contracts", "taproot", id="mutual-satisfaction-taproot")))비트코인을 쓰기로 하는 이유 중 하나는 결과를 매우 잘 예측할 수 있는
+계약을 만들 수 있다는 점입니다. 법정이 집행하는 법적 계약은 그 사건을 맡은 판사와 배심원의
+판단에 어느 정도 좌우됩니다. 반면 비트코인 계약은 참여자의 행동을 요구하는 경우가 많지만,
+그 외에는 기능적으로 동일한 코드를 돌리는 수천 개의 풀 노드가 집행합니다. 같은 계약에 같은
+입력이 주어지면 모든 풀 노드는 언제나 같은 결과를 내놓습니다. 어긋남이 있다면 그것은 비트코인이
+고장 났다는 뜻입니다. 사람 판사와 배심원은 소프트웨어보다 훨씬 유연할 수 있지만, 그 유연성이
+필요하지 않거나 바람직하지 않을 때 비트코인 계약의 예측 가능성은 큰 자산입니다.
 
-If all of the participants in a contract recognize that its outcome has
-become completely predictable, there's not actually any need for them to
-continue using the contract.  They could just do whatever the contract
-compels them to do and then terminate the contract.  In society, this
-is how most contracts terminate: if the interested parties are
-satisfied, they never take the contract before a judge or jury.  In
-Bitcoin, it means that any contract that will use a significant amount
-of block space to settle should also provide a clause that allows it to
-instead be settled by mutual satisfaction.
+계약의 모든 참여자가 그 결과가 완전히 예측 가능해졌다고 인정한다면, 사실 그 계약을 계속
+사용할 이유가 없습니다. 계약이 요구하는 대로 그냥 하고 계약을 끝내면 됩니다. 사회에서
+대부분의 계약은 이렇게 끝납니다. 이해 당사자들이 만족한다면 그 계약을 판사나 배심원 앞에
+가져가는 일은 결코 없습니다. 비트코인에서는, 정산하는 데 블록 공간을 상당히 쓰게 될 계약이라면
+상호 만족으로 정산할 수 있는 조항도 함께 제공해야 한다는 뜻입니다.
 
-In MAST and with scriptless multisignatures, a mutual satisfaction
-clause is easy to design.  We simply make one of the top leaves of the
-script tree a scriptless multisignature between all interested parties.
-We already saw a complex contract between several parties with a
-simple mutual satisfaction clause in <<diagram_mast3>>.  We could make
-that more optimized by switching from scripted multisignature to
-scriptless multisignature.
+MAST와 스크립트 없는 다중서명을 쓰면 상호 만족 조항을 설계하기 쉽습니다. 스크립트 트리의 위쪽
+잎 중 하나를 모든 이해 당사자 사이의 스크립트 없는 다중서명으로 두기만 하면 됩니다. 간단한
+상호 만족 조항을 가진, 여러 당사자 사이의 복잡한 계약은 이미 <<diagram_mast3>>에서 보았습니다.
+거기서 스크립트 다중서명을 스크립트 없는 다중서명으로 바꾸면 더 최적화할 수 있습니다.
 
-That's reasonably efficient and private.  If the mutual satisfaction
-clause is used, we only need to provide a single merkle branch and all
-we reveal is that a signature was involved (it could be from one person
-or it could be from thousands of different participants).  But
-developers in 2018 realized that we could do better if we also used
-pay to contract.
+이 정도면 꽤 효율적이고 프라이버시도 좋습니다. 상호 만족 조항이 쓰이면 머클 가지 하나만
+제공하면 되고, 드러나는 것은 서명이 관여했다는 사실뿐입니다(한 사람의 서명일 수도, 수천 명의
+참여자에게서 나온 것일 수도 있습니다). 그런데 2018년 개발자들은 계약으로 지불을 함께 쓰면 더
+잘할 수 있다는 것을 깨달았습니다.
 
-In our previous description of pay to contract in <<pay_to_contract>>,
-we tweaked a public key to commit to the text of an agreement between
-Alice and Bob.  We can instead commit to the program code of a contract
-by committing to the root of a MAST.  The public key we tweak
-is a regular Bitcoin public key, meaning it could require a signature
-from a single person or it could require a signature from multiple
-people (or it could be created in a special way to make it impossible to
-generate a signature for it).  That means we can satisfy the contract
-either with a single signature from all interested parties or by
-revealing the MAST branch we want to use.  That commitment tree
-involving both a public key and a MAST is shown in <<diagram_taproot1>>.
+<<pay_to_contract>>에서 계약으로 지불을 설명할 때는 앨리스와 밥 사이 합의문의 텍스트에
+커밋하도록 공개키를 트위킹했습니다. 대신 MAST의 루트에 커밋함으로써 계약의 프로그램 코드에
+커밋할 수도 있습니다. 우리가 트위킹하는 공개키는 보통의 비트코인 공개키이므로, 한 사람의
+서명을 요구할 수도 있고 여러 사람의 서명을 요구할 수도 있습니다(또는 그에 대한 서명을 만드는
+것이 불가능하도록 특별한 방식으로 만들 수도 있습니다). 즉 모든 이해 당사자의 서명 하나로
+계약을 충족하거나, 쓰고자 하는 MAST 가지를 드러내어 충족할 수 있다는 뜻입니다. 공개키와
+MAST를 모두 포함하는 그 커밋먼트 트리를 <<diagram_taproot1>>에 나타냈습니다.
 
 [[diagram_taproot1]]
-.A taproot with the public key committing to a merkle root.
+.공개키가 머클 루트에 커밋하는 탭루트.
 image::images/mbc3_0710.png["A taproot with the public key committing to a merkle root"]
 
-This makes the mutual satisfaction clause using a multisignature
-extremely efficient and very private.  It's even more private than it
-may appear because any transaction created by a single user who wants it
-to be satisfied by a single signature (or a multisignature generated by
-multiple different wallets they control) looks identical onchain to a
-mutual-satisfaction spend.  There's no onchain difference in this case
-between a spend by a million users involved in an extraordinarily complex
-contract or a single user just spending their saved bitcoins.
+이렇게 하면 다중서명을 쓰는 상호 만족 조항이 대단히 효율적이고 매우 사적인 것이 됩니다.
+보기보다 프라이버시가 더 좋기까지 한데, 한 사용자가 서명 하나로(또는 자신이 통제하는 여러
+지갑이 만든 다중서명으로) 충족되기를 바라며 만든 트랜잭션이 온체인에서 상호 만족 지출과
+똑같아 보이기 때문입니다. 이 경우 대단히 복잡한 계약에 얽힌 백만 명의 지출과 한 사용자가 그저
+모아둔 비트코인을 쓰는 것 사이에 온체인상의 차이가 없습니다.
 
-When spending is possible using just the key, such as for a single signature
-or scriptless multisignature, that is((("keypath spending")))((("scriptpath spending"))) called _keypath spending_.  When
-the tree of scripts is used, that is called _scriptpath spending_.
-For keypath spending, the data that gets put onchain is the public key
-(in a witness program) and the signature (on the witness stack).
+단일 서명이나 스크립트 없는 다중서명처럼 키만으로 지출할 수 있을 때, 이를
+((("keypath spending")))((("scriptpath spending")))_키패스 지출(keypath spending)_ 이라고 합니다. 스크립트 트리를 쓸
+때는 _스크립트패스 지출(scriptpath spending)_ 이라고 합니다. 키패스 지출에서 온체인에 올라가는
+데이터는 (위트니스 프로그램 안의) 공개키와 (위트니스 스택 위의) 서명입니다.
 
-For scriptpath spending, the onchain data also includes the public key,
-which is placed in a witness program and called the _taproot output key_
-in this context.  The witness structure includes the following information:
+스크립트패스 지출에서도 온체인 데이터에 공개키가 포함되는데, 위트니스 프로그램에 놓이며 이
+맥락에서는 _탭루트 출력 키(taproot output key)_ 라고 부릅니다. 위트니스 구조에는 다음 정보가
+들어갑니다.
 
-* A version number.
+* 버전 번호.
 
-* The underlying key--the key that existed before being tweaked by the
-   merkle root to produce the taproot output key.  This underlying key
-   is called the _taproot internal key_.
+* 기반 키. 머클 루트로 트위킹되어 탭루트 출력 키가 되기 전에 존재하던 키입니다. 이 기반 키를
+   _탭루트 내부 키(taproot internal key)_ 라고 합니다.
 
-* The script to execute, called the _leaf script_.
+* 실행할 스크립트. _리프 스크립트(leaf script)_ 라고 합니다.
 
-* One 32-byte hash for each junction in merkle tree along the path that connects the leaf to the merkle root.
+* 그 잎을 머클 루트에 잇는 경로상의 머클 트리 분기점마다 하나씩의 32바이트 해시.
 
-* Any data necessary to satisfy the script (such as signatures or hash preimages).
+* 그 스크립트를 충족하는 데 필요한 데이터(서명이나 해시 프리이미지 등).
 
 // Source for 33 bytes: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2020-February/017622.html
 
-We're only aware of one significant described downside of taproot:
-contracts whose participants want to use MAST but who don't want a
-mutual satisfaction clause have to include a taproot internal key on the
-blockchain, adding about 33 bytes of overhead. Given that almost
-all contracts are expected to benefit from a mutual satisfaction clause,
-or other multisignature clause that uses the top-level public key, and
-all users benefit from the increased anonymity set of outputs looking
-similar to each other, that rare overhead was not considered important
-by most users who participated in taproot's activation.
+탭루트의 뚜렷한 단점으로 알려진 것은 하나뿐입니다. MAST는 쓰고 싶지만 상호 만족 조항은 원하지
+않는 참여자들의 계약이라면 탭루트 내부 키를 블록체인에 담아야 해서 약 33바이트의 부담이
+더해진다는 점입니다. 거의 모든 계약이 상호 만족 조항이나 최상위 공개키를 쓰는 다른 다중서명
+조항에서 이득을 볼 것으로 예상되고, 출력들이 서로 비슷해 보임으로써 익명성 집합이 커지는 데서
+모든 사용자가 이득을 보므로, 탭루트 활성화에 참여한 대부분의 사용자는 그 드문 경우의 부담을
+중요하게 여기지 않았습니다.
 
-Support for taproot was added to Bitcoin in a soft fork that ((("scripts", "MAST", "taproot", startref="script-mast-taproot")))((("MAST (merklized alternative script trees)", "taproot", startref="mast-taproot")))((("merkle trees", "MAST", "taproot", startref="merkle-tree-mast-taproot")))((("taproot", startref="taproot-ch7")))((("mutual satisfaction contracts", "taproot", startref="mutual-satisfaction-taproot")))activated
-in November 2021.
+탭루트 지원은 2021년 11월에 활성화된 소프트 포크로 비트코인에 ((("scripts", "MAST", "taproot", startref="script-mast-taproot")))((("MAST (merklized alternative script trees)", "taproot", startref="mast-taproot")))((("merkle trees", "MAST", "taproot", startref="merkle-tree-mast-taproot")))((("taproot", startref="taproot-ch7")))((("mutual satisfaction contracts", "taproot", startref="mutual-satisfaction-taproot")))추가되었습니다.
 
-=== Tapscript
+=== 탭스크립트
 
 //FIXME:mention "control block" (maybe in MAST section)
 
-Taproot ((("tapscript", id="tapscript")))((("mutual satisfaction contracts", "tapscript", id="mutual-satisfaction-tapscript")))enables MAST but only with a slightly different version of the
-Bitcoin Script language than previously used, the new version being
-called _tapscript_.  The major differences include:
+탭루트는 ((("tapscript", id="tapscript")))((("mutual satisfaction contracts", "tapscript", id="mutual-satisfaction-tapscript")))MAST를 가능하게 하지만, 이전에 쓰이던 것과는 조금 다른 버전의
+비트코인 스크립트 언어에서만 그렇습니다. 그 새 버전을 _탭스크립트(tapscript)_ 라고 합니다.
+주요 차이는 다음과 같습니다.
 
 [role="less_space pagebreak-before"]
-Scripted multisignature changes::
-  The old +OP_CHECKMULTISIG+ and +OP_CHECKMULTISIGVERIFY+ opcodes are
-  removed.  Those opcodes don't combine well with one of the other
-  changes in the taproot soft fork, the ability to use schnorr signatures
-  with batch validation (see <<schnorr_signatures>>).  A new +OP_CHECKSIGADD+ opcode is provided
-  instead.  When it successfully verifies a signature, this new opcode
-  increments a counter by one, making it possible to conveniently count
-  how many signatures passed, which can be compared against the desired number
-  of successful signatures to reimplement the same behavior as
-  +OP_CHECKMULTISIG+.
+스크립트 다중서명의 변화::
+  기존의 +OP_CHECKMULTISIG+ 와 +OP_CHECKMULTISIGVERIFY+ 옵코드가 제거되었습니다. 이
+  옵코드들은 탭루트 소프트 포크의 다른 변경 사항 중 하나인, 일괄 검증이 가능한 슈노르 서명
+  사용(<<schnorr_signatures>> 참고)과 잘 어울리지 않습니다. 대신 새로운 +OP_CHECKSIGADD+
+  옵코드가 제공됩니다. 이 새 옵코드는 서명 검증에 성공하면 카운터를 1씩 올려서 통과한 서명이
+  몇 개인지 편리하게 셀 수 있게 해줍니다. 그 값을 원하는 성공 서명 개수와 비교하면
+  +OP_CHECKMULTISIG+ 와 같은 동작을 다시 구현할 수 있습니다.
 
-Changes to all signatures::
-  All signature operations in tapscript use the schnorr signature
-  algorithm as defined in BIP340.  We'll explore schnorr signatures more
-  in <<c_signatures>>.
+모든 서명의 변화::
+  탭스크립트의 모든 서명 연산은 BIP340에 정의된 슈노르 서명 알고리즘을 사용합니다. 슈노르
+  서명은 <<c_signatures>>에서 더 살펴봅니다.
 +
-Additionally, any signature-checking operation that is not expected
-  to succeed must be fed the value +OP_FALSE+ (also called +OP_0+)
-  instead of an actual signature.  Providing anything else to a failed
-  signature-checking operation will cause the entire script to fail.
-  This also helps support batch validation of schnorr signatures.
+또한 성공할 것으로 기대되지 않는 서명 검사 연산에는 실제 서명 대신 +OP_FALSE+ (+OP_0+
+  이라고도 합니다) 값을 넣어야 합니다. 실패하는 서명 검사 연산에 그 밖의 다른 것을 주면
+  스크립트 전체가 실패합니다. 이 역시 슈노르 서명의 일괄 검증을 뒷받침합니다.
 
-++OP_SUCCESSx++ opcodes::
-  Opcodes in previous versions of Script that were unusable are now
-  redefined to cause an entire script to succeed if they are used.
-  This allows future soft forks to redefine them as not succeeding under
-  certain circumstances, which
-  is a restriction and so is possible to do in a soft fork.  (The
-  opposite, to define a not-succeeding operation as a success can only
-  be done in a hard fork, which is a much more challenging upgrade
-  path.)
+++OP_SUCCESSx++ 옵코드::
+  이전 버전의 스크립트에서 쓸 수 없던 옵코드들이 이제 사용되면 스크립트 전체를 성공하게
+  만들도록 재정의되었습니다. 덕분에 앞으로의 소프트 포크에서 특정 상황에서는 성공하지 않는
+  것으로 재정의할 수 있는데, 이는 제약을 더하는 것이므로 소프트 포크로 가능합니다. (그 반대로
+  성공하지 않던 연산을 성공으로 정의하는 것은 하드 포크로만 할 수 있으며, 이는 훨씬 더 까다로운
+  업그레이드 경로입니다.)
 
-Although we've looked at authorization and authentication in depth in
-this chapter, we've skipped over one very important part of how Bitcoin
-authenticates spenders: its signatures.  We'll look at that((("tapscript", startref="tapscript")))((("mutual satisfaction contracts", "tapscript", startref="mutual-satisfaction-tapscript"))) next in
-<<c_signatures>>.
+이 장에서 권한 부여와 인증을 깊이 살펴봤지만, 비트코인이 지출자를 인증하는 방식의 아주 중요한
+한 부분인 서명은 건너뛰었습니다. 그것을 다음 ((("tapscript", startref="tapscript")))((("mutual satisfaction contracts", "tapscript", startref="mutual-satisfaction-tapscript")))<<c_signatures>>에서
+살펴보겠습니다.
 
 //FIXME:text "I think more information should be added concerning: tapscript in general. I think the MAST section would better serve to be condensed and integrated in the section on taproot. It should also mention how the taproot merle tree is unique (sorting the leaves, tagged hashes, etc, etc)."
