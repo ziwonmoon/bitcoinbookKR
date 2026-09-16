@@ -41,7 +41,7 @@
 
 - [x] `appa_whitepaper.adoc`
 - [x] `appb_errata.adoc`
-- [ ] `appc_bips.adoc`
+- [x] `appc_bips.adoc`
 
 ## 미포함
 

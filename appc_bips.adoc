@@ -1,73 +1,73 @@
 [[appdxbitcoinimpproposals]]
 [appendix]
-== Bitcoin Improvement Proposals
+== 비트코인 개선 제안
 
-Bitcoin Improvement Proposals are design documents providing information to the Bitcoin community or describing a new feature for Bitcoin or its processes or environment.
+비트코인 개선 제안(Bitcoin Improvement Proposal, BIP)은 비트코인 커뮤니티에 정보를 제공하거나 비트코인 또는 그 절차나 환경에 대한 새로운 기능을 기술하는 설계 문서입니다.
 
-As per BIP1 _BIP Purpose and Guidelines_, there are three((("BIPs (Bitcoin Improvement Proposals)", "types of"))) kinds of BIPs:
+BIP1 _BIP의 목적과 지침_ 에 따르면 BIP에는 세 ((("BIPs (Bitcoin Improvement Proposals)", "types of")))종류가 있습니다.
 
-_Standard_ BIP:: Describes any change that affects most or all Bitcoin implementations, such as a change to the network protocol, a change in block or transaction validity rules, or any change or addition that affects the interoperability of applications using Bitcoin.
-_Informational_ BIP:: Describes a Bitcoin design issue or provides general guidelines or information to the Bitcoin community, but does not propose a new feature. Informational BIPs do not necessarily represent a Bitcoin community consensus or recommendation, so users and implementors may ignore informational BIPs or follow their advice.
-_Process_ BIP:: Describes a Bitcoin process or proposes a change to (or an event in) a process. Process BIPs are like standard BIPs but apply to areas other than the Bitcoin protocol itself. They might propose an implementation but not to Bitcoin's codebase; they often require community consensus. Unlike informational BIPs, they are more than recommendations, and users are typically not free to ignore them. Examples include procedures, guidelines, changes to the decision-making process, and changes to the tools or environment used in Bitcoin development. Any meta-BIP is also considered a process BIP.
+_표준(Standard)_ BIP:: 네트워크 프로토콜의 변경, 블록이나 트랜잭션 유효성 규칙의 변경처럼 대부분 또는 모든 비트코인 구현에 영향을 주는 변경이나, 비트코인을 사용하는 애플리케이션의 상호운용성에 영향을 주는 모든 변경·추가를 기술합니다.
+_정보(Informational)_ BIP:: 비트코인 설계 쟁점을 기술하거나 비트코인 커뮤니티에 일반적인 지침이나 정보를 제공하되, 새로운 기능을 제안하지는 않습니다. 정보 BIP가 반드시 비트코인 커뮤니티의 합의나 권고를 나타내는 것은 아니므로, 사용자와 구현자는 정보 BIP를 무시하거나 그 조언을 따를 수 있습니다.
+_절차(Process)_ BIP:: 비트코인의 절차를 기술하거나 절차의 변경(또는 절차상의 사건)을 제안합니다. 절차 BIP는 표준 BIP와 비슷하지만 비트코인 프로토콜 자체가 아닌 영역에 적용됩니다. 구현을 제안할 수는 있으나 비트코인 코드베이스에 대한 것은 아니며, 대개 커뮤니티의 합의를 필요로 합니다. 정보 BIP와 달리 절차 BIP는 권고 이상이어서 사용자가 마음대로 무시할 수 없는 것이 보통입니다. 절차, 지침, 의사결정 과정의 변경, 비트코인 개발에 쓰이는 도구나 환경의 변경 등이 그 예입니다. 모든 메타 BIP 역시 절차 BIP로 봅니다.
 
-BIPs are recorded in a https://oreil.ly/jjO0R[versioned repository on GitHub].
-An MIT-licensed document from the open source Bitcoin Core project,
-reproduced here in edited form, describes which BIPs it implements, including listing
-the Pull Request (PR) and version of Bitcoin Core where support for each BIP was added or
-significantly changed.
+BIP는 https://oreil.ly/jjO0R[깃허브의 버전 관리 저장소]에 기록됩니다.
+오픈소스 비트코인 코어 프로젝트의 MIT 라이선스 문서를 여기에 편집해
+실었으며, 이 문서는 비트코인 코어가 어떤 BIP를 구현했는지와 함께 각
+BIP에 대한 지원이 추가되거나 크게 바뀐 풀 리퀘스트(PR)와 비트코인 코어
+버전을 함께 정리하고 있습니다.
 
-BIPs that are ((("BIPs (Bitcoin Improvement Proposals)", "implemented by Bitcoin Core", id="bips-implement")))((("Bitcoin Core", "BIPs implemented by", id="bitcoin-core-bips")))implemented by Bitcoin Core:
+비트코인 코어가 ((("BIPs (Bitcoin Improvement Proposals)", "implemented by Bitcoin Core", id="bips-implement")))((("Bitcoin Core", "BIPs implemented by", id="bitcoin-core-bips")))구현한 BIP 목록입니다.
 
--    BIP9: The changes allowing multiple soft forks to be deployed in parallel have been implemented since v0.12.1 (PR #7575).
--    BIP11: Multisig outputs are standard since v0.6.0 (PR #669).
--    BIP13: The address format for P2SH addresses has been implemented since v0.6.0 (PR #669).
--    BIP14: The subversion string is being used as User Agent since v0.6.0 (PR #669).
--    BIP16: The pay-to-script-hash evaluation rules have been implemented since v0.6.0, and took effect on April 1st 2012 (PR #748).
--    BIP21: The URI format for Bitcoin payments has been implemented since v0.6.0 (PR #176).
--    BIP22: The 'getblocktemplate' (GBT) RPC protocol for mining has been implemented since v0.7.0 (PR #936).
--    BIP23: Some extensions to GBT have been implemented since v0.10.0rc1, including longpolling and block proposals (PR #1816).
--    BIP30: The evaluation rules to forbid creating new transactions with the same txid as previous not-fully-spent transactions were implemented since v0.6.0, and the rule took effect on March 15th 2012 (PR #915).
--    BIP31: The 'pong' protocol message (and the protocol version bump to 60001) has been implemented since v0.6.1 (PR #1081).
--    BIP32: Hierarchical Deterministic Wallets has been implemented since v0.13.0 (PR #8035).
--    BIP34: The rule that requires blocks to contain their height (number) in the coinbase input, and the introduction of version 2 blocks has been implemented since v0.7.0. The rule took effect for version 2 blocks as of block 224413 (March 5th 2013), and version 1 blocks are no longer allowed since block 227931 (March 25th 2013) (PR #1526).
--    BIP35: The 'mempool' protocol message (and the protocol version bump to 60002) has been implemented since v0.7.0 (PR #1641). As of v0.13.0, this is only available for +NODE_BLOOM+ (BIP111) peers.
+-    BIP9: 여러 소프트 포크를 병렬로 배포할 수 있게 하는 변경이 v0.12.1부터 구현되었습니다 (PR #7575).
+-    BIP11: 다중서명 출력이 v0.6.0부터 표준입니다 (PR #669).
+-    BIP13: P2SH 주소의 주소 형식이 v0.6.0부터 구현되었습니다 (PR #669).
+-    BIP14: 서브버전 문자열이 v0.6.0부터 User Agent로 쓰이고 있습니다 (PR #669).
+-    BIP16: pay-to-script-hash 평가 규칙이 v0.6.0부터 구현되었고 2012년 4월 1일에 발효되었습니다 (PR #748).
+-    BIP21: 비트코인 결제를 위한 URI 형식이 v0.6.0부터 구현되었습니다 (PR #176).
+-    BIP22: 채굴을 위한 'getblocktemplate'(GBT) RPC 프로토콜이 v0.7.0부터 구현되었습니다 (PR #936).
+-    BIP23: 롱폴링과 블록 제안을 비롯한 GBT 확장 일부가 v0.10.0rc1부터 구현되었습니다 (PR #1816).
+-    BIP30: 아직 전부 사용되지 않은 이전 트랜잭션과 같은 txid를 가진 새 트랜잭션을 만들지 못하게 하는 평가 규칙이 v0.6.0부터 구현되었고, 2012년 3월 15일에 발효되었습니다 (PR #915).
+-    BIP31: 'pong' 프로토콜 메시지(와 프로토콜 버전의 60001로의 상승)가 v0.6.1부터 구현되었습니다 (PR #1081).
+-    BIP32: 계층 결정적 지갑이 v0.13.0부터 구현되었습니다 (PR #8035).
+-    BIP34: 블록이 코인베이스 입력에 자신의 높이(번호)를 담도록 요구하는 규칙과 버전 2 블록의 도입이 v0.7.0부터 구현되었습니다. 이 규칙은 블록 224413(2013년 3월 5일)부터 버전 2 블록에 발효되었고, 블록 227931(2013년 3월 25일)부터는 버전 1 블록이 더 이상 허용되지 않습니다 (PR #1526).
+-    BIP35: 'mempool' 프로토콜 메시지(와 프로토콜 버전의 60002로의 상승)가 v0.7.0부터 구현되었습니다 (PR #1641). v0.13.0부터는 +NODE_BLOOM+ (BIP111) 피어에서만 쓸 수 있습니다.
 
 [role="less_space pagebreak-before"]
--    BIP37: The bloom filtering for transaction relaying, partial Merkle trees for blocks, and the protocol version bump to 70001 (enabling low-bandwidth lightweight clients) has been implemented since v0.8.0 (PR #1795). Disabled by default since v0.19.0, can be enabled by the +-peerbloomfilters+ option.
--    BIP42: The bug that would have caused the subsidy schedule to resume after block 13440000 was fixed in v0.9.2 (PR #3842).
--    BIP43: The experimental descriptor wallets introduced in v0.21.0 by default use the Hierarchical Deterministic Wallet derivation proposed by BIP43 (PR #16528).
--    BIP44: The experimental descriptor wallets introduced in v0.21.0 by default use the Hierarchical Deterministic Wallet derivation proposed by BIP44 (PR #16528).
--    BIP49: The experimental descriptor wallets introduced in v0.21.0 by default use the Hierarchical Deterministic Wallet derivation proposed by BIP49 (PR #16528).
--    BIP61: The 'reject' protocol message (and the protocol version bump to 70002) was added in v0.9.0 (PR #3185). Starting v0.17.0, whether to send reject messages can be configured with the ++-enablebip61++ option, and support is deprecated (disabled by default) as of v0.18.0. Support was removed in v0.20.0 (PR #15437).
--    BIP65: The ++CHECKLOCKTIMEVERIFY++ soft fork was merged in v0.12.0 (PR #6351), and backported to v0.11.2 and v0.10.4. Mempool-only +CLTV+ was added in PR #6124.
--    BIP66: The strict DER rules and associated version 3 blocks have been implemented since v0.10.0 (PR #5713).
--    BIP68: Sequence locks have been implemented as of v0.12.1 (PR #7184), and have been buried since v0.19.0 (PR #16060).
--    BIP70 71 72: Payment Protocol support has been available in Bitcoin Core GUI since v0.9.0 (PR #5216). Support can be optionally disabled at build time since v0.18.0 (PR 14451), and it is disabled by default at build time since v0.19.0 (PR #15584). It has been removed as of v0.20.0 (PR 17165).
--    BIP84: The experimental descriptor wallets introduced in v0.21.0 by default use the Hierarchical Deterministic Wallet derivation proposed by BIP84. (PR #16528)
--    BIP86: Descriptor wallets by default use the Hierarchical Deterministic Wallet derivation proposed by BIP86 since v23.0 (PR #22364).
--    BIP90: Trigger mechanism for activation of BIPs 34, 65, and 66 has been simplified to block height checks since v0.14.0 (PR #8391).
--    BIP111: +NODE_BLOOM+ service bit added and enforced for all peer versions as of v0.13.0 (PR #6579 and PR #6641).
--    BIP112: The +CHECKSEQUENCEVERIFY+ opcode has been implemented since v0.12.1 (PR #7524), and has been buried since v0.19.0 (PR #16060).
--    BIP113: Median time past lock-time calculations have been implemented since v0.12.1 (PR #6566), and has been buried since v0.19.0 (PR #16060).
--    BIP125: Opt-in full replace-by-fee signaling partially implemented. 
--    BIP130: direct headers announcement is negotiated with peer versions ≥70012 as of v0.12.0 (PR 6494).
--    BIP133: feefilter messages are respected and sent for peer versions ≥70013 as of v0.13.0 (PR 7542).
--    BIP141: Segregated Witness (Consensus Layer) as of v0.13.0 (PR 8149), defined for mainnet as of v0.13.1 (PR 8937), and buried since v0.19.0 (PR #16060).
--    BIP143: Transaction Signature Verification for Version 0 Witness Program as of v0.13.0 (PR 8149), defined for mainnet as of v0.13.1 (PR 8937), and buried since v0.19.0 (PR #16060).
--    BIP144: Segregated Witness as of 0.13.0 (PR 8149).
--    BIP145: getblocktemplate updates for Segregated Witness as of v0.13.0 (PR 8149).
--    BIP147: +NULLDUMMY+ soft fork as of v0.13.1 (PR 8636 and PR 8937), buried since v0.19.0 (PR #16060).
--    BIP152: Compact block transfer and related optimizations are used as of v0.13.0 (PR 8068).
--    BIP155: The 'addrv2' and 'sendaddrv2' messages which enable relay of Tor V3 addresses (and other networks) are supported as of v0.21.0 (PR 19954).
--    BIP157 158: Compact Block Filters for Light Clients can be indexed as of v0.19.0 (PR #14121) and served to peers on the P2P network as of v0.21.0 (PR #16442).
--    BIP159: The +NODE_NETWORK_LIMITED+ service bit is signalled as of v0.16.0 (PR 11740), and such nodes are connected to as of v0.17.0 (PR 10387).
--    BIP173: Bech32 addresses for native Segregated Witness outputs are supported as of v0.16.0 (PR 11167). Bech32 addresses are generated by default as of v0.20.0 (PR 16884).
--    BIP174: RPCs to operate on Partially Signed Bitcoin Transactions (PSBT) are present as of v0.17.0 (PR 13557).
--    BIP176: Bits Denomination [QT only] is supported as of v0.16.0 (PR 12035).
--    BIP325: Signet test network is supported as of v0.21.0 (PR 18267).
--    BIP339: Relay of transactions by wtxid is supported as of v0.21.0 (PR 18044).
--    BIP340 341 342: Validation rules for Taproot (including Schnorr signatures and Tapscript leaves) are implemented as of v0.21.0 (PR 19953), with mainnet activation as of v0.21.1 (PR 21377, PR 21686).
--    BIP350: Addresses for native v1+ segregated Witness outputs use bech32m instead of bech32 as of v22.0 (PR 20861).
--    BIP371: Taproot fields for PSBT as of v24.0 (PR 22558).
--    BIP380 381 382 383 384 385: Output Script Descriptors, and most of Script Expressions are implemented as of v0.17.0 (PR 13697).
--    BIP386: +tr()+ Output Script Descriptors are implemented as((("BIPs (Bitcoin Improvement Proposals)", "implemented by Bitcoin Core", startref="bips-implement")))((("Bitcoin Core", "BIPs implemented by", startref="bitcoin-core-bips"))) of v22.0 (PR 22051).
+-    BIP37: 트랜잭션 중계를 위한 블룸 필터링, 블록에 대한 부분 머클 트리, 그리고 프로토콜 버전의 70001로의 상승(저대역폭 경량 클라이언트를 가능하게 함)이 v0.8.0부터 구현되었습니다 (PR #1795). v0.19.0부터는 기본적으로 비활성화되어 있으며 +-peerbloomfilters+ 옵션으로 켤 수 있습니다.
+-    BIP42: 블록 13440000 이후 보조금 일정이 다시 시작되게 만들었을 버그가 v0.9.2에서 수정되었습니다 (PR #3842).
+-    BIP43: v0.21.0에서 도입된 실험적 디스크립터 지갑은 기본적으로 BIP43이 제안한 계층 결정적 지갑 파생을 사용합니다 (PR #16528).
+-    BIP44: v0.21.0에서 도입된 실험적 디스크립터 지갑은 기본적으로 BIP44가 제안한 계층 결정적 지갑 파생을 사용합니다 (PR #16528).
+-    BIP49: v0.21.0에서 도입된 실험적 디스크립터 지갑은 기본적으로 BIP49가 제안한 계층 결정적 지갑 파생을 사용합니다 (PR #16528).
+-    BIP61: 'reject' 프로토콜 메시지(와 프로토콜 버전의 70002로의 상승)가 v0.9.0에서 추가되었습니다 (PR #3185). v0.17.0부터는 reject 메시지를 보낼지 여부를 ++-enablebip61++ 옵션으로 설정할 수 있게 되었고, v0.18.0부터 이 지원은 폐기 예정(기본적으로 비활성화)이 되었습니다. v0.20.0에서 지원이 제거되었습니다 (PR #15437).
+-    BIP65: ++CHECKLOCKTIMEVERIFY++ 소프트 포크가 v0.12.0에 병합되었고 (PR #6351) v0.11.2와 v0.10.4로 백포트되었습니다. 멤풀 전용 +CLTV+ 는 PR #6124에서 추가되었습니다.
+-    BIP66: 엄격한 DER 규칙과 그에 딸린 버전 3 블록이 v0.10.0부터 구현되었습니다 (PR #5713).
+-    BIP68: 시퀀스 락이 v0.12.1부터 구현되었고 (PR #7184) v0.19.0부터 코드에 고정(buried)되었습니다 (PR #16060).
+-    BIP70 71 72: 결제 프로토콜 지원이 v0.9.0부터 비트코인 코어 GUI에서 제공되었습니다 (PR #5216). v0.18.0부터는 빌드 시점에 선택적으로 끌 수 있게 되었고 (PR 14451), v0.19.0부터는 빌드 시점에 기본적으로 비활성화되었습니다 (PR #15584). v0.20.0에서 제거되었습니다 (PR 17165).
+-    BIP84: v0.21.0에서 도입된 실험적 디스크립터 지갑은 기본적으로 BIP84가 제안한 계층 결정적 지갑 파생을 사용합니다. (PR #16528)
+-    BIP86: v23.0부터 디스크립터 지갑은 기본적으로 BIP86이 제안한 계층 결정적 지갑 파생을 사용합니다 (PR #22364).
+-    BIP90: BIP 34, 65, 66의 활성화를 촉발하는 장치가 v0.14.0부터 블록 높이 확인으로 단순화되었습니다 (PR #8391).
+-    BIP111: +NODE_BLOOM+ 서비스 비트가 추가되었고 v0.13.0부터 모든 피어 버전에 대해 강제됩니다 (PR #6579, PR #6641).
+-    BIP112: +CHECKSEQUENCEVERIFY+ 옵코드가 v0.12.1부터 구현되었고 (PR #7524) v0.19.0부터 코드에 고정되었습니다 (PR #16060).
+-    BIP113: 중앙값 과거 시각(median time past) 기반 잠금 시간 계산이 v0.12.1부터 구현되었고 (PR #6566) v0.19.0부터 코드에 고정되었습니다 (PR #16060).
+-    BIP125: 선택적 완전 수수료 대체(replace-by-fee) 신호가 부분적으로 구현되었습니다. 
+-    BIP130: v0.12.0부터 피어 버전 ≥70012와 직접 헤더 공지를 협상합니다 (PR 6494).
+-    BIP133: v0.13.0부터 피어 버전 ≥70013에 대해 feefilter 메시지를 존중하고 전송합니다 (PR 7542).
+-    BIP141: 분리된 증인(합의 계층)이 v0.13.0부터 (PR 8149), 메인넷에 대해서는 v0.13.1부터 정의되었고 (PR 8937) v0.19.0부터 코드에 고정되었습니다 (PR #16060).
+-    BIP143: 버전 0 위트니스 프로그램에 대한 트랜잭션 서명 검증이 v0.13.0부터 (PR 8149), 메인넷에 대해서는 v0.13.1부터 정의되었고 (PR 8937) v0.19.0부터 코드에 고정되었습니다 (PR #16060).
+-    BIP144: 분리된 증인이 0.13.0부터 적용되었습니다 (PR 8149).
+-    BIP145: 분리된 증인을 위한 getblocktemplate 갱신이 v0.13.0부터 적용되었습니다 (PR 8149).
+-    BIP147: +NULLDUMMY+ 소프트 포크가 v0.13.1부터 적용되었고 (PR 8636, PR 8937) v0.19.0부터 코드에 고정되었습니다 (PR #16060).
+-    BIP152: 압축 블록 전송과 그에 관련된 최적화가 v0.13.0부터 쓰이고 있습니다 (PR 8068).
+-    BIP155: 토어 V3 주소(및 다른 네트워크)의 중계를 가능하게 하는 'addrv2'와 'sendaddrv2' 메시지가 v0.21.0부터 지원됩니다 (PR 19954).
+-    BIP157 158: 경량 클라이언트를 위한 압축 블록 필터를 v0.19.0부터 색인할 수 있고 (PR #14121), v0.21.0부터 P2P 네트워크의 피어에게 제공할 수 있습니다 (PR #16442).
+-    BIP159: +NODE_NETWORK_LIMITED+ 서비스 비트가 v0.16.0부터 신호되며 (PR 11740), v0.17.0부터는 그런 노드에 연결합니다 (PR 10387).
+-    BIP173: 네이티브 분리된 증인 출력을 위한 Bech32 주소가 v0.16.0부터 지원됩니다 (PR 11167). v0.20.0부터는 Bech32 주소가 기본으로 생성됩니다 (PR 16884).
+-    BIP174: 부분 서명된 비트코인 트랜잭션(PSBT)을 다루는 RPC가 v0.17.0부터 제공됩니다 (PR 13557).
+-    BIP176: 비트(Bits) 단위 표기가 [QT 전용] v0.16.0부터 지원됩니다 (PR 12035).
+-    BIP325: 시그넷 테스트 네트워크가 v0.21.0부터 지원됩니다 (PR 18267).
+-    BIP339: wtxid 기반 트랜잭션 중계가 v0.21.0부터 지원됩니다 (PR 18044).
+-    BIP340 341 342: 탭루트에 대한 유효성 규칙(슈노어 서명과 탭스크립트 잎 포함)이 v0.21.0부터 구현되었고 (PR 19953), v0.21.1부터 메인넷에서 활성화되었습니다 (PR 21377, PR 21686).
+-    BIP350: 네이티브 v1 이상 분리된 증인 출력의 주소가 v22.0부터 bech32 대신 bech32m을 사용합니다 (PR 20861).
+-    BIP371: PSBT를 위한 탭루트 필드가 v24.0부터 지원됩니다 (PR 22558).
+-    BIP380 381 382 383 384 385: 출력 스크립트 디스크립터와 스크립트 표현식 대부분이 v0.17.0부터 구현되었습니다 (PR 13697).
+-    BIP386: +tr()+ 출력 스크립트 디스크립터가((("BIPs (Bitcoin Improvement Proposals)", "implemented by Bitcoin Core", startref="bips-implement")))((("Bitcoin Core", "BIPs implemented by", startref="bitcoin-core-bips"))) v22.0부터 구현되었습니다 (PR 22051).
