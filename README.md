@@ -1,3 +1,5 @@
+> [Mastering Bitcoin](https://github.com/bitcoinbook/bitcoinbook)의 Claude 번역 포크.
+
 # 마스터링 비트코인
 
 『마스터링 비트코인』은 비트코인이 무엇이고 어떻게 작동하는지 설명하는 기술 서적입니다.
