@@ -32,7 +32,7 @@
 - [x] `ch08_signatures.adoc`
 - [x] `ch09_fees.adoc`
 - [x] `ch10_network.adoc`
-- [ ] `ch11_blockchain.adoc`
+- [x] `ch11_blockchain.adoc`
 - [ ] `ch12_mining.adoc`
 - [ ] `ch13_security.adoc`
 - [ ] `ch14_applications.adoc`

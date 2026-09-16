@@ -1,266 +1,210 @@
 [[blockchain]]
-== The Blockchain
+== 블록체인
 
-The ((("blockchain", "explained", id="blockchain-explain")))blockchain is the history of every confirmed Bitcoin transaction.
-It's what allows every full node to independently determine what keys and
-scripts control which bitcoins.  In this chapter, we'll look at the
-structure of the blockchain and see how it uses cryptographic
-commitments and other clever tricks to make every part of it easy for
-full nodes (and sometimes lightweight clients) to validate.
+((("blockchain", "explained", id="blockchain-explain")))블록체인은 확인된 모든 비트코인 트랜잭션의 역사입니다. 블록체인 덕분에
+모든 풀 노드가 어떤 키와 스크립트가 어떤 비트코인을 통제하는지 독립적으로 판단할 수 있습니다. 이 장에서는
+블록체인의 구조를 살펴보고, 그것이 암호학적 커밋먼트와 여러 영리한 기법을 써서 어떻게 모든 부분을 풀
+노드가(때로는 경량 클라이언트도) 손쉽게 검증할 수 있게 만드는지 알아봅니다.
 
-The blockchain data structure is
-an ordered, back-linked list of blocks of transactions.  The blockchain
-can be stored as a flat file or in a simple database.
-Blocks are linked "back," each referring to the previous block in the
-chain. The blockchain is often visualized
-as a vertical stack, with blocks layered on top of each other and the
-first block serving as the foundation of the stack. The visualization of
-blocks stacked on top of each other results in the use of terms such as
-"height" to refer to the distance from the first block, and "top" or
-"tip" to refer to the most recently added block.
+블록체인 자료 구조는 트랜잭션 블록들이 순서대로 뒤로 연결된 목록입니다. 블록체인은 단순한 파일이나 간단한
+데이터베이스로 저장할 수 있습니다. 블록은 "뒤로" 연결되며, 각 블록은 사슬에서 이전 블록을 참조합니다.
+블록체인은 흔히 세로로 쌓인 더미로 그려지는데, 블록이 서로 위에 겹겹이 쌓이고 첫 블록이 그 더미의 토대가
+됩니다. 블록이 서로 위에 쌓인 모습으로 그리다 보니 첫 블록으로부터의 거리를 "높이"라고 하고, 가장 최근에
+추가된 블록을 "꼭대기"나 "팁"이라고 부르게 되었습니다.
 
-Each block
-within the blockchain is identified by a hash, generated using the
-SHA256 cryptographic hash algorithm on the header of the block. Each
-block also commits to the previous block, known as ((("parent blocks")))the _parent_ block,
-through the "previous block hash" field in the block header.
-The sequence of hashes linking each block to its parent creates a chain
-going back all the way to the first block ever created, known ((("genesis block")))as the
-_genesis block_.
+블록체인의 각 블록은 블록 헤더에 SHA256 암호학적 해시 알고리즘을 적용해 만든 해시로 식별됩니다. 또한 각
+블록은 블록 헤더의 "이전 블록 해시" 필드를 통해 ((("parent blocks")))_부모_ 블록이라 불리는 이전 블록에
+커밋합니다. 각 블록을 자기 부모와 잇는 해시의 연쇄는 지금까지 만들어진 첫 블록, 즉
+((("genesis block")))_제네시스 블록_ 까지 거슬러 올라가는 사슬을 이룹니다.
 
-Although a block has just one parent, it can have ((("child blocks")))multiple
-children. Each of the children commits to the same parent block.
-Multiple children arise during a blockchain "fork," a temporary
-situation that can occur when different blocks are discovered almost
-simultaneously by different miners (see <<forks>>). Eventually only one
-child block becomes part of the blockchain accepted by all full nodes, and the "fork" is resolved.
+블록의 부모는 하나뿐이지만 ((("child blocks")))자식은 여럿일 수 있습니다. 그 자식들은 모두 같은 부모 블록에
+커밋합니다. 자식이 여럿 생기는 것은 블록체인 "포크" 상황인데, 서로 다른 채굴자가 거의 동시에 블록을
+발견했을 때 일어날 수 있는 일시적인 상황입니다(<<forks>> 참고). 결국 자식 블록 중 하나만 모든 풀 노드가
+받아들이는 블록체인의 일부가 되고 "포크"는 해소됩니다.
 
-The "previous block hash" field is inside the block header and thereby
-affects the _current_ block's hash.
-Any change to a parent block
-requires a child block's hash to change, which requires a change in the
-pointer of the grandchild, which in turn changes the grandchild, and so
-on. This sequence ensures that, once a block has many generations
-following it, it cannot be changed without forcing a recalculation of
-all subsequent blocks. Because such a recalculation would require
-enormous computation (and therefore energy consumption), the existence
-of a long chain of blocks makes the blockchain's deep history impractical to change,
-which is a key feature of Bitcoin's security.
+"이전 블록 해시" 필드는 블록 헤더 안에 있으므로 _현재_ 블록의 해시에도 영향을 줍니다. 부모 블록을
+바꾸면 자식 블록의 해시가 바뀌어야 하고, 그러면 손자의 포인터도 바뀌어야 하며, 다시 손자가 바뀌고, 이런
+식으로 이어집니다. 이 연쇄 덕분에 어떤 블록 뒤로 여러 세대가 쌓이고 나면, 이후의 모든 블록을 다시
+계산하지 않고는 그 블록을 바꿀 수 없습니다. 그런 재계산에는 엄청난 연산(따라서 에너지 소비)이 필요하므로,
+긴 블록 사슬이 존재한다는 것은 블록체인의 깊은 역사를 바꾸는 일이 현실적으로 불가능하다는 뜻이며 이것이
+비트코인 보안의 핵심 특징입니다.
 
-One way to think about the blockchain is like layers in a geological
-formation, or glacier core sample. The surface layers might change with
-the seasons, or even be blown away before they have time to settle. But
-once you go a few inches deep, geological layers become more and more
-stable. By the time you look a few hundred feet down, you are looking at
-a snapshot of the past that has remained undisturbed for millions of
-years. In the blockchain, the most recent few blocks might be revised if
-there is a chain reorganization due to a fork. The top six blocks are
-like a few inches of topsoil. But once you go more deeply into the
-blockchain, beyond six blocks, blocks are less and less likely to
-change. After 100 blocks back there is so much stability that
-the coinbase transaction--the transaction containing the reward in
-bitcoin for creating a new block--can be spent.
-While the
-protocol always allows a chain to be undone by a longer chain and while
-the possibility of any block being reversed always exists, the
-probability of such an event decreases as time passes until it ((("blockchain", "explained", startref="blockchain-explain")))becomes
-infinitesimal.
+블록체인을 이해하는 한 가지 방법은 지층이나 빙하 코어 시료의 층을 떠올리는 것입니다. 표면의 층은 계절에
+따라 바뀌거나 자리 잡기도 전에 날아가 버릴 수 있습니다. 하지만 몇 센티미터만 들어가도 지층은 점점 더
+안정적이 됩니다. 수백 미터 아래를 들여다볼 때쯤이면 수백만 년 동안 흐트러지지 않은 과거의 스냅숏을 보고
+있는 것입니다. 블록체인에서도 가장 최근의 블록 몇 개는 포크로 인한 체인 재구성이 일어나면 바뀔 수
+있습니다. 맨 위 여섯 블록은 몇 센티미터 두께의 표토와 같습니다. 하지만 블록체인 안으로 여섯 블록 너머 더
+깊이 들어가면 블록이 바뀔 가능성은 점점 낮아집니다. 100블록을 거슬러 올라가면 안정성이 충분해져,
+코인베이스 트랜잭션, 즉 새 블록을 만든 대가로 받는 비트코인 보상이 담긴 트랜잭션을 쓸 수 있게 됩니다.
+프로토콜은 언제나 더 긴 사슬이 기존 사슬을 되돌릴 수 있게 하고 어떤 블록이든 뒤집힐 가능성이 늘 존재하지만,
+시간이 지날수록 그런 일이 일어날 확률은 ((("blockchain", "explained", startref="blockchain-explain")))무한소에 가까워집니다.
 
-=== Structure of a Block
+=== 블록의 구조
 
-A block ((("blocks", "structure of")))is a container data structure that aggregates
-transactions for inclusion in the blockchain. The
-block is made of a header, containing metadata, followed by a long list
-of transactions that make up the bulk of its size. The block header is
-80 bytes, whereas the total size of all transactions in a block can be
-up to about 4,000,000 bytes.  A complete block,
-with all transactions, can therefore be almost 50,000 times larger than the block
-header. <<block_structure1>> describes how Bitcoin Core stores the structure of a block.
+블록은 ((("blocks", "structure of")))블록체인에 담을 트랜잭션을 모아두는 컨테이너 자료 구조입니다. 블록은
+메타데이터가 담긴 헤더와, 그 뒤에 이어지며 크기의 대부분을 차지하는 긴 트랜잭션 목록으로 이루어집니다.
+블록 헤더는 80바이트인 반면, 한 블록에 담긴 모든 트랜잭션의 총 크기는 약 4,000,000바이트에 이를 수
+있습니다. 따라서 모든 트랜잭션이 담긴 완전한 블록은 블록 헤더보다 거의 5만 배까지 클 수 있습니다.
+<<block_structure1>>은 비트코인 코어가 블록의 구조를 어떻게 저장하는지 설명합니다.
 
 ++++
 <table id="block_structure1">
-<caption>The structure of a block</caption>
+<caption>블록의 구조</caption>
 <thead>
 <tr>
-<th>Size</th>
-<th>Field</th>
-<th>Description</th>
+<th>크기</th>
+<th>필드</th>
+<th>설명</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><p>4 bytes</p></td>
-<td><p>Block Size</p></td>
-<td><p>The size of the block, in bytes, following this field</p></td>
+<td><p>4바이트</p></td>
+<td><p>블록 크기</p></td>
+<td><p>이 필드 뒤에 오는 블록의 크기(바이트)</p></td>
 </tr>
 <tr>
-<td><p>80 bytes</p></td>
-<td><p>Block Header</p></td>
-<td><p>Several fields form the block header</p></td>
+<td><p>80바이트</p></td>
+<td><p>블록 헤더</p></td>
+<td><p>여러 필드가 모여 블록 헤더를 이룸</p></td>
 </tr>
 <tr>
-<td><p>1–3 bytes (compactSize)</p></td>
-<td><p>Transaction Counter</p></td>
-<td><p>How many transactions follow</p></td>
+<td><p>1~3바이트(compactSize)</p></td>
+<td><p>트랜잭션 개수</p></td>
+<td><p>뒤에 오는 트랜잭션의 수</p></td>
 </tr>
 <tr>
-<td><p>Variable</p></td>
-<td><p>Transactions</p></td>
-<td><p>The transactions recorded in this block</p></td>
+<td><p>가변</p></td>
+<td><p>트랜잭션</p></td>
+<td><p>이 블록에 기록된 트랜잭션</p></td>
 </tr>
 </tbody>
 </table>
 ++++
-
-
 [[block_header]]
-=== Block Header
+=== 블록 헤더
 
-The ((("blocks", "block header")))((("block header")))block header consists of
-block metadata as shown in <<block_header_structure_ch09>>.
+((("blocks", "block header")))((("block header")))블록 헤더는 <<block_header_structure_ch09>>에 나타낸 블록 메타데이터로
+이루어집니다.
 
 ++++
 <table id="block_header_structure_ch09">
-<caption>The structure of the block header</caption>
+<caption>블록 헤더의 구조</caption>
 <thead>
 <tr>
-<th>Size</th>
-<th>Field</th>
-<th>Description</th>
+<th>크기</th>
+<th>필드</th>
+<th>설명</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><p>4 bytes</p></td>
-<td><p>Version</p></td>
-<td><p>Originally a version field; its use has evolved over time</p></td>
+<td><p>4바이트</p></td>
+<td><p>버전</p></td>
+<td><p>원래는 버전 필드였으나 시간이 지나며 쓰임이 달라짐</p></td>
 </tr>
 <tr>
-<td><p>32 bytes</p></td>
-<td><p>Previous Block Hash</p></td>
-<td><p>A hash of the previous (parent) block in the chain</p></td>
+<td><p>32바이트</p></td>
+<td><p>이전 블록 해시</p></td>
+<td><p>사슬에서 이전(부모) 블록의 해시</p></td>
 </tr>
 <tr>
-<td><p>32 bytes</p></td>
-<td><p>Merkle Root</p></td>
-<td><p>The root hash of the merkle tree of this block’s transactions</p></td>
+<td><p>32바이트</p></td>
+<td><p>머클 루트</p></td>
+<td><p>이 블록의 트랜잭션들로 이루어진 머클 트리의 루트 해시</p></td>
 </tr>
 <tr>
-<td><p>4 bytes</p></td>
-<td><p>Timestamp</p></td>
-<td><p>The approximate creation time of this block (Unix epoch time)</p></td>
+<td><p>4바이트</p></td>
+<td><p>타임스탬프</p></td>
+<td><p>이 블록의 대략적인 생성 시각(유닉스 에포크 시각)</p></td>
 </tr>
 <tr>
-<td><p>4 bytes</p></td>
-<td><p>Target</p></td>
-<td><p>A compact encoding of the proof-of-work target for this block</p></td>
+<td><p>4바이트</p></td>
+<td><p>목표값</p></td>
+<td><p>이 블록의 작업증명 목표값을 간결하게 인코딩한 값</p></td>
 </tr>
 <tr>
-<td><p>4 bytes</p></td>
-<td><p>Nonce</p></td>
-<td><p>Arbitrary data used for the proof-of-work algorithm</p></td>
+<td><p>4바이트</p></td>
+<td><p>논스</p></td>
+<td><p>작업증명 알고리즘에 쓰이는 임의의 데이터</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-The nonce, target, and timestamp are used in the mining
-process and will be discussed in more detail in <<mining>>.
+논스와 목표값, 타임스탬프는 채굴 과정에 쓰이며 <<mining>>에서 더 자세히 다룹니다.
 
 [[block_hash]]
-=== Block Identifiers: Block Header Hash and Block Height
+=== 블록 식별자: 블록 헤더 해시와 블록 높이
 
-The ((("blocks", "identifiers", id="block-identify")))((("block header hash", id="block-header-hash")))((("block height", id="block-height")))primary identifier of a block
-is its cryptographic hash, a commitment made by hashing the
-block header twice through the SHA256 algorithm. The resulting 32-byte
-hash is called the _block hash_ but is more accurately the _block header
-hash_, pass:[<span class="keep-together">because only the block header is
-used to compute it. For example,</span>]
-+000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ is
-the block hash of the first block on Bitcoin's blockchain. The block hash
-identifies a block uniquely and unambiguously and can be independently
-derived by any node by simply hashing the block header.
+((("blocks", "identifiers", id="block-identify")))((("block header hash", id="block-header-hash")))((("block height", id="block-height")))블록의 주된 식별자는 그 암호학적 해시입니다. 블록 헤더를 SHA256
+알고리즘으로 두 번 해시해 만든 커밋먼트이지요. 그렇게 나온 32바이트 해시를 _블록 해시_ 라고 부르지만,
+pass:[<span class="keep-together">계산에 블록 헤더만 쓰이므로
+_블록 헤더 해시_ 라고 하는 편이 더 정확합니다. 예를 들어</span>]
++000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ 은 비트코인 블록체인
+첫 블록의 블록 해시입니다. 블록 해시는 블록을 고유하고 모호함 없이 식별하며, 어떤 노드든 블록 헤더를
+해시하기만 하면 독립적으로 구할 수 있습니다.
 
-Note that the block hash is not actually included inside the block's
-data structure.
-Instead, the block's hash is computed by each node as the
-block is received from the network. The block hash might be stored in a
-separate database table as part of the block's metadata, to facilitate
-indexing and faster retrieval of blocks from disk.
+블록 해시는 사실 블록의 자료 구조 안에 들어 있지 않다는 점에 유의하세요. 대신 각 노드가 네트워크에서
+블록을 받을 때 그 블록의 해시를 계산합니다. 블록 해시는 인덱싱과 디스크에서의 빠른 조회를 돕기 위해 블록
+메타데이터의 일부로 별도의 데이터베이스 테이블에 저장되기도 합니다.
 
-A second way to identify a block is by its position in the blockchain,
-called the pass:[<span class="keep-together"><em>block height</em>. The
-genesis block is at block height 0 (zero) and is the</span>]
-pass:[<span class="keep-together">same block that was previously
-referenced by the following block hash</span>]
-+000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. A
-block can thus be identified in two ways: by referencing the block hash
-or by referencing the block height. Each subsequent block added "on top"
-of that first block is one position "higher" in the blockchain, like
-boxes stacked one on top of the other. The block height 800,000 was
-reached during the writing of this book in mid-2023, meaning there were
-800,000 blocks stacked on top of the first block created in January
-2009.
+블록을 식별하는 두 번째 방법은 블록체인에서의 위치, 즉
+pass:[<span class="keep-together"><em>블록 높이</em>를 쓰는 것입니다.
+제네시스 블록은 블록 높이 0에 있으며, 앞서</span>]
+pass:[<span class="keep-together">다음 블록 해시로 참조한 것과
+같은 블록입니다.</span>]
++000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ 입니다.
+따라서 블록은 두 가지 방법으로 식별할 수 있습니다. 블록 해시를 참조하거나 블록 높이를 참조하는 것입니다.
+그 첫 블록 "위에" 더해지는 블록은 하나씩 블록체인에서 한 칸 "높은" 위치에 놓이며, 상자를 차곡차곡 쌓는
+것과 같습니다. 이 책을 쓰던 2023년 중반에 블록 높이 800,000에 도달했는데, 이는 2009년 1월에 만들어진 첫
+블록 위로 800,000개의 블록이 쌓였다는 뜻입니다.
 
-Unlike the block hash, the block height is not a unique identifier.
-Although a single block will always have a specific and invariant block
-height, the reverse is not true—the block height does not always
-identify a single block. Two or more blocks might have the same block
-height, competing for the same position in the blockchain. This scenario
-is discussed in detail in the section <<forks>>.  In early blocks, the block height was
-also not a part of the block's data structure; it was not stored within
-the block. Each node dynamically identified a block's position (height)
-in the blockchain when it was received from the Bitcoin network.  A
-later protocol change (BIP34) began including the block height in the
-coinbase transaction, although its purpose was to ensure each block had
-a different coinbase transaction.  Nodes still need to dynamically
-identify a block's height in order to validate the coinbase field.  The
-block height might also be stored as metadata in an indexed database
-table for faster retrieval.
+블록 해시와 달리 블록 높이는 고유한 식별자가 아닙니다. 개별 블록은 언제나 특정하고 불변인 블록 높이를
+갖지만 그 역은 참이 아닙니다. 블록 높이가 항상 하나의 블록을 식별하지는 않습니다. 둘 이상의 블록이 같은
+블록 높이를 가지며 블록체인의 같은 자리를 놓고 경쟁할 수 있습니다. 이 상황은 <<forks>> 절에서 자세히
+다룹니다. 초기 블록에서는 블록 높이가 블록의 자료 구조에 포함되지도 않았습니다. 블록 안에 저장되지
+않았던 것입니다. 각 노드는 비트코인 네트워크에서 블록을 받을 때 블록체인에서의 위치(높이)를 동적으로
+알아냈습니다. 이후의 프로토콜 변경(BIP34)으로 블록 높이를 코인베이스 트랜잭션에 담기 시작했지만, 그
+목적은 블록마다 서로 다른 코인베이스 트랜잭션을 갖게 하려는 것이었습니다. 노드는 코인베이스 필드를
+검증하기 위해 여전히 블록의 높이를 동적으로 알아내야 합니다. 블록 높이도 빠른 조회를 위해 인덱싱된
+데이터베이스 테이블에 메타데이터로 저장될 수 있습니다.
 
 [TIP]
 ====
-A block's _block hash_ always identifies a single block uniquely. A
-block also always has a specific _block height_. However, it is not
-always the case that a specific block height identifies a single
-block. Rather, two or more blocks might compete for a single position((("blocks", "identifiers", startref="block-identify")))((("block header hash", startref="block-header-hash")))((("block height", startref="block-height"))) in
-the blockchain.
+블록의 _블록 해시_ 는 언제나 하나의 블록을 고유하게 식별합니다. 블록은 또한 언제나 특정한 _블록 높이_ 를
+갖습니다. 하지만 특정 블록 높이가 하나의 블록을 식별한다고 늘 말할 수는 없습니다. 오히려 둘 이상의 블록이
+블록체인의 한 자리를 놓고 ((("blocks", "identifiers", startref="block-identify")))((("block header hash", startref="block-header-hash")))((("block height", startref="block-height")))경쟁할 수 있습니다.
 ====
+=== 제네시스 블록
 
-=== The Genesis Block
+블록체인의((("blockchain", "genesis block", id="blockchain-genesis")))((("genesis block", id="genesis-block")))((("Bitcoin Core", "genesis block", id="bitcoin-core-genesis"))) 첫 번째 블록을 _제네시스 블록_ 이라고 하며 2009년에
+만들어졌습니다. 블록체인의 모든 블록의 공통 조상으로, 어느 블록에서 출발하든 사슬을 거슬러 올라가다 보면
+결국 제네시스 블록에 이르게 됩니다.
 
-The first block((("blockchain", "genesis block", id="blockchain-genesis")))((("genesis block", id="genesis-block")))((("Bitcoin Core", "genesis block", id="bitcoin-core-genesis"))) in the blockchain is called the _genesis block_
-and was created in 2009. It is the common ancestor of all the blocks in
-the blockchain, meaning that if you start at any block and follow the
-chain backward in time, you will eventually arrive at the genesis block.
+제네시스 블록은 비트코인 코어 안에 정적으로 박혀 있어 바꿀 수 없으므로, 모든 노드는 언제나 최소 한 개의
+블록으로 이루어진 블록체인에서 시작합니다. 모든 노드는 제네시스 블록의 해시와 구조, 정해진 생성 시각,
+심지어 그 안의 단일 트랜잭션까지 언제나 "알고" 있습니다. 따라서 모든 노드는 블록체인의 출발점, 즉 신뢰할
+수 있는 블록체인을 쌓아 올릴 안전한 "뿌리"를 갖게 됩니다.
 
-Every node always starts with a blockchain of at least one block because
-the genesis block is statically encoded within Bitcoin Core,
-such that it cannot be altered. Every node always "knows" the
-genesis block's hash and structure, the fixed time it was created, and
-even the single transaction within. Thus, every node has the starting
-point for the blockchain, a secure "root" from which to build a trusted
-blockchain.
+비트코인 코어 클라이언트 안에 정적으로 박혀 있는 제네시스 블록은
+https://oreil.ly/FqPW5[_chainparams.cpp_]에서 볼 수 있습니다.
 
-See the statically encoded genesis block inside the Bitcoin Core client
-in https://oreil.ly/FqPW5[_chainparams.cpp_].
-
-The following identifier hash belongs to the genesis block:
+다음 식별자 해시가 제네시스 블록의 것입니다.
 
 ----
 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 ----
 
-You can search for that block hash in almost any block explorer website, such
-as _blockstream.info_, and you will find a page describing the contents
-of this block, with a URL containing that hash:
+_blockstream.info_ 같은 거의 모든 블록 탐색기 웹사이트에서 이 블록 해시를 검색하면, 그 해시가 URL에 담긴
+채 이 블록의 내용을 설명하는 페이지를 볼 수 있습니다.
 
 [quote]
 ____
 https://blockstream.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 ____
 
-Alternatively, you can get the block using Bitcoin Core on the command line:
+아니면 명령줄에서 비트코인 코어로 그 블록을 가져올 수도 있습니다.
 
 ----
 $ bitcoin-cli getblock \
@@ -292,37 +236,29 @@ $ bitcoin-cli getblock \
 }
 ----
 
-The genesis block contains a message within it. The coinbase
-transaction input contains the text "The Times 03/Jan/2009 Chancellor on
-brink of second bailout for banks." This message was intended to offer
-proof of the earliest date this block could have been created, by referencing the
-headline of the British newspaper _The Times_. It also serves as a
-tongue-in-cheek reminder of the importance of an independent monetary
-system, with Bitcoin's launch occurring at the same time as an
-unprecedented worldwide monetary crisis. The message was embedded in the
-first block by Satoshi Nakamoto, Bitcoin's ((("Nakamoto, Satoshi")))((("blockchain", "genesis block", startref="blockchain-genesis")))((("genesis block", startref="genesis-block")))((("Bitcoin Core", "genesis block", startref="bitcoin-core-genesis")))creator.
+제네시스 블록에는 메시지가 하나 담겨 있습니다. 코인베이스 트랜잭션 입력에 영국 신문 _더 타임스_ 의 2009년
+1월 3일자 헤드라인을 인용한 문구가 들어 있습니다. 이 메시지는 그 헤드라인을 참조함으로써 이 블록이 만들어질
+수 있었던 가장 이른 날짜에 대한 증거를 제공하려는 것이었습니다. 또한 전례 없는 세계적 통화 위기와 같은
+시기에 비트코인이 출범했다는 점에서, 독립적인 통화 시스템의 중요성을 은근히 상기시키는 역할도 합니다. 이
+메시지는 비트코인의 창시자 사토시 나카모토가 첫 블록에
+((("Nakamoto, Satoshi")))((("blockchain", "genesis block", startref="blockchain-genesis")))((("genesis block", startref="genesis-block")))((("Bitcoin Core", "genesis block", startref="bitcoin-core-genesis")))새겨 넣었습니다.
 
-=== Linking Blocks in the Blockchain
+=== 블록체인에서 블록 연결하기
 
-Bitcoin((("blockchain", "linking blocks", id="blockchain-link")))((("blocks", "linking in blockchain", id="block-link")))((("linking blocks in blockchain", id="link-block"))) full nodes validate every
-block in the blockchain after the genesis block. Their local view of
-the blockchain is constantly updated as new blocks are found and used to
-extend the chain. As a node receives incoming blocks from the network,
-it will validate these blocks and then link them to its view of the existing
-blockchain. To establish a link, a node will examine the incoming block
-header and look for the "previous block hash."
+비트코인((("blockchain", "linking blocks", id="blockchain-link")))((("blocks", "linking in blockchain", id="block-link")))((("linking blocks in blockchain", id="link-block"))) 풀 노드는 제네시스 블록 이후의 블록체인의 모든 블록을
+검증합니다. 새 블록이 발견되어 사슬을 이어가는 데 쓰이면서 노드의 로컬 블록체인 관점은 끊임없이 갱신됩니다.
+노드는 네트워크에서 들어오는 블록을 받으면 그것을 검증한 뒤 자신이 가진 기존 블록체인 관점에 연결합니다.
+연결을 맺기 위해 노드는 들어온 블록 헤더를 살펴 "이전 블록 해시"를 찾습니다.
 
 [role="less_space pagebreak-before"]
-Let's assume, for example, that a node has 277,314 blocks in the local
-copy of the blockchain. The last block the node knows about is block
-277,314, with a block header hash of:
+예를 들어 어떤 노드가 블록체인 로컬 사본에 277,314개의 블록을 가지고 있다고 해봅시다. 그 노드가 아는 마지막
+블록은 277,314번 블록이고 블록 헤더 해시는 다음과 같습니다.
 
 ----
 00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249
 ----
 
-The Bitcoin node then receives a new block from the network, which it
-parses as follows:
+그러던 중 비트코인 노드가 네트워크에서 새 블록을 받고 다음과 같이 파싱합니다.
 
 [source,json]
 ----
@@ -344,54 +280,38 @@ parses as follows:
 }
 ----
 
-Looking at this new block, the node finds the +previousblockhash+ field,
-which contains the hash of its parent block. It is a hash known to the
-node, that of the last block on the chain at height 277,314. Therefore,
-this new block is a child of the last block on the chain and extends the
-existing blockchain. The node adds this new block to the end of the
-chain, making the blockchain longer with a new height of 277,315.
-<<chain_of_blocks>> shows the chain of three blocks, linked by
-references in((("blockchain", "linking blocks", startref="blockchain-link")))((("blocks", "linking in blockchain", startref="block-link")))((("linking blocks in blockchain", startref="link-block"))) the +previousblockhash+ field.
+이 새 블록을 살펴보면 노드는 부모 블록의 해시가 담긴 +previousblockhash+ 필드를 찾습니다. 이는 노드가 아는
+해시, 즉 높이 277,314인 사슬의 마지막 블록의 해시입니다. 따라서 이 새 블록은 사슬의 마지막 블록의 자식이며
+기존 블록체인을 이어갑니다. 노드는 이 새 블록을 사슬 끝에 추가해 블록체인을 더 길게 만들고 새 높이는
+277,315가 됩니다. <<chain_of_blocks>>는 +previousblockhash+ 필드의 참조로 이어진 세 블록의 사슬을
+((("blockchain", "linking blocks", startref="blockchain-link")))((("blocks", "linking in blockchain", startref="block-link")))((("linking blocks in blockchain", startref="link-block")))보여줍니다.
 
 [[chain_of_blocks]]
-.Blocks linked in a chain by each referencing the previous block header hash.
+.각 블록이 이전 블록 헤더 해시를 참조해 사슬로 이어진 블록들.
 image::images/mbc3_1101.png[]
-
 [[merkle_trees]]
-=== Merkle Trees
+=== 머클 트리
 
-Each block((("blockchain", "merkle trees", id="blockchain-merkle")))((("merkle trees", id="merkle-tree-explain"))) in the Bitcoin blockchain contains
-a summary of all the transactions in the block using a _merkle tree_.
+비트코인((("blockchain", "merkle trees", id="blockchain-merkle")))((("merkle trees", id="merkle-tree-explain"))) 블록체인의 각 블록은 _머클 트리_ 를 사용해 그 블록에 담긴 모든
+트랜잭션의 요약을 담고 있습니다.
 
-A _merkle tree_, also known
-as a _binary hash tree_, is ((("binary hash trees")))a data structure used for efficiently
-summarizing and verifying the integrity of large sets of data. Merkle
-trees are binary trees containing cryptographic hashes. The term "tree"
-is used in computer science to describe a branching data structure, but
-these trees are usually displayed upside down with the "root" at the top
-and the "leaves" at the bottom of a diagram, as you will see in the
-examples that follow.
+_이진 해시 트리_ 라고도 하는 _머클 트리_ 는 ((("binary hash trees")))큰 데이터 집합을 효율적으로 요약하고 그
+무결성을 검증하는 데 쓰이는 자료 구조입니다. 머클 트리는 암호학적 해시를 담은 이진 트리입니다. 컴퓨터
+과학에서 "트리"라는 말은 가지를 치는 자료 구조를 가리키지만, 이런 트리는 보통 뒤집어 그려서 "루트"가 위에,
+"잎"이 아래에 오게 표현합니다. 이어지는 예제에서 보게 될 것입니다.
 
-Merkle trees are used in Bitcoin to summarize all the transactions in a
-block, producing an overall commitment to the entire set of
-transactions and permitting a very efficient process to verify whether a
-transaction is included in a block. A merkle tree is constructed by
-recursively hashing pairs of elements until there is only one hash, called
-the _root_, or _merkle root_. The cryptographic hash algorithm used in
-Bitcoin's merkle trees is SHA256 applied twice, also known as
-double-SHA256.
+비트코인에서 머클 트리는 한 블록의 모든 트랜잭션을 요약해 트랜잭션 집합 전체에 대한 커밋먼트를 만들고,
+어떤 트랜잭션이 그 블록에 포함되어 있는지 매우 효율적으로 검증할 수 있게 하는 데 쓰입니다. 머클 트리는
+원소 쌍을 재귀적으로 해시해 해시가 하나만 남을 때까지 만들어지며, 그 마지막 하나를 _루트_ 또는 _머클 루트_
+라고 합니다. 비트코인의 머클 트리에 쓰이는 암호학적 해시 알고리즘은 SHA256을 두 번 적용하는 것으로,
+더블 SHA256이라고도 합니다.
 
-When N data elements are hashed and summarized in a merkle tree, you can
-check to see if any one data element is included in the tree with 
-about +log~2~(N)+ calculations, making this a very efficient data
-structure.
+N개의 데이터 원소를 해시해 머클 트리로 요약하면, 약 +log~2~(N)+ 번의 계산으로 어떤 원소가 그 트리에
+포함되어 있는지 확인할 수 있어 매우 효율적인 자료 구조가 됩니다.
 
-The merkle tree is constructed bottom-up. In the following example, we
-start with four transactions, A, B, C, and D, which form the _leaves_ of
-the merkle tree, as shown in <<simple_merkle>>. The transactions are not
-stored in the merkle tree; rather, their data is hashed and the
-resulting hash is stored in each leaf node as H~A~, H~B~, H~C~, and
-H~D~:
+머클 트리는 아래에서 위로 만들어집니다. 다음 예에서는 트랜잭션 A, B, C, D 네 개로 시작하며, 이들이
+<<simple_merkle>>에 나타낸 대로 머클 트리의 _잎_ 을 이룹니다. 트랜잭션 자체가 머클 트리에 저장되는 것은
+아닙니다. 그 데이터를 해시하고 그 결과 해시를 각 잎 노드에 H~A~, H~B~, H~C~, H~D~ 로 저장합니다.
 
 ++++
 <pre data-type="codelisting">
@@ -399,11 +319,9 @@ H<sub>A</sub> = SHA256(SHA256(Transaction A))
 </pre>
 ++++
 
-Consecutive pairs of leaf nodes are then summarized in a parent node by
-concatenating the two hashes and hashing them together. For example, to
-construct the parent node H~AB~, the two 32-byte hashes of the children
-are concatenated to create a 64-byte string. That string is then
-double-hashed to produce the parent node's hash:
+그다음 이웃한 잎 노드 쌍을 부모 노드로 요약하는데, 두 해시를 이어 붙인 뒤 함께 해시합니다. 예를 들어 부모
+노드 H~AB~ 를 만들려면 자식의 32바이트 해시 둘을 이어 붙여 64바이트 문자열을 만듭니다. 그 문자열을 다시
+두 번 해시해 부모 노드의 해시를 만듭니다.
 
 ++++
 <pre data-type="codelisting">
@@ -411,67 +329,51 @@ H<sub>AB</sub> = SHA256(SHA256(H<sub>A</sub> || H<sub>B</sub>))
 </pre>
 ++++
 
-The process continues until there is only one node at the top, the node
-known as the merkle root. That 32-byte hash is stored in the block
-header and summarizes all the data in all four transactions.
-<<simple_merkle>> shows how the root is calculated by pair-wise hashes
-of the nodes.
+이 과정은 맨 위에 노드가 하나만 남을 때까지 이어지며, 그 노드를 머클 루트라고 합니다. 그 32바이트 해시는
+블록 헤더에 저장되어 네 트랜잭션의 모든 데이터를 요약합니다. <<simple_merkle>>은 노드를 쌍으로 해시해
+루트를 계산하는 과정을 보여줍니다.
 
 [[simple_merkle]]
-.Calculating the nodes in a merkle tree.
+.머클 트리의 노드 계산하기.
 image::images/mbc3_1102.png["merkle_tree"]
 
-Because the merkle tree is a binary tree, it needs
-an even number of leaf nodes. If there are an odd number of transactions
-to summarize, the last transaction hash will be duplicated to create an
-even number of leaf nodes, also known ((("balanced merkle trees")))as a _balanced tree_. This is
-shown in <<merkle_tree_odd>>, where transaction C is duplicated.
-Similarly, if there are an odd number of hashes to process at any level,
-the last hash is duplicated.
+머클 트리는 이진 트리이므로 잎 노드의 개수가 짝수여야 합니다. 요약할 트랜잭션이 홀수 개라면 마지막 트랜잭션
+해시를 복제해 잎 노드를 짝수 개로 만드는데, 이를 ((("balanced merkle trees")))_균형 트리_ 라고도 합니다.
+<<merkle_tree_odd>>에 트랜잭션 C가 복제된 모습을 나타냈습니다. 마찬가지로 어느 단계에서든 처리할 해시가
+홀수 개라면 마지막 해시를 복제합니다.
 
 [[merkle_tree_odd]]
-.Duplicating one data element achieves an even number of data elements.
+.데이터 원소 하나를 복제해 원소 개수를 짝수로 만든다.
 image::images/mbc3_1103.png["merkle_tree_odd"]
 
-.A Design Flaw in Bitcoin's Merkle Tree
+.비트코인 머클 트리의 설계 결함
 ****
-An extended comment in Bitcoin Core's source code, reproduced here with slight revisions, describes a
-significant problem in the design of Bitcoin's duplication of odd
-elements in its merkle tree:
+비트코인 코어 소스 코드에 달린 긴 주석은, 머클 트리에서 홀수 원소를 복제하는 비트코인의 설계에 중대한
+문제가 있음을 설명합니다. 여기에 약간 다듬어 옮깁니다.
 
 
 ____
-WARNING! If you're reading this because you're learning about crypto
-and/or designing a new system that will use merkle trees, keep in mind
-that the following merkle tree algorithm has a serious flaw related to
-duplicate txids, resulting in a vulnerability (CVE-2012-2459).
+경고! 암호 기술을 공부하고 있거나 머클 트리를 쓰는 새 시스템을 설계하려고 이 글을 읽고 있다면, 아래의 머클
+트리 알고리즘에는 중복 txid와 관련된 심각한 결함이 있어 취약점(CVE-2012-2459)으로 이어진다는 점을 유념하세요.
 
-The reason is that if the number of hashes in the list at a given level
-is odd, the last one is duplicated before computing the next level (which
-is unusual in merkle trees). This results in certain sequences of
-transactions leading to the same merkle root. For example, the two
-trees in <<cve_tree>>:
+그 이유는 특정 단계의 해시 목록 개수가 홀수이면 다음 단계를 계산하기 전에 마지막 해시를 복제하기 때문입니다
+(머클 트리에서는 흔치 않은 방식입니다). 그 결과 서로 다른 트랜잭션 나열이 같은 머클 루트로 이어질 수
+있습니다. 예를 들어 <<cve_tree>>의 두 트리가 그렇습니다.
 
 [[cve_tree]]
 [role="width-90"]
-.Two Bitcoin-style merkle trees with the same root but a different number of leaves.
+.루트는 같지만 잎의 개수가 다른 비트코인 방식 머클 트리 둘.
 image::images/mbc3_1104.png["Two Bitcoin-style merkle trees with the same root but a different number of leaves"]
 
-The transaction lists [1,2,3,4,5,6] and [1,2,3,4,5,6,5,6] (where 5 and
-6 are repeated) result in the same root hash A (because the hash of both
-of (F) and (F,F) is C).
+트랜잭션 목록 [1,2,3,4,5,6]과 [1,2,3,4,5,6,5,6](5와 6이 반복된 것)은 같은 루트 해시 A를 만들어냅니다
+((F)의 해시와 (F,F)의 해시가 모두 C이기 때문입니다).
 
-The vulnerability results from being able to send a block with such a
-transaction list, with the same merkle root, and the same block hash as
-the original without duplication, resulting in failed validation. If the
-receiving node proceeds to mark that block as permanently invalid
-however, it will fail to accept further unmodified (and thus potentially
-valid) versions of the same block. We defend against this by detecting
-the case where we would hash two identical hashes at the end of the list
-together, and treating that identically to the block having an invalid
-merkle root. Assuming no double-SHA256 collisions, this will detect all
-known ways of changing the transactions without affecting the merkle
-root.
+이 취약점은 그런 트랜잭션 목록을 가진 블록을, 원본과 같은 머클 루트와 같은 블록 해시로 중복 없이 보낼 수
+있다는 데서 비롯되며 검증 실패로 이어집니다. 그런데 받는 노드가 그 블록을 영구히 유효하지 않다고 표시해
+버리면, 수정되지 않은(따라서 유효할 수도 있는) 같은 블록의 다른 버전을 이후에 받아들이지 못하게 됩니다.
+우리는 목록 끝에서 동일한 해시 둘을 함께 해시하게 되는 경우를 감지해, 그것을 머클 루트가 유효하지 않은
+블록과 똑같이 취급하는 방식으로 이를 방어합니다. 더블 SHA256 충돌이 없다고 가정하면, 이로써 머클 루트에
+영향을 주지 않으면서 트랜잭션을 바꾸는 알려진 모든 방법을 감지할 수 있습니다.
 
 ++++
 <p data-type="attribution">Bitcoin Core <em>src/consensus/merkle.cpp</em></p>
@@ -481,146 +383,104 @@ ____
 ****
 
 [role="less_space pagebreak-before"]
-The same method for constructing a tree from four transactions can be
-generalized to construct trees of any size. In Bitcoin it is common to
-have several thousand transactions in a single
-block, which are summarized in exactly the same way, producing just 32
-bytes of data as the single merkle root. In <<merkle_tree_large>>, you
-will see a tree built from 16 transactions. Note that although the root
-looks bigger than the leaf nodes in the diagram, it is the exact same
-size, just 32 bytes. Whether there is one transaction or ten
-thousand transactions in the block, the merkle root always summarizes
-them into 32 bytes.
+네 개의 트랜잭션으로 트리를 만드는 것과 같은 방법을 일반화하면 어떤 크기의 트리든 만들 수 있습니다.
+비트코인에서는 한 블록에 트랜잭션이 수천 개 들어 있는 것이 흔한데, 이들도 정확히 같은 방식으로 요약되어
+단 32바이트의 머클 루트 하나로 압축됩니다. <<merkle_tree_large>>에는 트랜잭션 16개로 만든 트리를
+나타냈습니다. 그림에서 루트가 잎 노드보다 커 보이지만 크기는 똑같은 32바이트라는 점에 유의하세요. 블록에
+트랜잭션이 하나든 만 개든, 머클 루트는 언제나 그것들을 32바이트로 요약합니다.
 
-To prove that a specific transaction is
-included in a block, a node only needs to produce approximately +log~2~(N)+ 32-byte
-hashes, constituting ((("authentication path")))((("merkle path")))an _authentication path_ or _merkle path_
-connecting the specific transaction to the root of the tree. This is
-especially important as the number of transactions increases because
-the base-2 logarithm of the number of transactions increases much more
-slowly. This allows Bitcoin nodes to efficiently produce paths of 10 or
-12 hashes (320–384 bytes), which can provide proof of a single
-transaction out of more than a thousand transactions in a multimegabyte
-block.
+특정 트랜잭션이 어떤 블록에 포함되어 있음을 증명하려면 노드는 약 +log~2~(N)+ 개의 32바이트 해시만 내놓으면
+됩니다. 이 해시들이 그 트랜잭션을 트리의 루트에 잇는
+((("authentication path")))((("merkle path")))_인증 경로_ 또는 _머클 경로_ 를 이룹니다. 트랜잭션 수가
+늘어날수록 이 점이 특히 중요해지는데, 트랜잭션 수의 밑이 2인 로그는 훨씬 더 천천히 늘어나기 때문입니다.
+덕분에 비트코인 노드는 해시 10개나 12개(320~384바이트)로 이루어진 경로를 효율적으로 만들어, 수 메가바이트
+블록에 담긴 천 건이 넘는 트랜잭션 중 특정 트랜잭션 하나에 대한 증명을 제공할 수 있습니다.
 
 [[merkle_tree_large]]
-.A merkle tree summarizing many data elements.
+.많은 데이터 원소를 요약하는 머클 트리.
 image::images/mbc3_1105.png["merkle_tree_large"]
 
-In <<merkle_tree_path>>, a node can prove that a transaction K is
-included in the block by producing a merkle path that is only four
-32-byte hashes long (128 bytes total). The path consists of the four
-hashes (shown with a shaded background) H~L~,
-H~IJ~, H~MNOP~, and H~ABCDEFGH~. With those four hashes provided as an
-authentication path, any node can prove that H~K~ (with a black
-background at the bottom of the diagram) is included in the merkle root
-by computing four additional pair-wise hashes H~KL~, H~IJKL~,
-H~IJKLMNOP~, and the merkle tree root (outlined in a dashed line in the
-diagram).
+<<merkle_tree_path>>에서 노드는 32바이트 해시 네 개(모두 128바이트)로만 이루어진 머클 경로를 내놓아
+트랜잭션 K가 그 블록에 포함되어 있음을 증명할 수 있습니다. 그 경로는 네 개의 해시(음영 배경으로 표시)
+H~L~, H~IJ~, H~MNOP~, H~ABCDEFGH~ 로 이루어집니다. 이 네 해시가 인증 경로로 주어지면, 어떤 노드든 추가로
+쌍 해시 H~KL~, H~IJKL~, H~IJKLMNOP~ 와 머클 트리 루트(그림에서 점선으로 표시)를 계산해 (그림 아래쪽에
+검은 배경으로 표시된) H~K~ 가 머클 루트에 포함되어 있음을 증명할 수 있습니다.
 
 [[merkle_tree_path]]
-.A merkle path used to prove inclusion of a data element.
+.데이터 원소의 포함을 증명하는 데 쓰이는 머클 경로.
 image::images/mbc3_1106.png["merkle_tree_path"]
 
-The efficiency of merkle trees becomes obvious as the scale increases.
-The largest possible block can hold almost 16,000 transactions in 4,000,000
-bytes, but proving any particular one of those 16,000 transactions
-is a part of that block only requires a copy of the transaction, a copy
-of the 80-byte block header, and 448 bytes for the merkle proof.  That
-makes the largest possible proof almost 10,000 times smaller than the
-largest possible Bitcoin block.
+머클 트리의 효율은 규모가 커질수록 분명해집니다. 가능한 가장 큰 블록은 4,000,000바이트에 거의 16,000건의
+트랜잭션을 담을 수 있지만, 그 16,000건 중 특정 트랜잭션 하나가 그 블록의 일부임을 증명하는 데는 그
+트랜잭션 사본과 80바이트 블록 헤더 사본, 그리고 머클 증명용 448바이트만 있으면 됩니다. 즉 가능한 가장 큰
+증명이 가능한 가장 큰 비트코인 블록보다 거의 1만 배 작습니다.
+=== 머클 트리와 경량 클라이언트
 
-=== Merkle Trees and Lightweight Clients
+머클 트리는 ((("Bitcoin network", "lightweight clients", "merkle trees and")))((("lightweight clients", "merkle trees and")))경량 클라이언트에서 폭넓게 쓰입니다. 경량 클라이언트는 모든
+트랜잭션을 갖고 있지 않고 전체 블록도 내려받지 않으며 블록 헤더만 내려받습니다. 블록의 모든 트랜잭션을
+내려받지 않고도 어떤 트랜잭션이 그 블록에 포함되어 있는지 검증하기 위해 머클 경로를 사용합니다.
 
-Merkle trees are ((("Bitcoin network", "lightweight clients", "merkle trees and")))((("lightweight clients", "merkle trees and")))used extensively by lightweight clients. Lightweight clients don't
-have all transactions and do not download full blocks, just block
-headers. In order to verify that a transaction is included in a block,
-without having to download all the transactions in the block, they use
-a merkle path.
+예를 들어 자기 지갑에 든 주소로 들어오는 지불에 관심이 있는 경량 클라이언트를 생각해 봅시다. 경량
+클라이언트는 피어와의 연결에 블룸 필터(<<bloom_filters>> 참고)를 설정해, 관심 있는 주소가 담긴 트랜잭션만
+받도록 제한합니다. 피어가 그 블룸 필터에 일치하는 트랜잭션을 발견하면 +merkleblock+ 메시지로 그 블록을
+보냅니다. +merkleblock+ 메시지에는 블록 헤더와 함께, 관심 있는 트랜잭션을 그 블록의 머클 루트에 잇는 머클
+경로가 담겨 있습니다. 경량 클라이언트는 이 머클 경로로 트랜잭션을 블록 헤더와 연결해 그 트랜잭션이 블록에
+포함되어 있음을 검증할 수 있습니다. 또한 경량 클라이언트는 블록 헤더로 그 블록을 나머지 블록체인과
+연결합니다. 트랜잭션과 블록 사이, 그리고 블록과 블록체인 사이의 이 두 연결이 합쳐져 그 트랜잭션이
+블록체인에 기록되어 있음을 증명합니다. 결과적으로 경량 클라이언트가 블록 헤더와 머클 경로로 받는 데이터는
+1킬로바이트도 되지 않으며, 이는 전체 블록(현재 약 2MB)보다 천 배 넘게
+((("blockchain", "merkle trees", startref="blockchain-merkle")))((("merkle trees", startref="merkle-tree-explain")))적은 양입니다.
 
-Consider, for example, a lightweight client that is interested in incoming
-payments to an address contained in its wallet. The lightweight client will
-establish a bloom filter (see <<bloom_filters>>) on its connections to
-peers to limit the transactions received to only those containing
-addresses of interest. When a peer sees a transaction that matches the
-bloom filter, it will send that block using a +merkleblock+ message. The
-+merkleblock+ message contains the block header as well as a merkle path
-that links the transaction of interest to the merkle root in the block.
-The lightweight client can use this merkle path to connect the transaction to the
-block header and verify that the transaction is included in the block. The lightweight
-client also uses the block header to link the block to the rest of the
-blockchain. The combination of these two links, between the transaction
-and block and between the block and blockchain, proves that the
-transaction is recorded in the blockchain. All in all, the lightweight client will
-have received less than a kilobyte of data for the block header and
-merkle path, an amount of data that is more than a thousand times less
-than a full block (about 2 MB ((("blockchain", "merkle trees", startref="blockchain-merkle")))((("merkle trees", startref="merkle-tree-explain")))currently).
+=== 비트코인의 테스트 블록체인
 
-=== Bitcoin's Test Blockchains
+비트코인에 쓰이는 블록체인이 하나가 아니라는 사실이 놀라울 수도 있습니다. 2009년 1월 3일 사토시 나카모토가
+만든 "메인" 비트코인 블록체인, 즉 이 장에서 살펴본 제네시스 블록이 있는 그 블록체인을
+((("mainnet")))_메인넷_ 이라고 합니다. 테스트 목적으로 쓰이는 다른 비트코인 블록체인도 있는데, 현재
+_테스트넷_, _시그넷_, _레그테스트_ 가 있습니다. 하나씩 살펴봅시다.
 
-You might be
-surprised to learn that there is more than one blockchain used with Bitcoin. The
-"main" Bitcoin blockchain, the one created by Satoshi Nakamoto on
-January 3rd, 2009, the one with the genesis block we studied in this
-chapter, is ((("mainnet")))called _mainnet_.  There are other Bitcoin blockchains that
-are used for testing purposes: at this time _testnet_, _signet_, and
-_regtest_. Let's look at each in turn.
+==== 테스트넷: 비트코인의 시험장
 
-==== Testnet: Bitcoin's Testing Playground
+테스트넷은 ((("blockchain", "test blockchains", "testnet", id="blockchain-test-testnet")))((("test blockchains", "testnet", id="test-block-testnet")))((("testnet", id="testnet")))테스트 목적으로 쓰이는 테스트 블록체인과 네트워크, 화폐의
+이름입니다. 테스트넷은 지갑과 테스트 비트코인(테스트넷 코인), 채굴 등 메인넷의 모든 기능을 갖춘, 완전히
+동작하는 실제 P2P 네트워크입니다. 가장 중요한 차이는 테스트넷 코인이 가치가 없도록 되어 있다는 점입니다.
 
-Testnet is ((("blockchain", "test blockchains", "testnet", id="blockchain-test-testnet")))((("test blockchains", "testnet", id="test-block-testnet")))((("testnet", id="testnet")))the name of the test blockchain, network, and currency that
-is used for testing purposes. The testnet is a fully featured live P2P
-network, with wallets, test bitcoins (testnet coins), mining, and all
-the other features of mainnet.  The most important difference is that
-testnet coins are meant to be worthless.
+비트코인 메인넷에서 실제로 쓰일 소프트웨어는 무엇이든 먼저 테스트 코인으로 테스트넷에서 시험해 볼 수
+있습니다. 이는 버그로 인한 금전적 손실로부터 개발자를 보호하고, 버그로 인한 의도치 않은 동작으로부터
+네트워크를 보호합니다.
 
-Any software development that is intended for production use on
-Bitcoin's mainnet can first be tested on testnet with test coins.
-This protects both the developers from monetary losses due to bugs and
-the network from unintended behavior due to bugs.
-
-The current testnet is called _testnet3_, the third iteration of
-testnet, restarted in February 2011 to reset the difficulty from the
-previous testnet.  Testnet3 is a large blockchain, in excess of 30 GB in
-2023. It will take a while to sync fully and use up resources
-on your computer. Not as much as mainnet, but not exactly "lightweight"
-either.
+현재의 테스트넷은 _테스트넷3_ 라고 하며, 이전 테스트넷의 난이도를 초기화하기 위해 2011년 2월에 다시 시작한
+세 번째 테스트넷입니다. 테스트넷3는 큰 블록체인으로 2023년 기준 30GB가 넘습니다. 완전히 동기화하는 데
+시간이 꽤 걸리고 컴퓨터 자원도 씁니다. 메인넷만큼은 아니지만 그렇다고 "가볍지도" 않습니다.
 
 [TIP]
 ====
-Testnet and the other test blockchains described in this book don't use
-the same address prefixes as mainnet addresses to prevent someone from
-accidentally sending real bitcoins to a test address.  Mainnet addresses
-begin with +1+, +3+, or +bc1+.  Addresses for the test networks
-mentioned in this book begin with +m+, +n+, or +tb1+.  Other test
-networks, or new protocols being developed on test networks, may use
-other address prefixes or alterations.
+테스트넷을 비롯해 이 책에서 설명하는 테스트 블록체인은 실수로 진짜 비트코인을 테스트 주소로 보내는 일을
+막기 위해 메인넷 주소와 같은 접두사를 쓰지 않습니다. 메인넷 주소는 +1+, +3+, +bc1+ 로 시작합니다. 이
+책에서 언급하는 테스트 네트워크의 주소는 +m+, +n+, +tb1+ 로 시작합니다. 다른 테스트 네트워크나 테스트
+네트워크에서 개발 중인 새 프로토콜은 다른 주소 접두사나 변형을 쓸 수 있습니다.
 ====
 
-===== Using testnet
+===== 테스트넷 사용하기
 
-Bitcoin Core, like((("Bitcoin Core", "testnet"))) many other Bitcoin programs, has full support
-for operation on testnet as an alternative mainnet. All of Bitcoin Core's
-functions work on testnet, including the wallet, mining testnet coins,
-and syncing a full testnet node.
+비트코인 코어도((("Bitcoin Core", "testnet"))) 다른 여러 비트코인 프로그램과 마찬가지로 메인넷 대신
+테스트넷에서 동작하는 것을 온전히 지원합니다. 지갑, 테스트넷 코인 채굴, 테스트넷 풀 노드 동기화를 포함해
+비트코인 코어의 모든 기능이 테스트넷에서 동작합니다.
 
 [role="less_space pagebreak-before"]
-To start Bitcoin Core on testnet instead of mainnet you use the
-+testnet+ switch:
+메인넷 대신 테스트넷에서 비트코인 코어를 시작하려면 +testnet+ 스위치를 씁니다.
 
 ----
 $ bitcoind -testnet
 ----
 
-In the logs you should see that bitcoind is building a new blockchain in
-the +testnet3+ subdirectory of the default bitcoind directory:
+로그를 보면 bitcoind가 기본 bitcoind 디렉터리의 +testnet3+ 하위 디렉터리에 새 블록체인을 만들고 있음을 알
+수 있습니다.
 
 ----
 bitcoind: Using data directory /home/username/.bitcoin/testnet3
 ----
 
-To connect to bitcoind, you use the +bitcoin-cli+ command-line tool, but
-you must also switch it to testnet mode:
+bitcoind에 연결하려면 +bitcoin-cli+ 명령줄 도구를 쓰되, 이것도 테스트넷 모드로 전환해야 합니다.
 
 ----
 $ bitcoin-cli -testnet getblockchaininfo
@@ -639,97 +499,70 @@ $ bitcoin-cli -testnet getblockchaininfo
   [...]
 ----
 
-You can also run on testnet3 with other full-node implementations, such
-as +btcd+ (written in Go) and +bcoin+ (written in JavaScript), to
-experiment and learn in other programming languages and frameworks.
++btcd+ (Go로 작성)나 +bcoin+ (자바스크립트로 작성) 같은 다른 풀 노드 구현으로도 테스트넷3에서 돌려보며
+다른 프로그래밍 언어와 프레임워크를 실험하고 배울 수 있습니다.
 
-Testnet3 supports all the features of mainnet, including
-segregated witness v0 and v1 (see <<segwit>> and <<taproot>>). Therefore, testnet3 can also be
-used to test segregated witness features.
+테스트넷3는 분리된 증인 v0와 v1(<<segwit>>과 <<taproot>> 참고)을 포함해 메인넷의 모든 기능을 지원합니다.
+따라서 테스트넷3로 분리된 증인 기능도 시험해 볼 수 있습니다.
 
-===== Problems with testnet
+===== 테스트넷의 문제
 
-Testnet doesn't just use the same data structures as Bitcoin, it also
-uses almost exactly the same proof-of-work security mechanism as
-Bitcoin.  The notable differences for testnet are that its minimum
-difficulty is half that of Bitcoin and that it's allowed to include a
-block at the minimum difficulty if that block's timestamp is more than
-20 minutes after the previous block.
+테스트넷은 비트코인과 같은 자료 구조를 쓸 뿐 아니라 작업증명 보안 방식도 거의 그대로 씁니다. 테스트넷의
+눈에 띄는 차이는 최소 난이도가 비트코인의 절반이라는 점과, 어떤 블록의 타임스탬프가 이전 블록보다 20분 넘게
+뒤라면 최소 난이도의 블록을 담는 것이 허용된다는 점입니다.
 
-Unfortunately, Bitcoin's PoW security mechanism was designed to depend
-on economic incentives--incentives which don't exist in a test
-blockchain that is forbidden from having value.  On mainnet, miners are
-incentivized to include user transactions in their blocks because those
-transactions pay fees.  On testnet, transactions still contain something
-called fees, but those fees don't have any economic value.  That means
-the only incentive for a testnet miner to include transactions is
-because they want to help users and developers to test their software.
+안타깝게도 비트코인의 작업증명 보안 방식은 경제적 유인에 기대도록 설계되었는데, 가치를 가져서는 안 되는
+테스트 블록체인에는 그런 유인이 없습니다. 메인넷에서 채굴자는 사용자 트랜잭션이 수수료를 내기 때문에 그것을
+자기 블록에 담을 유인이 있습니다. 테스트넷에서도 트랜잭션에 수수료라 불리는 것이 여전히 들어 있지만 그
+수수료에는 아무런 경제적 가치가 없습니다. 즉 테스트넷 채굴자가 트랜잭션을 담을 유일한 유인은 사용자와
+개발자가 소프트웨어를 시험하도록 돕고 싶다는 마음뿐입니다.
 
-Alas, people who like to disrupt systems often feel a stronger
-incentive, at least in the short term.  Because PoW mining is designed
-to be permissionless, anyone can mine, whether their intention is good
-or not.  That means disruptive miners can create many blocks in a row on
-testnet without including any user transactions.  When those attacks
-happen, testnet becomes unusable for users and ((("blockchain", "test blockchains", "testnet", startref="blockchain-test-testnet")))((("test blockchains", "testnet", startref="test-block-testnet")))((("testnet", startref="testnet")))developers.
+그런데 시스템을 방해하기 좋아하는 사람들은 적어도 단기적으로는 더 강한 유인을 느끼곤 합니다. 작업증명 채굴은
+허가가 필요 없도록 설계되어 있으므로, 의도가 좋든 나쁘든 누구나 채굴할 수 있습니다. 즉 방해하려는 채굴자가
+사용자 트랜잭션을 전혀 담지 않은 블록을 테스트넷에서 연달아 여러 개 만들 수 있습니다. 그런 공격이 벌어지면
+테스트넷은 사용자와 개발자에게 쓸모없어집니다.((("blockchain", "test blockchains", "testnet", startref="blockchain-test-testnet")))((("test blockchains", "testnet", startref="test-block-testnet")))((("testnet", startref="testnet")))
+==== 시그넷: 권위 증명 테스트넷
 
-==== Signet: The Proof of Authority Testnet
+((("blockchain", "test blockchains", "signet", id="blockchain-test-signet")))((("test blockchains", "signet", id="test-block-signet")))((("signet", id="signet")))허가 없는 작업증명에 의존하는 시스템이 경제적 유인 없이 아주 쓸 만한
+블록체인을 제공할 방법은 알려져 있지 않으므로, 비트코인 프로토콜 개발자들은 대안을 고민하기 시작했습니다.
+주된 목표는 소프트웨어가 최소한의 변경으로 테스트넷에서 돌아갈 수 있도록 비트코인의 구조를 가능한 한 그대로
+유지하면서도, 계속 쓸모 있는 환경을 제공하는 것이었습니다. 부차적인 목표는 새 소프트웨어 개발자가 자기만의
+테스트 네트워크를 손쉽게 만들 수 있는 재사용 가능한 설계를 내놓는 것이었습니다.
 
-There's no ((("blockchain", "test blockchains", "signet", id="blockchain-test-signet")))((("test blockchains", "signet", id="test-block-signet")))((("signet", id="signet")))known way for a system dependent on permissionless PoW to
-provide a highly usable blockchain without introducing economic
-incentives, so Bitcoin protocol developers began considering
-alternatives.  The primary goal was to preserve as much of the structure of
-Bitcoin as possible so that software could run on a testnet with minimal
-changes--but to also provide an environment that would remain useful.
-A secondary goal was to produce a reusable design that would allow
-developers of new software to easily create their own test networks.
+비트코인 코어를 비롯한 소프트웨어에 구현된 해법을 _시그넷_ 이라고 하며 BIP325에 정의되어 있습니다. 시그넷은
+각 블록이 그 블록의 생성을 신뢰받는 권위자가 승인했다는 증거(서명 등)를 담아야 하는 테스트 네트워크입니다.
 
-The solution implemented in Bitcoin Core and other software is called
-_signet_, as defined by BIP325.  A signet is a test network where each
-block must contain proof (such as a signature) that the creation of that
-block was sanctioned by a trusted authority.
+비트코인의 채굴이 허가가 필요 없어 누구나 할 수 있는 것과 달리, 시그넷의 채굴은 완전히 허가제입니다. 허가를
+받은 사람만 할 수 있습니다. 비트코인 메인넷이라면 도저히 받아들일 수 없는 변경이겠지만(아무도 그 소프트웨어를
+쓰지 않을 것입니다), 코인에 가치가 없고 목적이 오로지 소프트웨어와 시스템 시험인 테스트넷에서는 합리적입니다.
 
-Whereas mining in Bitcoin is permissionless--anyone can do it--mining on
-signet is fully permissioned.  Only those with permission can do it.
-This would be a completely unacceptable change to Bitcoin's mainnet--no
-one would use that software--but it's reasonable on a testnet where coins have
-no value and the only purpose is testing software and systems.
+BIP325 시그넷은 자기만의 시그넷을 아주 쉽게 만들 수 있도록 설계되었습니다. 다른 누군가가 자기 시그넷을
+운영하는 방식이 마음에 들지 않는다면, 직접 시그넷을 시작해 자기 소프트웨어를 거기에 연결하면 됩니다.
 
-BIP325 signets are designed to make it very easy to create your own.  If
-you disagree with how someone else is running their signet, you can
-start your own signet and connect your software to it.
+===== 기본 시그넷과 커스텀 시그넷
 
-===== The default signet and custom signets
+비트코인 코어는((("Bitcoin Core", "signet")))((("default signet")))((("custom signets"))) 기본 시그넷을 지원하며, 이 글을 쓰는 시점에 가장 널리 쓰이는
+시그넷이라고 봅니다. 현재 그 프로젝트의 기여자 두 명이 운영하고 있습니다. 시그넷 관련 다른 매개변수 없이
++signet+ 매개변수만 주고 비트코인 코어를 시작하면 바로 이 시그넷을 쓰게 됩니다.
 
-Bitcoin Core supports((("Bitcoin Core", "signet")))((("default signet")))((("custom signets"))) a default signet, which we believe to be the most
-widely used signet at the time of writing.  It is currently operated by
-two contributors to that project.  If you start Bitcoin Core with the
-+signet+ parameter and no other signet-related parameters, this is the
-signet you will be using.
+이 글을 쓰는 시점에 기본 시그넷은 블록이 약 150,000개이고 크기는 약 1기가바이트입니다. 비트코인 메인넷과
+같은 기능을 모두 지원하며, 시그넷에서만 돌아가도록 만들어진 비트코인 코어의 소프트웨어 포크인 Bitcoin
+Inquisition 프로젝트를 통해 제안된 업그레이드를 시험하는 데도 쓰입니다.
 
-As of this writing, the default signet has about 150,000 blocks and is
-about a gigabyte in size.  It supports all of the same features as
-Bitcoin's mainnet and is also used for testing proposed upgrades through
-the Bitcoin Inquisition project, which is a software fork of Bitcoin
-Core that's only designed to run on signet.
-
-If you want to use a different signet, called a _custom signet_, you
-will need to know the script used to determine when a block is
-authorized, called((("challenge script"))) the _challenge_ script.  This is a standard Bitcoin
-script, so it can use features such as multisig to allow multiple people
-to authorize blocks.  You may also need to connect to a seed node that
-will provide you with the addresses of peers on the custom signet.  For
-example:
+_커스텀 시그넷_ 이라고 하는 다른 시그넷을 쓰려면, 어떤 블록이 승인되었는지 판단하는 데 쓰이는 스크립트,
+이른바 ((("challenge script")))_챌린지_ 스크립트를 알아야 합니다. 이는 표준 비트코인 스크립트이므로 멀티시그
+같은 기능을 써서 여러 사람이 블록을 승인하게 할 수도 있습니다. 또한 그 커스텀 시그넷의 피어 주소를 알려줄
+시드 노드에 연결해야 할 수도 있습니다. 예를 들면 다음과 같습니다.
 
 ----
 bitcoind -signet -signetchallenge=0123...cdef -signetseednode=example.com:1234
 ----
 
-As of this writing, we generally recommend that the public testing of
-mining software occur on testnet3 and that all other public testing of
-Bitcoin software occur on the default signet.
+이 글을 쓰는 시점에 우리는 채굴 소프트웨어의 공개 시험은 테스트넷3에서, 그 밖의 모든 비트코인 소프트웨어
+공개 시험은 기본 시그넷에서 하기를 대체로 권합니다.
 
-To interact with your chosen signet, you can use the +-signet+ parameter
-with +bitcoin-cli+, similar to how you used testnet.  For((("blockchain", "test blockchains", "signet", startref="blockchain-test-signet")))((("test blockchains", "signet", startref="test-block-signet")))((("signet", startref="signet"))) example:
+고른 시그넷과 상호작용하려면 테스트넷에서 그랬듯 +bitcoin-cli+ 에 +-signet+ 매개변수를 쓰면 됩니다.
+((("blockchain", "test blockchains", "signet", startref="blockchain-test-signet")))((("test blockchains", "signet", startref="test-block-signet")))((("signet", startref="signet")))예를 들면 다음과 같습니다.
 
 ----
 $ bitcoin-cli -signet getblockchaininfo
@@ -750,34 +583,30 @@ $ bitcoin-cli -signet getblockchaininfo
 }
 ----
 
-==== Regtest: The Local Blockchain
+==== 레그테스트: 로컬 블록체인
 
-Regtest, ((("blockchain", "test blockchains", "regtest", id="blockchain-test-regtest")))((("test blockchains", "regtest", id="test-block-regtest")))((("regtest", id="regtest")))which stands for
-"Regression Testing," is a Bitcoin Core feature that allows you to
-create a local blockchain for testing purposes. Unlike signet and testnet3, which
-are public and shared test blockchains, the regtest blockchains are
-intended to be run as closed systems for local testing. You launch a
-regtest blockchain from scratch. You may
-add other nodes to the network or run it with a single node only to
-test the Bitcoin Core software.
+((("blockchain", "test blockchains", "regtest", id="blockchain-test-regtest")))((("test blockchains", "regtest", id="test-block-regtest")))((("regtest", id="regtest")))"회귀 테스트(Regression Testing)"를 뜻하는 레그테스트는 테스트 목적으로
+로컬 블록체인을 만들 수 있게 해주는 비트코인 코어의 기능입니다. 공개된 공유 테스트 블록체인인 시그넷이나
+테스트넷3와 달리, 레그테스트 블록체인은 로컬 테스트를 위한 닫힌 시스템으로 운영하도록 만들어졌습니다.
+레그테스트 블록체인은 처음부터 새로 시작합니다. 네트워크에 다른 노드를 추가할 수도 있고, 비트코인 코어
+소프트웨어를 시험하기 위해 노드 하나만으로 돌릴 수도 있습니다.
 
-To start ((("Bitcoin Core", "regtest")))Bitcoin Core in regtest mode, you use the +regtest+ flag:
+비트코인 코어를 ((("Bitcoin Core", "regtest")))레그테스트 모드로 시작하려면 +regtest+ 플래그를 씁니다.
 
 ----
 $ bitcoind -regtest
 ----
 
-Just like with testnet, Bitcoin Core will initialize a new blockchain
-under the _regtest_ subdirectory of your bitcoind default directory:
+테스트넷에서와 마찬가지로 비트코인 코어는 bitcoind 기본 디렉터리의 _regtest_ 하위 디렉터리에 새 블록체인을
+초기화합니다.
 
 ----
 bitcoind: Using data directory /home/username/.bitcoin/regtest
 ----
 
 [role="less_space pagebreak-before"]
-To use the command-line tool, you need to specify the +regtest+ flag
-too. Let's try the +getblockchaininfo+ command to inspect the regtest
-blockchain:
+명령줄 도구를 쓸 때도 +regtest+ 플래그를 지정해야 합니다. +getblockchaininfo+ 명령으로 레그테스트
+블록체인을 살펴봅시다.
 
 ----
 $ bitcoin-cli -regtest getblockchaininfo
@@ -794,8 +623,8 @@ $ bitcoin-cli -regtest getblockchaininfo
   [...]
 ----
 
-As you can see, there are no blocks yet. Let's create a default wallet,
-get an address, and then mine some (500 blocks) to earn the reward:
+보다시피 아직 블록이 없습니다. 기본 지갑을 만들고 주소를 받은 다음, 보상을 얻기 위해 블록을 500개 채굴해
+봅시다.
 
 ----
 $ bitcoin-cli -regtest createwallet ""
@@ -814,38 +643,28 @@ $ bitcoin-cli -regtest generatetoaddress 500 \
 ]
 ----
 
-It will only take a few seconds to mine all these blocks, which
-certainly makes it easy for testing. If you check your wallet balance,
-you will see that you earned the rewards for the first 400 blocks (coinbase
-rewards must be 100 blocks deep before you can ((("blockchain", "test blockchains", "regtest", startref="blockchain-test-regtest")))((("test blockchains", "regtest", startref="test-block-regtest")))((("regtest", startref="regtest")))spend them):
+이 블록을 모두 채굴하는 데는 몇 초밖에 걸리지 않으니 시험하기에 확실히 편합니다. 지갑 잔액을 확인해 보면
+처음 400개 블록에 대한 보상을 받은 것을 볼 수 있습니다(코인베이스 보상은 쓰려면 100블록 깊이에 묻혀 있어야
+((("blockchain", "test blockchains", "regtest", startref="blockchain-test-regtest")))((("test blockchains", "regtest", startref="test-block-regtest")))((("regtest", startref="regtest")))합니다).
 
 ----
 $ bitcoin-cli -regtest getbalance
 12462.50000000
 ----
 
-=== Using Test Blockchains for Development
+=== 개발에 테스트 블록체인 활용하기
 
-Bitcoin's ((("blockchain", "test blockchains", "development usage")))((("test blockchains", "development usage")))various
-blockchains (regtest, signet, testnet3, mainnet) offer a range
-of testing environments for bitcoin development. Use the test
-blockchains whether you are developing for Bitcoin Core or another
-full-node consensus client; developing an application such as a wallet, exchange,
-ecommerce site; or even developing novel smart contracts and complex
-scripts).
+비트코인의 ((("blockchain", "test blockchains", "development usage")))((("test blockchains", "development usage")))여러 블록체인(레그테스트, 시그넷, 테스트넷3, 메인넷)은 비트코인
+개발을 위한 다양한 테스트 환경을 제공합니다. 비트코인 코어나 다른 풀 노드 합의 클라이언트를 개발하든, 지갑이나
+거래소, 전자상거래 사이트 같은 애플리케이션을 개발하든, 심지어 새로운 스마트 계약과 복잡한 스크립트를
+개발하든 테스트 블록체인을 활용하세요.
 
-You can use the test blockchains to establish a development pipeline.
-Test your code locally on a regtest as you develop it. Once you are
-ready to try it on a public network, switch to signet or testnet to expose your
-code to a more dynamic environment with more diversity of code and
-applications. Finally, once you are confident your code works as
-expected, switch to mainnet to deploy it in production. As you make
-changes, improvements, bug fixes, etc., start the pipeline again,
-deploying each change first on regtest, then on signet or testnet, and finally
-into production.
+테스트 블록체인으로 개발 파이프라인을 꾸릴 수 있습니다. 코드를 작성하는 동안에는 로컬 레그테스트에서
+시험하세요. 공개 네트워크에서 시험할 준비가 되면 시그넷이나 테스트넷으로 옮겨, 더 다양한 코드와 애플리케이션이
+오가는 역동적인 환경에 여러분의 코드를 노출시키세요. 마지막으로 코드가 기대한 대로 동작한다고 확신하게 되면
+메인넷으로 전환해 실제 환경에 배포하세요. 변경하고 개선하고 버그를 고칠 때마다 이 파이프라인을 다시 돌려,
+각 변경을 먼저 레그테스트에, 그다음 시그넷이나 테스트넷에, 마지막으로 실제 환경에 배포하세요.
 
-Now that we know what data the blockchain contains and how cryptographic
-commitments securely tie the various parts together, we will look at the
-special commitment that both provide computational security and
-ensure no block can be changed without invalidating all other blocks
-built on top of it: Bitcoin's mining function.
+이제 블록체인에 어떤 데이터가 담겨 있고 암호학적 커밋먼트가 여러 부분을 어떻게 안전하게 묶어주는지 알았으니,
+연산적 보안을 제공하는 동시에 어떤 블록도 그 위에 쌓인 다른 모든 블록을 무효로 만들지 않고는 바꿀 수 없게
+보장하는 특별한 커밋먼트, 즉 비트코인의 채굴 함수를 살펴보겠습니다.
