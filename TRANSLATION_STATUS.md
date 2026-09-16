@@ -30,7 +30,7 @@
 - [x] `ch03_bitcoin-core.adoc`
 - [x] `ch07_authorization-authentication.adoc`
 - [x] `ch08_signatures.adoc`
-- [ ] `ch09_fees.adoc`
+- [x] `ch09_fees.adoc`
 - [ ] `ch10_network.adoc`
 - [ ] `ch11_blockchain.adoc`
 - [ ] `ch12_mining.adoc`
