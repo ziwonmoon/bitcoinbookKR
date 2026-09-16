@@ -1,41 +1,35 @@
 [[c_transactions]]
-== Transactions
+== 트랜잭션
 
-The way we typically transfer physical cash has little resemblance to
-the way we transfer bitcoins.  Physical cash is a bearer token.  Alice
-pays Bob by handing him some number of tokens, such as dollar bills.
-By comparison, bitcoins don't exist either physically or as digital
-data--Alice can't hand Bob some bitcoins or send them by email.
+우리가 보통 현금을 주고받는 방식은 비트코인을 주고받는 방식과 거의 닮은 데가
+없습니다. 현금은 소지자 토큰입니다. 앨리스는 달러 지폐 같은 토큰을 밥에게 건네
+지불합니다. 그에 비해 비트코인은 물리적으로도, 디지털 데이터로도 존재하지
+않습니다. 앨리스가 밥에게 비트코인을 건네주거나 이메일로 보낼 수는 없습니다.
 
-Instead, consider how Alice might transfer control over a parcel of land
-to Bob.  She can't physically pick up the land and hand it to Bob.
-Rather there exists some sort of record (usually maintained by a local
-government) that describes the land Alice owns.  Alice transfers that
-land to Bob by convincing the government to update the record to say
-that Bob now owns the land.
+대신 앨리스가 어떤 땅에 대한 권리를 밥에게 넘기는 상황을 생각해 봅시다. 앨리스가
+땅을 물리적으로 들어 밥에게 건넬 수는 없습니다. 그보다는 앨리스가 소유한 땅을
+기술하는 어떤 기록(보통 지방 정부가 관리합니다)이 존재합니다. 앨리스는 이제 밥이
+그 땅을 소유한다고 기록을 갱신하도록 정부를 설득함으로써 그 땅을 밥에게 넘깁니다.
 
-Bitcoin works in a similar way.  There exists a database on every
-Bitcoin full node that says that Alice controls some number of
-bitcoins. Alice pays Bob by convincing full nodes to update their
-database to say that some of Alice's bitcoins are now controlled by Bob.
-The data that Alice uses to convince full nodes to update their
-databases is called a _transaction_.  This is done without directly
-using either Alice's or Bob's identities, as we'll see in
-<<c_authorization_authentication>>.
+비트코인도 비슷하게 작동합니다. 모든 비트코인 풀 노드에는 앨리스가 얼마만큼의
+비트코인을 통제한다고 적힌 데이터베이스가 있습니다. 앨리스는 자기 비트코인 중
+일부를 이제 밥이 통제한다고 데이터베이스를 갱신하도록 풀 노드들을 설득해 밥에게
+지불합니다. 풀 노드가 데이터베이스를 갱신하도록 앨리스가 설득하는 데 쓰는 데이터를
+_트랜잭션_ 이라고 합니다. 이 일은 앨리스나 밥의 신원을 직접 쓰지 않고 이루어지며,
+<<c_authorization_authentication>>에서 살펴봅니다.
 
-In this chapter we'll deconstruct a Bitcoin transaction and examine each
-of its parts to see how they facilitate the transfer of value in a way
-that's highly expressive and amazingly reliable.
+이 장에서는 비트코인 트랜잭션을 해체해 각 부분을 살펴보면서, 이들이 어떻게 표현력이
+풍부하면서도 놀랍도록 믿음직한 방식으로 가치 이전을 가능하게 하는지 알아봅니다.
 
 [[tx_structure]]
-=== A Serialized Bitcoin Transaction
+=== 직렬화된 비트코인 트랜잭션
 
-In <<exploring_and_decoding_transactions>>, we ((("transactions", "serialized", id="transaction-serialize")))((("serialized transactions", id="serial-transactions")))((("Bitcoin Core", "serialized transactions", id="bitcoin-core-serial-transaction")))used Bitcoin Core with
-the txindex option enabled to retrieve a copy of Alice's payment to Bob.
-Let's retrieve the transaction containing that payment again, as shown in <<alice_tx_serialized_reprint>>.
+<<exploring_and_decoding_transactions>>에서 ((("transactions", "serialized", id="transaction-serialize")))((("serialized transactions", id="serial-transactions")))((("Bitcoin Core", "serialized transactions", id="bitcoin-core-serial-transaction")))우리는 txindex 옵션을 켠
+비트코인 코어로 앨리스가 밥에게 지불한 트랜잭션의 사본을 가져왔습니다. 그 지불이
+담긴 트랜잭션을 다시 가져와 봅시다. <<alice_tx_serialized_reprint>>에 나타냈습니다.
 
 [[alice_tx_serialized_reprint]]
-.Alice's serialized transaction
+.앨리스의 직렬화된 트랜잭션
 ====
 ----
 $ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
@@ -52,181 +46,149 @@ e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
 ====
 
 
-Bitcoin Core's serialization format is special because it's the format
-used to make commitments to transactions and to relay them across
-Bitcoin's P2P network, but otherwise programs can use
-a different format as long as they transmit all of the
-same data.  However, Bitcoin Core's format is reasonably compact for the
-data it transmits and simple to parse, so many other Bitcoin programs
-use this format.
+비트코인 코어의 직렬화 형식이 특별한 이유는, 트랜잭션에 커밋하고 비트코인 P2P
+네트워크로 중계하는 데 쓰이는 형식이기 때문입니다. 그 외에는 같은 데이터를 모두
+전달하기만 한다면 프로그램이 다른 형식을 써도 됩니다. 다만 비트코인 코어의 형식은
+전달하는 데이터에 비해 상당히 간결하고 파싱하기도 간단해서, 다른 많은 비트코인
+프로그램이 이 형식을 씁니다.
 
 [TIP]
 ====
-The only ((("partially signed bitcoin transaction (PSBT) format")))((("PSBT (partially signed bitcoin transaction) format")))other widely used transaction serialization format that
-we're aware of is the partially signed bitcoin transaction (PSBT) format
-documented in BIPs 174 and 370 (with extensions documented in other
-BIPs).  PSBT allows an untrusted program to produce a transaction
-template that can be verified and updated by trusted programs (such as
-hardware signing devices) that have the necessary private keys or
-other sensitive data to fill in the template.  To accomplish this, PSBT
-allows storing a significant amount of metadata about a transaction,
-making it much less compact than the standard serialization format.
-This book does not go into detail about PSBT, but we strongly recommend
-it to developers of wallets that plan to support signing
-with multiple keys.
+우리가 아는 한 널리 쓰이는 ((("partially signed bitcoin transaction (PSBT) format")))((("PSBT (partially signed bitcoin transaction) format")))다른 트랜잭션 직렬화 형식은 BIP174와
+BIP370에 문서화된(그리고 다른 BIP에 확장이 문서화된) 부분 서명 비트코인
+트랜잭션(PSBT) 형식뿐입니다. PSBT는 신뢰할 수 없는 프로그램이 트랜잭션 템플릿을
+만들면, 그 템플릿을 채우는 데 필요한 비밀키나 그 밖의 민감한 데이터를 가진 신뢰할
+수 있는 프로그램(하드웨어 서명 장치 등)이 이를 검증하고 갱신할 수 있게 합니다.
+이를 위해 PSBT는 트랜잭션에 대한 상당한 양의 메타데이터를 저장할 수 있게 하는데,
+그래서 표준 직렬화 형식보다 훨씬 덜 간결합니다. 이 책은 PSBT를 자세히 다루지
+않지만, 여러 키로 서명하는 것을 지원할 계획인 지갑 개발자에게는 강력히 권합니다.
 ====
 
-The transaction displayed in hexadecimal in <<alice_tx_serialized_reprint>> is
-replicated as a byte map in <<alice_tx_byte_map>>.  Note that it takes
-64 hexadecimal characters to display 32 bytes.  This map shows only the
-top-level fields.  We'll examine each of them in the order they appear
-in the transaction and describe any additional fields that they((("transactions", "serialized", startref="transaction-serialize")))((("serialized transactions", startref="serial-transactions")))((("Bitcoin Core", "serialized transactions", startref="bitcoin-core-serial-transaction"))) contain.
+<<alice_tx_serialized_reprint>>에 16진수로 표시한 트랜잭션을
+<<alice_tx_byte_map>>에 바이트 맵으로 다시 나타냈습니다. 32바이트를 표시하는 데
+16진수 64자가 필요하다는 점에 유의하세요. 이 맵은 최상위 필드만 보여줍니다.
+트랜잭션에 나타나는 순서대로 각 필드를 살펴보고, 그 안에 담긴 추가 필드도((("transactions", "serialized", startref="transaction-serialize")))((("serialized transactions", startref="serial-transactions")))((("Bitcoin Core", "serialized transactions", startref="bitcoin-core-serial-transaction"))) 설명하겠습니다.
 
 [[alice_tx_byte_map]]
-.A byte map of Alice's transaction.
+.앨리스 트랜잭션의 바이트 맵.
 image::images/mbc3_0601.png["A byte map of Alice's transaction"]
 
 [[version]]
-=== Version
+=== 버전
 
-The first ((("transactions", "version of", id="transactions-version")))((("version (of transactions)", id="version-transactions")))four bytes of a serialized Bitcoin transaction are its
-version.  The original version of Bitcoin transactions was version 1
-(0x01000000).  All transactions in Bitcoin must follow
-the rules of version 1 transactions, with many of those rules being
-described throughout this book.
+직렬화된 ((("transactions", "version of", id="transactions-version")))((("version (of transactions)", id="version-transactions")))비트코인 트랜잭션의 첫 4바이트는 버전입니다. 비트코인
+트랜잭션의 원래 버전은 버전 1(0x01000000)이었습니다. 비트코인의 모든 트랜잭션은
+버전 1 트랜잭션의 규칙을 따라야 하며, 그 규칙 중 상당수를 이 책 전반에서
+설명합니다.
 
-Version 2 Bitcoin transactions were introduced in the BIP68 soft fork
-change to Bitcoin's consensus rules.  BIP68 places additional
-constraints on the sequence field, but those constraints only apply to
-transactions with version 2 or higher.  Version 1 transactions are
-unaffected.  BIP112, which was part of the same soft fork as BIP68,
-upgraded an opcode (++OP_CHECKSEQUENCEVERIFY++), which will now fail if it is
-evaluated as part of a transaction with a version less than 2.  Beyond
-those two changes, version 2 transactions are identical to version 1
-transactions.
+버전 2 비트코인 트랜잭션은 비트코인 합의 규칙에 대한 BIP68 소프트 포크 변경으로
+도입되었습니다. BIP68은 시퀀스 필드에 추가 제약을 두지만, 그 제약은 버전 2 이상의
+트랜잭션에만 적용됩니다. 버전 1 트랜잭션은 영향을 받지 않습니다. BIP68과 같은 소프트
+포크의 일부였던 BIP112는 옵코드 하나(++OP_CHECKSEQUENCEVERIFY++)를 업그레이드했는데,
+이제 버전이 2보다 낮은 트랜잭션의 일부로 평가되면 실패합니다. 이 두 가지 변경을 빼면
+버전 2 트랜잭션은 버전 1 트랜잭션과 동일합니다.
 
 [role="less_space pagebreak-before"]
-.Protecting Presigned Transactions
+.사전 서명 트랜잭션 보호하기
 ****
-The last step ((("transactions", "presigned", id="transaction-presign")))((("presigned transactions", id="presign-transaction")))before broadcasting a transaction to the network for
-inclusion in the blockchain is to sign it.  However, it's possible to
-sign a transaction without broadcasting it immediately.  You can save
-that presigned transaction for months or years in the belief that it
-can be added to the blockchain later when you do broadcast it.  In the
-interim, you may even lose access to the private key (or keys) necessary
-to sign an alternative transaction spending the funds.  This isn't
-hypothetical: several protocols built on Bitcoin, including Lightning
-Network, depend on presigned [.keep-together]#transactions.#
+트랜잭션을 ((("transactions", "presigned", id="transaction-presign")))((("presigned transactions", id="presign-transaction")))블록체인에 포함시키기 위해 네트워크에 방송하기 직전의
+마지막 단계는 서명입니다. 그런데 트랜잭션에 서명해 두고 곧바로 방송하지 않는 것도
+가능합니다. 나중에 방송하면 블록체인에 추가될 수 있으리라 믿고, 사전 서명된 그
+트랜잭션을 몇 달이나 몇 년씩 보관할 수 있습니다. 그사이에 그 자금을 쓰는 다른
+트랜잭션에 서명하는 데 필요한 비밀키에 대한 접근권을 잃을 수도 있습니다. 이는
+가정이 아닙니다. 라이트닝 네트워크를 비롯해 비트코인 위에 세워진 여러 프로토콜이
+사전 서명 [.keep-together]#트랜잭션에# 의존합니다.
 
-This creates a challenge for protocol developers when they assist users
-in upgrading the Bitcoin consensus protocol.  Adding new
-constraints--such as BIP68 did to the sequence field--may invalidate
-some presigned transactions.  If there's no way to create a new
-signature for an equivalent transaction, then the money being spent in
-the presigned transaction is permanently lost.
+이 때문에 프로토콜 개발자가 사용자의 비트코인 합의 프로토콜 업그레이드를 도울 때
+난제가 생깁니다. BIP68이 시퀀스 필드에 그랬듯 새 제약을 추가하면 일부 사전 서명
+트랜잭션이 무효가 될 수 있습니다. 동등한 트랜잭션에 대해 새 서명을 만들 방법이
+없다면, 그 사전 서명 트랜잭션에서 쓰이려던 돈은 영원히 사라집니다.
 
-This problem is solved by reserving some transaction features for
-upgrades, such as version numbers.  Anyone creating presigned
-transactions prior to BIP68 should have been using version 1
-transactions, so only applying BIP68's additional constraints on
-sequence to transactions v2 or higher should not invalidate any
-presigned [.keep-together]#transactions.#
+이 문제는 버전 번호처럼 일부 트랜잭션 기능을 업그레이드용으로 남겨두는 방식으로
+해결합니다. BIP68 이전에 사전 서명 트랜잭션을 만든 사람이라면 버전 1 트랜잭션을
+썼을 테니, BIP68의 추가 시퀀스 제약을 v2 이상 트랜잭션에만 적용하면 어떤 사전 서명
+[.keep-together]#트랜잭션도# 무효화되지 않습니다.
 
-If you implement a protocol that uses presigned transactions, ensure
-that it doesn't use any features that are reserved for future upgrades.
-Bitcoin Core's default transaction relay policy does not allow the use
-of reserved features.  You can test whether a transaction complies with
-that policy by using Bitcoin Core's +testmempoolaccept+ RPC on Bitcoin
-mainnet.
+사전 서명 트랜잭션을 쓰는 프로토콜을 구현한다면, 앞으로의 업그레이드를 위해 남겨둔
+기능은 쓰지 않도록 하세요. 비트코인 코어의 기본 트랜잭션 중계 정책은 예약된 기능의
+사용을 허용하지 않습니다. 비트코인 메인넷에서 비트코인 코어의 +testmempoolaccept+
+RPC로 트랜잭션이 그 정책을 따르는지 확인할 수 있습니다.
 ****
 
-As of this writing, a proposal to begin using version 3 transactions is
-being widely considered.  That proposal does not seek to change the
-consensus rules but only the policy that Bitcoin full nodes use to relay
-transactions.  Under the proposal, version 3 transactions would be
-subject to additional constraints in order to prevent certain denial of
-service (DoS) attacks that we'll discuss((("transactions", "version of", startref="transactions-version")))((("version (of transactions)", startref="version-transactions"))) further in <<transaction_pinning>>.
+이 글을 쓰는 시점에 버전 3 트랜잭션을 쓰기 시작하자는 제안이 널리 검토되고 있습니다.
+그 제안은 합의 규칙을 바꾸려는 것이 아니라, 비트코인 풀 노드가 트랜잭션을 중계할 때
+쓰는 정책만 바꾸려는 것입니다. 제안대로라면 버전 3 트랜잭션은 특정한 서비스
+거부(DoS) 공격을 막기 위해 추가 제약을 받게 되는데, 이에 대해서는((("transactions", "version of", startref="transactions-version")))((("version (of transactions)", startref="version-transactions"))) <<transaction_pinning>>에서 더 다룹니다.
 
-=== Extended Marker and Flag
+=== 확장 마커와 플래그
 
-The next two fields((("transactions", "extended serialization format")))((("extended serialization format")))((("BIP144 extended serialization format"))) of the example serialized transaction were added as
-part of the segregated witness (segwit) soft fork change to Bitcoin's
-consensus rules.  The rules were changed according to BIPs 141 and 143,
-but the _extended serialization format_ is defined in BIP144.
+예시로 든 직렬화 트랜잭션의((("transactions", "extended serialization format")))((("extended serialization format")))((("BIP144 extended serialization format"))) 다음 두 필드는 비트코인 합의 규칙에 대한
+분리된 증인(세그윗) 소프트 포크 변경의 일부로 추가되었습니다. 규칙은 BIP141과
+BIP143에 따라 바뀌었지만, _확장 직렬화 형식_ 은 BIP144에 정의되어 있습니다.
 
 [role="less_space pagebreak-before"]
-If the transaction includes a witness structure (which we'll describe in
-<<witness_structure>>), the marker must be zero (0x00) and the flag must be
-nonzero.  In the current P2P protocol, the flag should always be one
-(0x01); alternative flags are reserved for later protocol upgrades.
+트랜잭션에 위트니스 구조(<<witness_structure>>에서 설명합니다)가 포함되어 있다면
+마커는 0(0x00)이어야 하고 플래그는 0이 아니어야 합니다. 현재 P2P 프로토콜에서
+플래그는 항상 1(0x01)이어야 하며, 다른 플래그 값은 이후의 프로토콜 업그레이드를
+위해 예약되어 있습니다.
 
-If the transaction doesn't need a witness stack, the marker and flag must not
-be present.  This is compatible with the original version of Bitcoin's
-transaction serialization format, now called _legacy serialization_.
-For details, see <<legacy_serialization>>.
+트랜잭션에 위트니스 스택이 필요 없다면 마커와 플래그가 있어서는 안 됩니다. 이는
+이제 _레거시 직렬화_ 라고 불리는 비트코인 트랜잭션 직렬화 형식의 원래 버전과
+호환됩니다. 자세한 내용은 <<legacy_serialization>>을 참고하세요.
 
-In ((("transactions", "legacy serialization")))((("legacy serialization")))legacy serialization, the marker byte would have been interpreted as
-the number of inputs (zero).  A transaction can't have zero inputs, so
-the marker signals to modern programs that extended serialization is
-being used.  The flag field provides a similar signal and also
-simplifies the process of updating the serialization format in the
-future.
-
+((("transactions", "legacy serialization")))((("legacy serialization")))레거시 직렬화에서 마커 바이트는 입력의 개수(0)로 해석되었을
+것입니다. 트랜잭션은 입력이 0개일 수 없으므로, 마커는 요즘 프로그램에게 확장
+직렬화가 쓰이고 있다는 신호가 됩니다. 플래그 필드도 비슷한 신호를 주는 동시에
+앞으로 직렬화 형식을 갱신하는 과정을 단순하게 만들어 줍니다.
 [[inputs]]
-=== Inputs
+=== 입력
 
-The((("transactions", "inputs", id="transaction-input")))((("inputs", id="input-transaction"))) inputs field contains several other fields, so let's start by showing a
-map of those bytes in <<alice_tx_input_map>>.
+((("transactions", "inputs", id="transaction-input")))((("inputs", id="input-transaction")))입력 필드에는 다른 여러 필드가 들어 있으므로, 먼저
+<<alice_tx_input_map>>에 그 바이트들의 맵을 보여주는 것으로 시작합시다.
 
 [[alice_tx_input_map]]
-.Map of bytes in the inputs field of Alice's transaction.
+.앨리스 트랜잭션의 입력 필드에 있는 바이트 맵.
 image::images/mbc3_0602.png["map of bytes in the inputs field of Alice's transaction"]
 
-==== Length of Transaction Input List
+==== 트랜잭션 입력 목록의 길이
 
-The ((("transactions", "inputs", "length of list", id="transaction-input-length")))((("inputs", "length of list", id="input-transaction-length")))transaction input list starts with an integer indicating the number of inputs
-in the transaction.  The minimum value is one.  There's no explicit
-maximum value, but restrictions on the maximum size of a transaction
-effectively limit transactions to a few thousand inputs.  The number is
-encoded as a compactSize unsigned integer.
+((("transactions", "inputs", "length of list", id="transaction-input-length")))((("inputs", "length of list", id="input-transaction-length")))트랜잭션 입력 목록은 그 트랜잭션에 든 입력의 개수를 나타내는
+정수로 시작합니다. 최솟값은 1입니다. 명시적인 최댓값은 없지만, 트랜잭션의 최대
+크기 제한 때문에 실질적으로 트랜잭션은 입력 수천 개 정도로 제한됩니다. 이 수는
+compactSize 부호 없는 정수로 인코딩됩니다.
 
 [role="less_space pagebreak-before"]
-.CompactSize Unsigned Integers
+.CompactSize 부호 없는 정수
 ****
-Unsigned integers((("compactSize  unsigned integers", id="compactsize")))((("unsigned integers", id="unsigned"))) in Bitcoin that often have low values, but which may
-sometimes have high values, are usually encoded using the compactSize
-data type.  CompactSize is a version of a variable-length integer, so
-it's sometimes called var_int or varint (see, for example, documentation
-for BIPs 37 and 144).
+비트코인에서((("compactSize  unsigned integers", id="compactsize")))((("unsigned integers", id="unsigned"))) 대개 작은 값을 갖지만 때로는 큰 값을 가질 수도 있는
+부호 없는 정수는 보통 compactSize 데이터 타입으로 인코딩합니다. CompactSize는
+가변 길이 정수의 한 형태여서 var_int나 varint라고 불리기도 합니다(예를 들어
+BIP37과 BIP144의 문서를 보세요).
 
 
 [WARNING]
 ====
-Several varieties of variable length integers are used
-in different programs, including in different Bitcoin programs.  For
-example, Bitcoin Core serializes its UTXO database using a data type it
-calls +VarInts+, which is different from compactSize.  Additionally, the
-nBits field in a Bitcoin block header is encoded using a custom data
-type known as +Compact+, which is unrelated to compactSize.  When
-talking about the variable length integers used in Bitcoin transaction
-serialization and other parts of the Bitcoin P2P protocol, we will
-always use the full name compactSize.
+서로 다른 비트코인 프로그램을 포함해 여러 프로그램에서 여러 종류의 가변 길이
+정수가 쓰입니다. 예를 들어 비트코인 코어는 UTXO 데이터베이스를 직렬화할 때
++VarInts+ 라고 부르는 데이터 타입을 쓰는데, 이는 compactSize와 다릅니다. 또한
+비트코인 블록 헤더의 nBits 필드는 +Compact+ 라는 맞춤 데이터 타입으로
+인코딩되는데, 이 역시 compactSize와 무관합니다. 비트코인 트랜잭션 직렬화와
+비트코인 P2P 프로토콜의 다른 부분에서 쓰이는 가변 길이 정수를 이야기할 때는
+항상 compactSize라는 온전한 이름을 쓰겠습니다.
 ====
 
-For numbers from 0 to 252, compactSize unsigned integers are identical
-to the C-language data type +uint8_t+, which is probably the native
-encoding familiar to any programmer.  For other numbers up to
-0xffffffffffffffff, a byte is prefixed to the number to indicate its
-length—but otherwise the numbers look like regular C-language encoded
-unsigned integers:
+0부터 252까지의 수에 대해 compactSize 부호 없는 정수는 C 언어의 데이터 타입
++uint8_t+ 와 동일하며, 이는 아마 프로그래머에게 익숙한 기본 인코딩일 것입니다.
+0xffffffffffffffff 까지의 다른 수에 대해서는 길이를 나타내는 바이트가 수 앞에
+붙지만, 그 외에는 보통의 C 언어 인코딩 부호 없는 정수처럼 보입니다.
 
 ++++
 <table>
 <thead>
 <tr>
-<th>Value</th>
-<th>Bytes used</th>
-<th>Format</th>
+<th>값</th>
+<th>사용 바이트 수</th>
+<th>형식</th>
 </tr>
 </thead>
 <tbody>
@@ -238,114 +200,101 @@ unsigned integers:
 <tr>
 <td><p>≥ <code>253</code> &amp;&amp; ≤ <code>0xffff</code></p></td>
 <td><p>3</p></td>
-<td><p><code>0xfd</code> followed by the number as <code>uint16_t</code></p></td>
+<td><p><code>0xfd</code> 뒤에 <code>uint16_t</code> 로 된 수</p></td>
 </tr>
 <tr>
 <td><p>≥ <code>0x10000</code> &amp;&amp; ≤ <code>0xffffffff</code></p></td>
 <td><p><code>5</code></p></td>
-<td><p><code>0xfe</code> followed by the number as <code>uint32_t</code></p></td>
+<td><p><code>0xfe</code> 뒤에 <code>uint32_t</code> 로 된 수</p></td>
 </tr>
 <tr>
 <td><p>≥ <code>0x100000000</code> &amp;&amp; ≤ <code>0xffffffffffffffff</code></p></td>
 <td><p><code>9</code></p></td>
-<td><p><code>0xff</code> followed by the number as <code>uint64_t</code></p></td>
+<td><p><code>0xff</code> 뒤에 <code>uint64_t</code> 로 된 수</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 ****
 
-Each input in a transaction must contain three fields: an _outpoint_ field, a length-prefixed _input script_ field, and a _sequence_
+트랜잭션의 각 입력에는 반드시 세 개의 필드가 들어 있어야 합니다. _아웃포인트_
+필드, 길이 접두사가 붙은 _입력 스크립트_ 필드, 그리고 _시퀀스_
 
-We'll look at each of those fields in the following sections.  Some
-inputs also include a witness stack, but this is serialized at the end of a
-transaction so we'll ((("transactions", "inputs", "length of list", startref="transaction-input-length")))((("inputs", "length of list", startref="input-transaction-length")))examine it later.
+이어지는 절들에서 이 필드들을 하나씩 살펴봅니다. 어떤 입력에는 위트니스 스택도
+들어 있지만, 이는 트랜잭션의 끝에 직렬화되므로 나중에
+((("transactions", "inputs", "length of list", startref="transaction-input-length")))((("inputs", "length of list", startref="input-transaction-length")))살펴보겠습니다.
 
 
 [[outpoints]]
-==== Outpoint
+==== 아웃포인트
 
-A Bitcoin ((("transactions", "inputs", "outpoint field", id="transaction-input-outpoint")))((("inputs", "outpoint field", id="input-transaction-outpoint")))((("outpoint field (transaction inputs)", id="outpoint")))transaction is a request for full nodes to update their
-database of coin ownership information.  For Alice to transfer control
-of some of her bitcoins to Bob, she first needs to tell full nodes how
-to find the previous transfer where she received those bitcoins.  Since
-control over bitcoins is assigned in transaction outputs, Alice _points_
-to the previous _output_ using an _outpoint_ field.  Each input must
-contain a single outpoint.
+비트코인 ((("transactions", "inputs", "outpoint field", id="transaction-input-outpoint")))((("inputs", "outpoint field", id="input-transaction-outpoint")))((("outpoint field (transaction inputs)", id="outpoint")))트랜잭션은 풀 노드에게 코인 소유권 정보 데이터베이스를
+갱신해 달라는 요청입니다. 앨리스가 자기 비트코인 일부에 대한 통제권을 밥에게
+넘기려면, 먼저 그 비트코인을 자신이 받았던 이전 이전(移轉)을 풀 노드가 어떻게
+찾을 수 있는지 알려주어야 합니다. 비트코인에 대한 통제권은 트랜잭션 출력에
+할당되므로, 앨리스는 _아웃포인트_ 필드를 사용해 이전 _출력_ 을 _가리킵니다_.
+각 입력에는 아웃포인트가 하나씩 들어 있어야 합니다.
 
-The outpoint contains a 32-byte txid for the
-transaction where Alice received the bitcoins she now wants to spend.
-This txid is in Bitcoin's internal byte order for hashes; see
-<<internal_and_display_order>>.
+아웃포인트에는 앨리스가 지금 쓰려는 비트코인을 받았던 트랜잭션의 32바이트 txid가
+들어 있습니다. 이 txid는 해시에 대한 비트코인의 내부 바이트 순서로 되어 있습니다.
+<<internal_and_display_order>>를 참고하세요.
 
-Because transactions may contain multiple outputs, Alice also needs to
-identify which particular output from that transaction to use, ((("output indexes")))called
-its _output index_.  Output indexes are 4-byte unsigned
-integers starting from zero.
+트랜잭션에는 출력이 여러 개 있을 수 있으므로, 앨리스는 그 트랜잭션의 어느 출력을
+쓸 것인지도 지정해야 하는데 이를 ((("output indexes")))_출력 인덱스_ 라고 합니다. 출력 인덱스는
+0부터 시작하는 4바이트 부호 없는 정수입니다.
 
-When a full node encounters an outpoint, it uses that information to try
-to find the referenced output.  Full nodes are only required to look at earlier
-transactions in the blockchain.  For example, Alice's transaction is
-included in block 774,958.  A full node verifying her transaction
-only looks for the previous output referenced by her outpoint in that
-block and previous blocks, not any later blocks.  Within block 774,958,
-they will only look at transactions placed in the block prior to Alice's
-transaction, as determined by the order of leaves in the block's merkle
-tree (see <<merkle_trees>>).
+풀 노드는 아웃포인트를 만나면 그 정보로 참조된 출력을 찾으려 합니다. 풀 노드는
+블록체인에서 더 이전의 트랜잭션만 살펴보면 됩니다. 예를 들어 앨리스의 트랜잭션은
+774,958번 블록에 포함되어 있습니다. 앨리스의 트랜잭션을 검증하는 풀 노드는
+아웃포인트가 참조하는 이전 출력을 그 블록과 그 이전 블록들에서만 찾고, 이후의
+블록에서는 찾지 않습니다. 774,958번 블록 안에서는 블록의 머클 트리 잎 순서로 정해지는
+바에 따라(<<merkle_trees>> 참고) 앨리스의 트랜잭션보다 앞에 놓인 트랜잭션만
+살펴봅니다.
 
-Upon finding the previous output, the full node obtains several critical
-pieces of information from it:
+이전 출력을 찾으면 풀 노드는 거기서 몇 가지 결정적인 정보를 얻습니다.
 
-- The amount of bitcoins assigned to that previous output.  All of those
-  bitcoins will be transferred in this transaction.  In the example
-  transaction, the value of the previous output was 100,000 satoshis.
+- 그 이전 출력에 할당된 비트코인의 양. 그 비트코인 전부가 이 트랜잭션에서
+  이전됩니다. 예시 트랜잭션에서 이전 출력의 값은 100,000사토시였습니다.
 
-- The authorization conditions for that previous output.  These are the
-  conditions that must be fulfilled in order to spend the bitcoins
-  assigned to that previous output.
+- 그 이전 출력의 승인 조건. 그 이전 출력에 할당된 비트코인을 쓰려면 반드시
+  충족해야 하는 조건입니다.
 
-- For confirmed transactions, the height of the block that confirmed it
-  and the median time past (MTP) for that block.  This is required for
-  relative timelocks (described in <<relative_timelocks>>) and outputs
-  of coinbase transactions (described in <<coinbase_transactions>>).
+- 확인된 트랜잭션의 경우, 그것을 확인해 준 블록의 높이와 그 블록의 중앙값 과거
+  시각(MTP). 이는 상대적 타임락(<<relative_timelocks>>에서 설명)과 코인베이스
+  트랜잭션의 출력(<<coinbase_transactions>>에서 설명)에 필요합니다.
 
-- Proof that the previous output exists in the blockchain (or as a known
-  unconfirmed transaction) and that no other transaction has spent it.
-  One of Bitcoin's consensus rules forbids any output from being spent
-  more than once within a valid blockchain.  This is the((("double spending")))((("conflicting transactions"))) rule against
-  _double spending_: Alice can't use the same previous output to pay
-  both Bob and Carol in separate transactions.  Two transactions that each try to spend the
-  same previous output are called _conflicting transactions_ because
-  only one of them can be included in a valid blockchain.
+- 그 이전 출력이 블록체인에(또는 알려진 미확인 트랜잭션으로) 존재하며 다른 어떤
+  트랜잭션도 그것을 쓰지 않았다는 증거. 비트코인의 합의 규칙 중 하나는 유효한
+  블록체인 안에서 어떤 출력도 두 번 이상 쓰이는 것을 금지합니다. 이것이
+  ((("double spending")))((("conflicting transactions")))_이중지불_ 을 막는 규칙입니다. 앨리스는 같은 이전 출력을
+  써서 서로 다른 트랜잭션으로 밥과 캐럴 모두에게 지불할 수 없습니다. 같은 이전
+  출력을 쓰려고 하는 두 트랜잭션을 _충돌 트랜잭션_ 이라고 하는데, 둘 중 하나만
+  유효한 블록체인에 포함될 수 있기 때문입니다.
 
-Different approaches to tracking previous outputs have been tried by
-different full node implementations at various times.  Bitcoin Core
-currently uses the solution believed to be most effective at retaining
-all necessary information while minimizing disk space: it keeps a
-database that stores every UTXO and
-essential metadata about it (like its confirmation block height).  Each
-time a new block of transactions arrives, all of the outputs they spend
-are removed from the UTXO database and all of the outputs they create
-are added to the((("transactions", "inputs", "outpoint field", startref="transaction-input-outpoint")))((("inputs", "outpoint field", startref="input-transaction-outpoint")))((("outpoint field (transaction inputs)", startref="outpoint"))) database.
+이전 출력을 추적하는 방식은 여러 풀 노드 구현이 시기마다 서로 다르게 시도해
+왔습니다. 비트코인 코어는 현재, 필요한 정보를 모두 보존하면서 디스크 공간을
+최소화하는 데 가장 효과적이라고 여겨지는 해법을 씁니다. 모든 UTXO와 그에 대한
+핵심 메타데이터(확인 블록 높이 등)를 저장하는 데이터베이스를 유지하는 것입니다.
+트랜잭션이 담긴 새 블록이 도착할 때마다, 그 트랜잭션들이 쓴 출력은 모두 UTXO
+데이터베이스에서 제거되고 그들이 만든 출력은 모두 데이터베이스에
+((("transactions", "inputs", "outpoint field", startref="transaction-input-outpoint")))((("inputs", "outpoint field", startref="input-transaction-outpoint")))((("outpoint field (transaction inputs)", startref="outpoint")))추가됩니다.
 
 [[internal_and_display_order]]
-.Internal and Display Byte Orders
+.내부 바이트 순서와 표시 바이트 순서
 ****
-Bitcoin uses ((("hash functions", "digests")))((("digests")))((("internal byte order")))((("display byte order")))the output of hash functions, called _digests_, in various
-ways.  Digests provide unique identifiers for blocks and transactions;
-they're used in commitments for addresses, blocks, transactions,
-signatures, and more; and digests are iterated upon in Bitcoin's
-proof-of-work function. In some cases, hash digests are displayed to
-users in one byte order but are used internally in a different byte
-order, creating confusion.  For example, consider the previous output
-txid from the outpoint in our example transaction:
+비트코인은 ((("hash functions", "digests")))((("digests")))((("internal byte order")))((("display byte order")))_다이제스트_ 라고 불리는 해시 함수의 출력을 여러 방식으로
+사용합니다. 다이제스트는 블록과 트랜잭션의 고유 식별자가 되고, 주소·블록·트랜잭션·
+서명 등에 대한 커밋먼트에 쓰이며, 비트코인의 작업증명 함수에서 반복적으로 계산됩니다.
+어떤 경우에는 해시 다이제스트가 사용자에게는 한 가지 바이트 순서로 표시되지만
+내부적으로는 다른 바이트 순서로 쓰여 혼란을 일으킵니다. 예를 들어 예시 트랜잭션의
+아웃포인트에 있는 이전 출력 txid를 봅시다.
 
 ----
 eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
 ----
 
-If we try using that txid to retrieve that transaction using
-Bitcoin Core, we get an error and must reverse its byte order:
+이 txid로 비트코인 코어에서 그 트랜잭션을 가져오려 하면 오류가 나고, 바이트 순서를
+뒤집어야 합니다.
 
 ----
 $ bitcoin-cli getrawtransaction \
@@ -364,29 +313,25 @@ $ bitcoin-cli getrawtransaction \
 02000000000101c25ae90c9f3d40cc1fc509ecfd54b06e35450702...
 ----
 
-This odd behavior is probably an unintentional consequence of a
-https://oreil.ly/01JH2[design
-decision in early Bitcoin software].  As a practical matter, it means
-developers of Bitcoin software need to remember to reverse the order of
-bytes in transaction and block identifiers they show to users.
+이 이상한 동작은 아마도 https://oreil.ly/01JH2[초기 비트코인 소프트웨어의 설계
+결정]에서 의도치 않게 따라온 결과일 것입니다. 실무적으로 이는 비트코인 소프트웨어
+개발자가 사용자에게 보여주는 트랜잭션과 블록 식별자의 바이트 순서를 뒤집어야 한다는
+것을 기억해야 한다는 뜻입니다.
 
-In this book, we use the term _internal byte order_ for the data that
-appears within transactions and blocks.  We use _display byte order_ for
-the form displayed to users.  Another set of common terms is
-_little-endian byte order_ for the internal version and _big-endian byte
-order_ for the display version.
+이 책에서는 트랜잭션과 블록 안에 나타나는 데이터에 대해 _내부 바이트 순서_ 라는
+용어를 씁니다. 사용자에게 표시되는 형태에는 _표시 바이트 순서_ 를 씁니다. 흔히 쓰이는
+또 다른 용어로는 내부 버전에 _리틀 엔디언 바이트 순서_, 표시 버전에 _빅 엔디언 바이트
+순서_ 가 있습니다.
 ****
 
-==== Input Script
+==== 입력 스크립트
 
-The ((("transactions", "inputs", "input script")))((("inputs", "input script")))((("input scripts")))input script field is a remnant of the legacy transaction format.  Our
-example transaction input spends a native segwit output that doesn't
-require any data in the input script, so the length prefix for the
-input script is set to zero (0x00).
+((("transactions", "inputs", "input script")))((("inputs", "input script")))((("input scripts")))입력 스크립트 필드는 레거시 트랜잭션 형식의 잔재입니다. 예시
+트랜잭션의 입력은 입력 스크립트에 아무 데이터도 필요하지 않은 네이티브 세그윗
+출력을 쓰므로, 입력 스크립트의 길이 접두사가 0(0x00)으로 설정되어 있습니다.
 
-For an example of a length-prefixed input script that spends a legacy
-output, we use one from an arbitrary transaction in the most recent
-block as of this writing:
+레거시 출력을 쓰는, 길이 접두사가 붙은 입력 스크립트의 예로 이 글을 쓰는 시점의
+가장 최근 블록에서 임의의 트랜잭션 하나를 가져왔습니다.
 
 ----
 6b483045022100a6cc4e8cd0847951a71fad3bc9b14f24d44ba59d19094e0a8c
@@ -395,432 +340,345 @@ fa2580bb664b020220366060ea8203d766722ed0a02d1599b99d3c95b97dab8e
 9ef9b550356ee791c9a40896
 ----
 
-The length prefix is a compactSize unsigned integer indicating the
-length of the serialized input script field.  In this case, it's a single
-byte (0x6b) indicating the input script is 107 bytes.  We'll cover parsing
-and using scripts in detail in <<c_authorization_authentication>>.
-
+길이 접두사는 직렬화된 입력 스크립트 필드의 길이를 나타내는 compactSize 부호 없는
+정수입니다. 이 경우에는 1바이트(0x6b)이며 입력 스크립트가 107바이트임을 나타냅니다.
+스크립트를 파싱하고 사용하는 방법은 <<c_authorization_authentication>>에서 자세히
+다룹니다.
 [[sequence]]
-==== Sequence
+==== 시퀀스
 
-The ((("transactions", "inputs", "sequence field", id="transaction-input-sequence")))((("inputs", "sequence field", id="input-transaction-sequence")))((("sequence field (transaction inputs)", id="sequence-field")))final four bytes of an input are its _sequence_ number.
-The use and meaning of this field has changed over time.
+((("transactions", "inputs", "sequence field", id="transaction-input-sequence")))((("inputs", "sequence field", id="input-transaction-sequence")))((("sequence field (transaction inputs)", id="sequence-field")))입력의 마지막 4바이트는 _시퀀스_ 번호입니다. 이 필드의 쓰임과
+의미는 시간이 지나면서 바뀌어 왔습니다.
 
 [[original_tx_replacement]]
-===== Original sequence-based transaction replacement
+===== 최초의 시퀀스 기반 트랜잭션 대체
 
-The ((("sequence-based transaction replacement", id="sequence-replace")))sequence field was originally intended to allow creation of
-multiple versions of the same transaction, with later versions replacing
-earlier versions as candidates for confirmation.  The sequence number
-tracked the version of the transaction.
+((("sequence-based transaction replacement", id="sequence-replace")))시퀀스 필드는 원래 같은 트랜잭션의 여러 버전을 만들 수 있게 하되,
+확인 후보로서 나중 버전이 앞선 버전을 대체하도록 하려는 의도였습니다. 시퀀스 번호가
+트랜잭션의 버전을 추적한 것입니다.
 
-For example, imagine Alice and Bob want to bet on a game of cards.  They
-start by each signing a transaction that deposits some money into an
-output with a script that requires signatures from both of them to ((("multisignature scripts")))((("setup transactions")))spend, a
-_multisignature_ script (_multisig_ for short).  This is called the
-_setup transaction_.  They then create a transaction that spends that
-output:
+예를 들어 앨리스와 밥이 카드 게임에 내기를 걸고 싶어 한다고 해봅시다. 두 사람은 먼저
+각자 서명한 트랜잭션으로 어느 정도의 돈을, 쓰려면 둘 모두의 서명이 필요한 스크립트를
+가진 출력에 넣습니다. ((("multisignature scripts")))((("setup transactions")))_다중서명_ 스크립트(줄여서 _멀티시그_)입니다. 이를
+_셋업 트랜잭션_ 이라고 합니다. 그런 다음 그 출력을 쓰는 트랜잭션을 만듭니다.
 
-- The first version of the transaction, with nSequence 0 (0x00000000),
-  pays Alice and Bob back the money they initially deposited.  This is
-  called a _refund transaction_.  Neither of them broadcasts the refund
-  transaction at this time.  They only need it if there's a problem.
+- 트랜잭션의 첫 버전은 nSequence가 0(0x00000000)이며, 앨리스와 밥에게 처음 넣은
+  돈을 그대로 돌려줍니다. 이를 _환불 트랜잭션_ 이라고 합니다. 이 시점에 둘 중
+  누구도 이 환불 트랜잭션을 방송하지 않습니다. 문제가 생겼을 때만 필요합니다.
 
-- Alice wins the first round of the card game, so the second version of
-  the transaction, with sequence 1, increases the amount of money paid
-  to Alice and decreases Bob's share.  They both sign the updated
-  transaction.  Again, they don't need to broadcast this version of the
-  transaction unless there's a problem.
+- 앨리스가 카드 게임의 첫 판을 이겼으므로, 시퀀스가 1인 두 번째 버전의 트랜잭션은
+  앨리스에게 지불되는 금액을 늘리고 밥의 몫을 줄입니다. 둘 다 갱신된 트랜잭션에
+  서명합니다. 마찬가지로 문제가 생기지 않는 한 이 버전을 방송할 필요는 없습니다.
 
-- Bob wins the second round, so the sequence is incremented to 2,
-  Alice's share is decreased, and Bob's share is increased.  They again
-  sign but don't broadcast.
+- 밥이 두 번째 판을 이겼으므로 시퀀스가 2로 올라가고, 앨리스의 몫이 줄고 밥의 몫이
+  늘어납니다. 둘은 다시 서명하되 방송하지는 않습니다.
 
-- After many more rounds where the sequence is incremented, the
-  funds redistributed, and the resulting transaction is signed but not
-  broadcast, they decide to finalize the transaction.  Creating a
-  transaction with the final balance of funds, they set sequence to its
-  maximum value (0xffffffff), finalizing the transaction.  They broadcast
-  this version of the transaction, it's relayed across the network, and
-  eventually confirmed by miners.
+- 시퀀스를 올리고 자금을 다시 배분하고 그렇게 나온 트랜잭션에 서명하되 방송하지는
+  않는 과정을 여러 판 더 거친 뒤, 두 사람은 트랜잭션을 확정하기로 합니다. 자금의
+  최종 잔액을 담은 트랜잭션을 만들면서 시퀀스를 최댓값(0xffffffff)으로 설정해
+  트랜잭션을 확정합니다. 이 버전의 트랜잭션을 방송하면 네트워크로 중계되고 결국
+  채굴자들이 확인해 줍니다.
 
-We can see the replacement rules for sequence at work if we consider
-alternative scenarios:
+다른 시나리오를 생각해 보면 시퀀스의 대체 규칙이 작동하는 모습을 볼 수 있습니다.
 
-- Imagine that Alice broadcasts the final transaction, with a sequence of
-  0xffffffff, and then Bob broadcasts one of the earlier transactions
-  where his balance was higher.  Because Bob's version of the
-  transaction has a lower sequence number, full nodes using the original
-  Bitcoin code won't relay it to miners, and miners who also used the
-  original code won't mine it.
+- 앨리스가 시퀀스 0xffffffff인 최종 트랜잭션을 방송한 다음, 밥이 자기 잔액이 더
+  많았던 앞선 트랜잭션 중 하나를 방송했다고 상상해 봅시다. 밥 쪽 트랜잭션의 시퀀스
+  번호가 더 낮으므로, 원래의 비트코인 코드를 쓰는 풀 노드는 그것을 채굴자에게
+  중계하지 않고, 역시 원래 코드를 쓰는 채굴자도 그것을 채굴하지 않습니다.
 
-- In another scenario, imagine that Bob broadcasts an earlier version of
-  the transaction a few seconds before Alice broadcasts the final
-  version.  Nodes will relay Bob's version and miners will attempt to
-  mine it, but when Alice's version with its higher sequence number
-  arrives, nodes will also relay it and miners using the original
-  Bitcoin code will try to mine it instead of Bob's version.  Unless Bob
-  got lucky and a block was discovered before Alice's version arrived,
-  it's Alice's version of the transaction that will get confirmed.
+- 다른 시나리오로, 밥이 앨리스가 최종 버전을 방송하기 몇 초 전에 앞선 버전의
+  트랜잭션을 방송했다고 상상해 봅시다. 노드들은 밥의 버전을 중계하고 채굴자들은
+  그것을 채굴하려 하겠지만, 시퀀스 번호가 더 높은 앨리스의 버전이 도착하면 노드들은
+  그것도 중계하고 원래의 비트코인 코드를 쓰는 채굴자들은 밥의 버전 대신 그것을
+  채굴하려 합니다. 밥이 운이 좋아 앨리스의 버전이 도착하기 전에 블록이 발견되지
+  않는 한, 확인되는 것은 앨리스 쪽 트랜잭션입니다.
 
-This type of protocol is what we now ((("payment channels")))call a _payment channel_.
-Bitcoin's creator, in an email attributed to him, called((("high-frequency transactions"))) these
-_high-frequency transactions_ and described a number of features added to
-the protocol to support them.  We'll learn about several of those other
-features later and also discover how modern versions of payment channels
-are increasingly being used in Bitcoin today.
+이런 유형의 프로토콜을 요즘은 ((("payment channels")))_결제 채널_ 이라고 부릅니다. 비트코인의
+창시자는 그가 쓴 것으로 알려진 이메일에서 이를((("high-frequency transactions"))) _고빈도 트랜잭션_ 이라고 부르며,
+이를 지원하기 위해 프로토콜에 추가한 여러 기능을 설명했습니다. 그 다른 기능 몇
+가지는 뒤에서 배우게 되며, 현대적인 형태의 결제 채널이 오늘날 비트코인에서 점점 더
+많이 쓰이고 있다는 것도 알게 될 것입니다.
 
-There were a few problems with purely sequence-based payment channels.
-The first was that the rules for replacing a lower-sequence transaction
-with a higher-sequence transaction were only a matter of software
-policy.  There was no direct incentive for miners to prefer one version
-of the transaction over any other.  The second problem was that the
-first person to send their transaction might get lucky and have it
-confirmed even if it wasn't the highest-sequence transaction.  A
-security protocol that fails a few percent of the time due to bad luck
-isn't a very effective protocol.
+순수하게 시퀀스에만 기반한 결제 채널에는 몇 가지 문제가 있었습니다. 첫째는 더 낮은
+시퀀스의 트랜잭션을 더 높은 시퀀스의 트랜잭션으로 대체하는 규칙이 소프트웨어 정책의
+문제일 뿐이었다는 점입니다. 채굴자가 어느 한 버전을 다른 버전보다 선호할 직접적인
+유인이 없었습니다. 둘째 문제는 트랜잭션을 가장 먼저 보낸 사람이 운이 좋으면 그것이
+가장 높은 시퀀스의 트랜잭션이 아니더라도 확인될 수 있다는 점이었습니다. 운이 나쁘면
+몇 퍼센트의 확률로 실패하는 보안 프로토콜은 그다지 쓸모 있는 프로토콜이 아닙니다.
 
-The third problem was that it was possible to replace one version of a
-transaction with a different version an unlimited number of
-times.  Each replacement would consume the bandwidth of all the relaying full nodes
-on the network.  For example, as of this writing, there are about 50,000
-relaying full nodes; an attacker creating 1,000 replacement transactions
-per minute at 200 bytes each would use about 20 KB of their
-personal bandwidth but about 10 GB of full node network bandwidth
-every minute.  Except for the cost of their 20 KB/minute bandwidth and
-the occasional fee when a transaction got confirmed, the attacker wouldn't
-need to pay any costs for the enormous burden they placed on full node
-operators.
+셋째 문제는 한 버전의 트랜잭션을 다른 버전으로 무제한 대체할 수 있다는 점이었습니다.
+대체할 때마다 네트워크에서 중계하는 모든 풀 노드의 대역폭을 소비하게 됩니다. 예를
+들어 이 글을 쓰는 시점에 중계하는 풀 노드는 약 50,000개입니다. 공격자가 200바이트짜리
+대체 트랜잭션을 분당 1,000개씩 만들면 자기 대역폭은 분당 약 20KB를 쓰지만 풀 노드
+네트워크 대역폭은 분당 약 10GB를 쓰게 됩니다. 분당 20KB의 대역폭 비용과 트랜잭션이
+확인될 때 이따금 내는 수수료를 빼면, 공격자는 풀 노드 운영자들에게 지운 엄청난 부담에
+대해 아무 비용도 치를 필요가 없습니다.
 
-To eliminate the risk of this attack, the original type of
-sequence-based transaction replacement was disabled in an early version
-of the Bitcoin software.  For several years, Bitcoin full nodes would
-not allow an unconfirmed transaction containing a particular input (as
-indicated by its outpoint) to be replaced by a different transaction
-containing the same input.  However, that situation didn't ((("sequence-based transaction replacement", startref="sequence-replace")))last forever.
+이 공격의 위험을 없애기 위해, 최초 형태의 시퀀스 기반 트랜잭션 대체는 초기 버전의
+비트코인 소프트웨어에서 비활성화되었습니다. 이후 몇 년 동안 비트코인 풀 노드는
+특정 입력(아웃포인트로 지정되는)을 담은 미확인 트랜잭션이 같은 입력을 담은 다른
+트랜잭션으로 대체되는 것을 허용하지 않았습니다. 하지만 그 상황이 영원히
+((("sequence-based transaction replacement", startref="sequence-replace")))이어지지는 않았습니다.
 
 [[sequence-bip125]]
-===== Opt-in transaction replacement signaling
+===== 선택적 트랜잭션 대체 신호
 
-After the((("opt-in transaction replacement")))((("replace by fee (RBF)")))((("transaction fees", "opt-in transaction replacement"))) original sequence-based transaction replacement was disabled
-due to the potential for abuse, a solution was proposed: programming
-Bitcoin Core and other relaying full node software to allow a
-transaction that paid a higher transaction fee rate to replace a
-conflicting transaction that paid a lower fee rate.  This is called
-_replace by fee_, or _RBF_ for short.  Some users and businesses
-objected to adding support for transaction replacement back into Bitcoin
-Core, so a compromise was reached that once again used the sequence
-field in support of replacement.
+악용 가능성 때문에((("opt-in transaction replacement")))((("replace by fee (RBF)")))((("transaction fees", "opt-in transaction replacement"))) 최초의 시퀀스 기반 트랜잭션 대체가 비활성화된 뒤, 한
+가지 해법이 제안되었습니다. 비트코인 코어를 비롯한 중계 풀 노드 소프트웨어가, 더
+높은 트랜잭션 수수료율을 내는 트랜잭션이 더 낮은 수수료율을 내는 충돌 트랜잭션을
+대체할 수 있도록 프로그래밍하자는 것이었습니다. 이를 _수수료 대체(replace by fee)_,
+줄여서 _RBF_ 라고 합니다. 일부 사용자와 사업자가 트랜잭션 대체 지원을 비트코인
+코어에 다시 넣는 데 반대했기에, 대체를 지원하는 데 시퀀스 필드를 다시 한번 활용하는
+절충안이 마련되었습니다.
 
-As documented in BIP125, an unconfirmed transaction with any input that
-has a sequence set to a value below 0xfffffffe (i.e., at least 2 below
-the maximum value) signals to the network that its signer wants it to be
-replaceable by a conflicting transaction paying a higher fee rate.
-Bitcoin Core allowed those unconfirmed transactions to be replaced and
-continued to disallow other transactions from being replaced.  This
-allowed users and businesses that objected to replacement to simply
-ignore unconfirmed transactions containing the BIP125 signal until they
-became confirmed.
+BIP125에 문서화된 대로, 어떤 입력의 시퀀스가 0xfffffffe 미만(즉 최댓값보다 최소
+2만큼 작은) 값으로 설정된 미확인 트랜잭션은, 서명자가 더 높은 수수료율을 내는 충돌
+트랜잭션으로 대체되기를 원한다는 신호를 네트워크에 보냅니다. 비트코인 코어는 그런
+미확인 트랜잭션의 대체를 허용하고 다른 트랜잭션의 대체는 계속 허용하지 않았습니다.
+덕분에 대체에 반대하는 사용자와 사업자는 BIP125 신호가 담긴 미확인 트랜잭션을 확인될
+때까지 그냥 무시할 수 있었습니다.
 
-There's more to modern transaction replacement policies than fee rates
-and sequence signals, which we'll see in <<rbf>>.
+현대적인 트랜잭션 대체 정책에는 수수료율과 시퀀스 신호 말고도 더 많은 것이 있으며,
+<<rbf>>에서 살펴봅니다.
 
 [[relative_timelocks]]
-===== Sequence as a consensus-enforced relative timelock
+===== 합의로 강제되는 상대적 타임락으로서의 시퀀스
 
-In <<version>>, we learned ((("relative timelocks", id="relative-timelock")))that the BIP68 soft fork added
-a new constraint to transactions with version numbers 2 or higher.  That
-constraint applies to the sequence field.
+<<version>>에서 ((("relative timelocks", id="relative-timelock")))BIP68 소프트 포크가 버전 번호 2 이상인 트랜잭션에 새
+제약을 추가했다고 배웠습니다. 그 제약은 시퀀스 필드에 적용됩니다.
 
-Transaction inputs with sequence values less than 2^31^ are
-interpreted as having a relative timelock. Such a transaction may only
-be included in the blockchain once the previous output (referenced by the
-outpoint) has aged by the relative timelock amount. For example, a
-transaction with one input with a relative timelock of 30 blocks can
-only be confirmed in a block with at least 29 blocks between it and the
-block containing the output being spent on the same blockchain.
-Since sequence is a per-input field, a transaction may contain any
-number of timelocked inputs, all of which must have sufficiently aged
-for the transaction to be valid. A disable flag allows a transaction to
-include both inputs with a relative timelock (sequence < 2^31^) and
-inputs without a relative timelock (sequence ≥ 2^31^).
+시퀀스 값이 2^31^ 보다 작은 트랜잭션 입력은 상대적 타임락을 가진 것으로 해석됩니다.
+그런 트랜잭션은 (아웃포인트가 참조하는) 이전 출력이 상대적 타임락 만큼 나이를 먹은
+뒤에야 블록체인에 포함될 수 있습니다. 예를 들어 상대적 타임락이 30블록인 입력 하나를
+가진 트랜잭션은, 같은 블록체인에서 쓰이는 출력이 담긴 블록과의 사이에 최소 29개의
+블록이 있는 블록에서만 확인될 수 있습니다. 시퀀스는 입력마다 있는 필드이므로,
+트랜잭션에는 타임락이 걸린 입력이 얼마든지 들어갈 수 있으며 그 모두가 충분히 나이를
+먹어야 트랜잭션이 유효해집니다. 비활성화 플래그를 쓰면 상대적 타임락이 있는
+입력(시퀀스 < 2^31^)과 없는 입력(시퀀스 ≥ 2^31^)을 한 트랜잭션에 함께 넣을 수
+있습니다.
 
-The sequence value is specified in either blocks or seconds.
-A type-flag
-is used to differentiate between values counting blocks and values
-counting time in seconds. The type-flag is set in the 23rd
-least-significant bit (i.e., value 1<<22). If the type-flag is set, then
-the sequence value is interpreted as a multiple of 512 seconds. If
-the type-flag is not set, the sequence value is interpreted as a
-number of blocks.
+시퀀스 값은 블록 단위 또는 초 단위로 지정합니다. 블록을 세는 값과 시간을 초로 세는
+값을 구별하는 데는 타입 플래그를 씁니다. 타입 플래그는 최하위에서 23번째 비트(즉 값
+1<<22)에 설정됩니다. 타입 플래그가 설정되어 있으면 시퀀스 값은 512초의 배수로
+해석됩니다. 타입 플래그가 설정되어 있지 않으면 시퀀스 값은 블록 수로 해석됩니다.
 
 
-When interpreting sequence as a relative timelock, only the 16 least
-significant bits are considered. Once the flags (bits 32 and 23) are
-evaluated, the sequence value is usually "masked" with a 16-bit mask
-(e.g., +sequence+ & 0x0000FFFF).  The multiple of 512 seconds is
-roughly equal to the average amount of time between blocks, so the
-maximum relative timelock in both blocks and seconds from 16 bits
-(2^16^) is a bit more than one year.
+시퀀스를 상대적 타임락으로 해석할 때는 최하위 16비트만 고려합니다. 플래그(32번째와
+23번째 비트)를 평가하고 나면, 시퀀스 값은 보통 16비트 마스크로 "마스킹"됩니다(예:
++sequence+ & 0x0000FFFF). 512초의 배수는 블록 사이의 평균 시간과 대략 같으므로,
+16비트(2^16^)로 표현할 수 있는 블록 단위와 초 단위의 최대 상대적 타임락은 1년보다
+조금 더 깁니다.
 
-<<bip_68_def_of_nseq>> shows the binary layout of the sequence value,
-as defined by BIP68.
+<<bip_68_def_of_nseq>>는 BIP68이 정의한 시퀀스 값의 이진 배치를 보여줍니다.
 
 [[bip_68_def_of_nseq]]
-.BIP68 definition of sequence encoding (Source: BIP68).
+.BIP68의 시퀀스 인코딩 정의 (출처: BIP68).
 image::images/mbc3_0603.png["BIP68 definition of sequence encoding"]
 
-Note that any transaction that sets a relative timelock using sequence
-also sends the signal for opt-in replace by fee ((("transactions", "inputs", startref="transaction-input")))((("inputs", startref="input-transaction")))((("transactions", "inputs", "sequence field", startref="transaction-input-sequence")))((("inputs", "sequence field", startref="input-transaction-sequence")))((("sequence field (transaction inputs)", startref="sequence-field")))as described in
-<<sequence-bip125>>.
+시퀀스로 상대적 타임락을 설정하는 트랜잭션은 <<sequence-bip125>>에서 설명한 선택적
+수수료 대체 신호도 함께 보낸다는 ((("transactions", "inputs", startref="transaction-input")))((("inputs", startref="input-transaction")))((("transactions", "inputs", "sequence field", startref="transaction-input-sequence")))((("inputs", "sequence field", startref="input-transaction-sequence")))((("sequence field (transaction inputs)", startref="sequence-field")))점에
+유의하세요.
+=== 출력
 
-=== Outputs
-
-The ((("transactions", "outputs", id="transaction-output")))((("outputs", id="output-transaction")))outputs field of a transaction contains several fields related to
-specific outputs.  Just as we did with the inputs field, we'll start by
-looking at the specific bytes of the outputs field from the example
-transaction where Alice pays Bob, displayed as
-a map of those bytes in <<output-byte-map>>.
+((("transactions", "outputs", id="transaction-output")))((("outputs", id="output-transaction")))트랜잭션의 출력 필드에는 개별 출력과 관련된 여러 필드가 들어
+있습니다. 입력 필드에서 그랬듯이, 앨리스가 밥에게 지불하는 예시 트랜잭션의 출력
+필드 바이트를 <<output-byte-map>>의 바이트 맵으로 살펴보는 것에서 시작합시다.
 
 [[output-byte-map]]
-.A byte map of the outputs field from Alice's transaction.
+.앨리스 트랜잭션의 출력 필드 바이트 맵.
 image::images/mbc3_0604.png["A byte map of the outputs field from Alice's transaction"]
 
-==== Outputs Count
+==== 출력 개수
 
-Identical((("transactions", "outputs", "count")))((("outputs", "count"))) to the start of the inputs section of a transaction, the outputs
-field begins with a count indicating the number of outputs in this
-transaction.  It's a compactSize integer and must be greater than zero.
+트랜잭션의((("transactions", "outputs", "count")))((("outputs", "count"))) 입력 절 시작과 똑같이, 출력 필드도 이 트랜잭션에 든
+출력의 개수를 나타내는 개수 값으로 시작합니다. compactSize 정수이며 0보다 커야
+합니다.
 
-The example transaction has two outputs.
+예시 트랜잭션에는 출력이 두 개 있습니다.
 
-==== Amount
+==== 금액
 
-The first((("transactions", "outputs", "amount field", id="transaction-output-amount")))((("outputs", "amount field", id="output-transaction-amount")))((("amount field (transaction outputs)", id="amount-field"))) field of a specific output is its _amount_, also called
-"value" in Bitcoin Core.  This is an 8-byte signed integer indicating
-the number of satoshis to transfer.  A satoshi is the smallest unit of
-bitcoin that can be represented in an onchain Bitcoin transaction.
-There are 100 million satoshis in a bitcoin.
+개별((("transactions", "outputs", "amount field", id="transaction-output-amount")))((("outputs", "amount field", id="output-transaction-amount")))((("amount field (transaction outputs)", id="amount-field"))) 출력의 첫 번째 필드는 _금액_ 이며, 비트코인 코어에서는
+"value"라고도 합니다. 이전할 사토시의 수를 나타내는 8바이트 부호 있는 정수입니다.
+사토시는 온체인 비트코인 트랜잭션에서 표현할 수 있는 비트코인의 최소 단위입니다.
+1비트코인은 1억 사토시입니다.
 
-Bitcoin's consensus rules allow an output to have a value as small as
-zero and as large as 21 million bitcoins (2.1 quadrillion satoshis).
+비트코인의 합의 규칙은 출력의 값이 0만큼 작을 수도, 2,100만 비트코인(2,100조 사토시)
+만큼 클 수도 있게 허용합니다.
 
 //TODO:describe early integer overflow problem
 
 [[uneconomical_outputs]]
-===== Uneconomical outputs and disallowed dust
+===== 비경제적 출력과 허용되지 않는 더스트
 
-Despite not ((("uneconomical outputs", id="uneconomical")))((("dust policies", id="dust")))having any value, a zero-value output can be spent under
-the same rules as any other output.  However, spending an output (using
-it as the input in a transaction) increases the size of a transaction,
-which increases the amount of fee that needs to be paid.  If the value
-of the output is less than the cost of the additional fee, then it doesn't
-make economic sense to spend the output.  Such outputs are known as
-_uneconomical outputs_.
+((("uneconomical outputs", id="uneconomical")))((("dust policies", id="dust")))값이 전혀 없는데도 0값 출력은 다른 어떤 출력과 같은 규칙으로 쓸 수
+있습니다. 다만 출력을 쓰면(트랜잭션의 입력으로 사용하면) 트랜잭션의 크기가 커지고,
+그만큼 내야 하는 수수료도 늘어납니다. 출력의 값이 추가 수수료 비용보다 작다면 그
+출력을 쓰는 것은 경제적으로 말이 되지 않습니다. 그런 출력을 _비경제적 출력_ 이라고
+합니다.
 
-A zero-value output is always an uneconomical output; it wouldn't
-contribute any value to a transaction spending it even if the
-transaction's fee rate was zero.  However, many other outputs with low
-values can be uneconomical as well, even unintentionally.  For example,
-at a typical fee rate on the network today, an output might add more
-value to a transaction than it costs to spend--but tomorrow, fee rates
-might rise and make the output uneconomical.
+0값 출력은 언제나 비경제적 출력입니다. 트랜잭션의 수수료율이 0이더라도 그것을 쓰는
+트랜잭션에 아무 가치도 보태지 못합니다. 하지만 값이 낮은 다른 많은 출력도, 심지어
+의도치 않게 비경제적이 될 수 있습니다. 예를 들어 오늘 네트워크의 일반적인 수수료율에서는
+어떤 출력이 쓰는 비용보다 더 많은 가치를 트랜잭션에 보탤 수도 있지만, 내일 수수료율이
+올라 그 출력이 비경제적이 될 수 있습니다.
 
-The need for full nodes to keep track of all UTXOs, as described in <<outpoints>>, means that every UTXO makes it
-slightly harder to run a full node.  For UTXOs containing significant
-value, there's an incentive to eventually spend them, so they aren't a
-problem.  But there's no incentive for the person controlling an
-uneconomical UTXO to ever spend it, potentially making it a perpetual
-burden on operators of full nodes.  Because Bitcoin's decentralization
-depends on many people being willing to run full nodes, several full
-node implementations such as Bitcoin Core discourage the creation of
-uneconomical outputs using policies that affect the relay and mining of
-unconfirmed transactions.
+<<outpoints>>에서 설명했듯 풀 노드가 모든 UTXO를 추적해야 한다는 것은, UTXO 하나하나가
+풀 노드를 돌리는 일을 조금씩 더 어렵게 만든다는 뜻입니다. 상당한 가치를 담은 UTXO라면
+언젠가 쓸 유인이 있으므로 문제가 되지 않습니다. 하지만 비경제적 UTXO를 통제하는 사람에게는
+그것을 쓸 유인이 전혀 없어서, 풀 노드 운영자에게 영구적인 부담이 될 수 있습니다.
+비트코인의 탈중앙화는 많은 사람이 기꺼이 풀 노드를 돌리는 데 달려 있으므로, 비트코인
+코어를 비롯한 여러 풀 노드 구현은 미확인 트랜잭션의 중계와 채굴에 영향을 주는 정책으로
+비경제적 출력이 만들어지는 것을 억제합니다.
 
 [role="less_space pagebreak-before"]
-The policies against relaying or mining transactions creating new
-uneconomical outputs are called _dust_ policies, based on a metaphorical
-comparison between outputs with very small values and particles with
-very small size.  Bitcoin Core's dust policy is complicated and contains
-several arbitrary numbers, so many programs we're aware of simply
-assume outputs with less than 546 satoshis are dust and will not be
-relayed or mined by default.  There are occasionally proposals to lower
-dust limits, and counterproposals to raise them, so we encourage
-developers using presigned transactions or multiparty protocols to
-check whether the policy has changed since publication of this book.
+새로운 비경제적 출력을 만드는 트랜잭션의 중계나 채굴을 막는 정책을 _더스트_ 정책이라고
+합니다. 값이 아주 작은 출력을 크기가 아주 작은 입자에 빗댄 표현입니다. 비트코인 코어의
+더스트 정책은 복잡하고 임의로 정해진 숫자가 여럿 들어 있어서, 우리가 아는 많은
+프로그램은 그냥 546사토시 미만인 출력을 더스트로 보고 기본적으로 중계하거나 채굴하지
+않습니다. 더스트 한도를 낮추자는 제안과 올리자는 반대 제안이 이따금 나오므로, 사전 서명
+트랜잭션이나 다자간 프로토콜을 쓰는 개발자라면 이 책이 출간된 뒤 정책이 바뀌었는지
+확인해 보시기를 권합니다.
 
 [TIP]
 ====
-Since Bitcoin's inception, every full node has needed to keep a copy of
-every UTXO, but that might not always be
-the case.  Several developers have been working on((("Utreexo"))) Utreexo, a project
-that allows full nodes to store a commitment to the set of UTXOs rather
-than the data itself.  A minimal commitment might be only a kilobyte or
-two in size--compare that to the over five gigabytes Bitcoin Core stores
-as of this writing.
+비트코인이 시작된 이래 모든 풀 노드는 모든 UTXO의 사본을 가지고 있어야 했지만, 항상
+그래야 하는 것은 아닐 수도 있습니다. 여러 개발자가((("Utreexo"))) Utreexo라는 프로젝트를 작업해
+왔는데, 풀 노드가 UTXO 집합의 데이터 자체가 아니라 그에 대한 커밋먼트를 저장할 수 있게
+하는 것입니다. 최소한의 커밋먼트라면 크기가 1~2킬로바이트에 그칠 수도 있습니다. 이 글을
+쓰는 시점에 비트코인 코어가 저장하는 5기가바이트 넘는 양과 비교해 보세요.
 
-However, Utreexo will still require some nodes to store all UTXO data,
-especially nodes serving miners and other operations that need to
-quickly validate new blocks.  That means uneconomical outputs can still
-be a problem for full nodes even in a possible future where most nodes
-use Utreexo.
+다만 Utreexo에서도 일부 노드는 여전히 모든 UTXO 데이터를 저장해야 합니다. 특히 채굴자를
+위해 서비스하는 노드나 새 블록을 빠르게 검증해야 하는 다른 운영 주체가 그렇습니다. 즉
+대부분의 노드가 Utreexo를 쓰는 미래가 오더라도 비경제적 출력은 여전히 풀 노드에 문제가
+될 수 있습니다.
 ====
 
-Bitcoin Core's policy rules about dust do have one exception: output
-scripts starting with +OP_RETURN+, called _data carrier outputs_,
-can have a value of zero.  The +OP_RETURN+ opcode causes the script to
-immediately fail no matter what comes after it, so these outputs can
-never be spent.  That means full nodes don't need to keep track of them,
-a feature Bitcoin Core takes advantage of to allow users to store small
-amounts of arbitrary data in the blockchain without increasing the size
-of its UTXO database.  Since the outputs are unspendable, they aren't
-uneconomical--any satoshis assigned to them become
-permanently unspendable--so allowing the amount to be zero ensures
-satoshis aren't being ((("transactions", "outputs", "amount field", startref="transaction-output-amount")))((("outputs", "amount field", startref="output-transaction-amount")))((("amount field (transaction outputs)", startref="amount-field")))((("uneconomical outputs", startref="uneconomical")))((("dust policies", startref="dust")))destroyed.
+더스트에 관한 비트코인 코어의 정책 규칙에는 예외가 하나 있습니다. +OP_RETURN+ 으로
+시작하는 출력 스크립트, 이른바 _데이터 캐리어 출력_ 은 값이 0일 수 있습니다.
++OP_RETURN+ 옵코드는 그 뒤에 무엇이 오든 스크립트를 즉시 실패하게 만들므로, 이런 출력은
+결코 쓰일 수 없습니다. 즉 풀 노드가 그것들을 추적할 필요가 없으며, 비트코인 코어는 이
+점을 활용해 UTXO 데이터베이스의 크기를 키우지 않으면서 사용자가 소량의 임의 데이터를
+블록체인에 저장할 수 있게 합니다. 이 출력들은 쓸 수 없으므로 비경제적이지도 않습니다.
+거기 할당된 사토시는 영구히 쓸 수 없게 되므로, 금액을 0으로 허용하는 것이 사토시가
+((("transactions", "outputs", "amount field", startref="transaction-output-amount")))((("outputs", "amount field", startref="output-transaction-amount")))((("amount field (transaction outputs)", startref="amount-field")))((("uneconomical outputs", startref="uneconomical")))((("dust policies", startref="dust")))파괴되지 않게 보장합니다.
 
-==== Output Scripts
+==== 출력 스크립트
 
-The ((("transactions", "outputs", "output scripts", id="transaction-output-script")))((("outputs", "output scripts", id="output-transaction-script")))((("output scripts", id="output-script2")))output amount is followed by a compactSize integer indicating the
-length of the _output script_, the script that contains the
-conditions that will need to be fulfilled in order to spend the
-bitcoins.  According to Bitcoin's
-consensus rules, the minimum size of an output script is zero.
+((("transactions", "outputs", "output scripts", id="transaction-output-script")))((("outputs", "output scripts", id="output-transaction-script")))((("output scripts", id="output-script2")))출력 금액 뒤에는 _출력 스크립트_ 의 길이를 나타내는 compactSize
+정수가 옵니다. 출력 스크립트는 그 비트코인을 쓰려면 충족해야 하는 조건을 담은
+스크립트입니다. 비트코인의 합의 규칙에 따르면 출력 스크립트의 최소 크기는 0입니다.
 
-The consensus maximum allowed size of an output script varies depending on
-when it's being checked.  There's no explicit limit on the size of an
-output script in the output of a transaction, but a later transaction can
-only spend a previous output with a script of 10,000 bytes or
-smaller.  Implicitly, an output script can be almost as large as the
-transaction containing it, and a transaction can be almost as large as
-the block containing it.
+합의 규칙이 허용하는 출력 스크립트의 최대 크기는 언제 검사하느냐에 따라 달라집니다.
+트랜잭션의 출력에 든 출력 스크립트의 크기에는 명시적인 제한이 없지만, 이후의 트랜잭션은
+스크립트가 10,000바이트 이하인 이전 출력만 쓸 수 있습니다. 암묵적으로 출력 스크립트는
+그것을 담은 트랜잭션만큼 커질 수 있고, 트랜잭션은 그것을 담은 블록만큼 커질 수 있습니다.
 
 [[anyone-can-spend]]
 [TIP]
 ====
-An output script with zero length can be spent by an input script containing
-++OP_TRUE++.  Anyone can create that input script, which means anyone
-can spend an empty output script.  There are an essentially unlimited
-number of scripts that anyone can spend, and they are known to Bitcoin
-protocol developers as _anyone can spends_.  Upgrades to Bitcoin's
-script language often take an existing anyone-can-spend script and add
-new constraints to it, making it only spendable under the new
-conditions.  Application developers should never need to use an
-anyone-can-spend script, but if you do, we highly recommend that you
-loudly announce your plans to Bitcoin users and developers so that
-future upgrades don't accidentally interfere with your system.
+길이가 0인 출력 스크립트는 ++OP_TRUE++ 를 담은 입력 스크립트로 쓸 수 있습니다. 그런
+입력 스크립트는 누구나 만들 수 있으므로, 빈 출력 스크립트는 누구나 쓸 수 있습니다.
+누구나 쓸 수 있는 스크립트는 사실상 무제한으로 많으며, 비트코인 프로토콜 개발자들은
+이를 _누구나 사용 가능(anyone can spend)_ 이라고 부릅니다. 비트코인 스크립트 언어의
+업그레이드는 기존의 누구나 사용 가능한 스크립트를 가져다 새 제약을 더해, 새 조건에서만
+쓸 수 있게 만드는 경우가 많습니다. 애플리케이션 개발자가 누구나 사용 가능한 스크립트를
+쓸 일은 결코 없어야 하지만, 혹시 쓴다면 앞으로의 업그레이드가 여러분의 시스템을 뜻하지
+않게 방해하지 않도록 계획을 비트코인 사용자와 개발자에게 널리 알리시기를 강력히
+권합니다.
 ====
 
-Bitcoin Core's policy for relaying and mining transactions effectively
-limits output scripts to just a few templates, ((("standard transaction outputs")))called _standard
-transaction outputs_.  This was originally implemented after the
-discovery of several early bugs in Bitcoin related to the Script
-language and is retained in modern Bitcoin Core to support
-anyone-can-spend upgrades and to encourage the best practice of placing
-script conditions in P2SH redeem scripts, segwit v0 witness scripts, and
-segwit v1 (taproot) leaf scripts.
+트랜잭션을 중계하고 채굴하는 비트코인 코어의 정책은 출력 스크립트를 사실상 몇 가지
+형판으로만 제한하는데, 이를 ((("standard transaction outputs")))_표준 트랜잭션 출력_ 이라고 합니다. 이는 원래
+스크립트 언어와 관련된 초기 비트코인 버그 몇 가지가 발견된 뒤에 도입되었고, 지금의
+비트코인 코어에도 남아 있습니다. 누구나 사용 가능한 스크립트를 이용한 업그레이드를
+뒷받침하고, 스크립트 조건을 P2SH 리딤 스크립트와 세그윗 v0 위트니스 스크립트, 세그윗
+v1(탭루트) 리프 스크립트에 넣는 모범 사례를 장려하기 위해서입니다.
 
-We'll look at each of the current standard transaction templates and
-learn how to ((("transactions", "outputs", startref="transaction-output")))((("outputs", startref="output-transaction")))((("transactions", "outputs", "output scripts", startref="transaction-output-script")))((("outputs", "output scripts", startref="output-transaction-script")))((("output scripts", startref="output-script2")))parse scripts in <<c_authorization_authentication>>.
-
+현재의 표준 트랜잭션 형판을 하나씩 살펴보고 스크립트를 파싱하는 방법은
+((("transactions", "outputs", startref="transaction-output")))((("outputs", startref="output-transaction")))((("transactions", "outputs", "output scripts", startref="transaction-output-script")))((("outputs", "output scripts", startref="output-transaction-script")))((("output scripts", startref="output-script2")))<<c_authorization_authentication>>에서 배웁니다.
 [[witness_structure]]
-=== Witness Structure
+=== 위트니스 구조
 
-In court,((("transactions", "witnesses", id="transaction-witness")))((("witnesses", id="witness"))) a witness is someone who testifies that they saw something
-important happen.  Human witnesses aren't always reliable, so courts
-have various processes for interrogating witnesses to (ideally) only
-accept evidence from those who are reliable.
+법정에서((("transactions", "witnesses", id="transaction-witness")))((("witnesses", id="witness"))) 증인은 중요한 일이 벌어지는 것을 보았다고 증언하는 사람입니다.
+사람 증인이 언제나 믿음직하지는 않으므로, 법원은 (이상적으로는) 믿을 만한 사람의
+증거만 받아들이기 위해 증인을 신문하는 여러 절차를 둡니다.
 
-Imagine what a witness would look like for a math problem.  For example,
-if the important problem was _x + 2 == 4_ and someone claimed they
-witnessed the solution, what would we ask them?  We'd want a
-mathematical proof that showed a value that could be summed with two to
-equal four.  We could even omit the need for a person and just use the
-proposed value for _x_ as our witness.  If we were told that the witness
-was _two_, then we could fill in the equation, check that it was correct, and
-decide that the important problem had been solved.
+수학 문제에 대한 증인은 어떤 모습일지 상상해 봅시다. 예를 들어 중요한 문제가
+_x + 2 == 4_ 이고 누군가 그 해답을 목격했다고 주장한다면, 우리는 무엇을 물을까요?
+2와 더했을 때 4가 되는 값을 보여주는 수학적 증명을 원할 것입니다. 사람을 아예 빼고
+_x_ 에 들어갈 값 자체를 증인으로 삼을 수도 있습니다. 증인이 _2_ 라고 들었다면
+방정식에 넣어 맞는지 확인하고, 그 중요한 문제가 풀렸다고 판단할 수 있습니다.
 
-When spending bitcoins, the important problem we want to solve is
-determining whether the spend was authorized by the person or people who
-control those bitcoins.  The thousands of full nodes that enforce
-Bitcoin's consensus rules can't interrogate human witnesses, but they can
-accept _witnesses_ that consist entirely of data for solving math
-problems.  For example, a witness of _2_ will allow spending bitcoins
-protected by the following script:
+비트코인을 쓸 때 우리가 풀고자 하는 중요한 문제는, 그 지출이 해당 비트코인을 통제하는
+사람(또는 사람들)에게 승인받은 것인지 판단하는 것입니다. 비트코인의 합의 규칙을
+집행하는 수천 개의 풀 노드는 사람 증인을 신문할 수 없지만, 전적으로 수학 문제를 푸는
+데이터로만 이루어진 _위트니스_ 는 받아들일 수 있습니다. 예를 들어 위트니스 _2_ 는
+다음 스크립트가 지키는 비트코인을 쓸 수 있게 해줍니다.
 
 ----
 2 OP_ADD 4 OP_EQUAL
 ----
 
-Obviously, allowing your bitcoins to be spent by anyone who can solve a
-simple equation wouldn't be secure.  As we'll see in <<c_signatures>>, an
-unforgeable digital signature scheme uses an equation that can only be
-solved by someone in possession of certain data they're able to
-keep secret.  They're able to reference that secret data using a public
-identifier.  That public identifier is ((("public keys")))((("digital signatures")))((("signatures", see="digital signatures")))called a _public key_ and a
-solution to the equation is called a _signature_.
+당연하게도 간단한 방정식을 풀 수 있는 사람이라면 누구나 여러분의 비트코인을 쓸 수
+있게 하는 것은 안전하지 않습니다. <<c_signatures>>에서 보겠지만, 위조할 수 없는
+디지털 서명 방식은 비밀로 유지할 수 있는 특정 데이터를 가진 사람만 풀 수 있는
+방정식을 사용합니다. 그리고 그 비밀 데이터를 공개 식별자로 참조할 수 있습니다. 그
+공개 식별자를 ((("public keys")))((("digital signatures")))((("signatures", see="digital signatures")))_공개키_ 라고 하고, 그 방정식의 해답을 _서명_ 이라고 합니다.
 
-The following script contains a public key and an opcode that requires
-a corresponding signature commit to the data in the spending transaction.  Like
-the number _2_ in our simple example, the signature is our witness:
+다음 스크립트에는 공개키와, 그에 대응하는 서명이 지출 트랜잭션의 데이터에 커밋할 것을
+요구하는 옵코드가 들어 있습니다. 앞의 간단한 예에서 숫자 _2_ 가 그랬듯, 여기서는
+서명이 우리의 위트니스입니다.
 
 ----
 <public key> OP_CHECKSIG
 ----
 
-Witnesses, the values used to solve the math problems that protect
-bitcoins, need to be included in the transactions where they're used in
-order for full nodes to verify them.  In the legacy transaction format
-used for all early Bitcoin transactions, signatures and other data are
-placed in the input script field.  However, when developers started to
-implement contract protocols on Bitcoin, such as we saw in
-<<original_tx_replacement>>, they discovered several significant
-problems with placing witnesses in the input script field.
+비트코인을 지키는 수학 문제를 푸는 데 쓰이는 값인 위트니스는, 풀 노드가 검증할 수
+있도록 그것이 쓰이는 트랜잭션에 함께 담겨야 합니다. 초기 비트코인 트랜잭션에 모두
+쓰인 레거시 트랜잭션 형식에서는 서명을 비롯한 데이터가 입력 스크립트 필드에 놓입니다.
+그런데 <<original_tx_replacement>>에서 본 것과 같은 계약 프로토콜을 비트코인 위에
+구현하기 시작하면서, 개발자들은 위트니스를 입력 스크립트 필드에 두는 데 따르는 몇
+가지 중대한 문제를 발견했습니다.
 
-==== Circular Dependencies
+==== 순환 의존
 
-Many ((("transactions", "witnesses", "circular dependencies", id="transaction-witness-circular")))((("witnesses", "circular dependencies", id="witness-circular")))((("circular dependencies", id="circular")))contract protocols for Bitcoin involve a series of transactions
-that are signed out of order.  For example, Alice and Bob want to
-deposit funds into a script that can only be spent with signatures from
-both of them, but they each also want to get their money back if the
-other person becomes unresponsive.  A simple solution is to sign
-transactions out of order:
+비트코인의 ((("transactions", "witnesses", "circular dependencies", id="transaction-witness-circular")))((("witnesses", "circular dependencies", id="witness-circular")))((("circular dependencies", id="circular")))많은 계약 프로토콜은 순서를 뒤바꿔 서명하는 일련의 트랜잭션을
+포함합니다. 예를 들어 앨리스와 밥이 둘 모두의 서명이 있어야만 쓸 수 있는 스크립트에
+자금을 넣고 싶지만, 상대가 응답하지 않게 되면 각자 자기 돈을 돌려받고 싶어 한다고
+해봅시다. 간단한 해법은 트랜잭션에 순서를 뒤바꿔 서명하는 것입니다.
 
-- Tx~0~ pays money from Alice and money from Bob into an output with a
-  script that requires signatures from both Alice and Bob to spend.
+- Tx~0~ 은 앨리스의 돈과 밥의 돈을, 쓰려면 앨리스와 밥 둘 모두의 서명이 필요한
+  스크립트를 가진 출력에 지불합니다.
 
-- Tx~1~ spends the previous output to two outputs, one refunding Alice
-  her money and one refunding Bob his money (minus a small amount for
-  transaction fees).
+- Tx~1~ 은 그 이전 출력을 두 개의 출력으로 씁니다. 하나는 앨리스에게 그의 돈을
+  환불하고, 다른 하나는 밥에게 그의 돈을 환불합니다(트랜잭션 수수료로 쓸 소액은
+  제외).
 
-- If Alice and Bob sign Tx~1~ before they sign Tx~0~, then they're both
-  guaranteed to be able to get a refund at any time.  The protocol
-  doesn't require either of them to trust the other, making ((("trustless protocols")))it a _trustless
-  protocol_.
+- 앨리스와 밥이 Tx~0~ 에 서명하기 _전에_ Tx~1~ 에 서명한다면, 둘 다 언제든 환불받을
+  수 있음을 보장받습니다. 이 프로토콜은 둘 중 누구도 상대를 신뢰할 것을 요구하지
+  않으므로 ((("trustless protocols")))_무신뢰 프로토콜_ 입니다.
 
-A problem with this construction in the legacy transaction format is
-that every field, including the input script field that contains
-signatures, is used to derive a [.keep-together]#transaction's# identifier (txid).  The
-txid for Tx~0~ is part of the input's outpoint in Tx~1~.  That means
-there's no way for Alice and Bob to construct Tx~1~ until both
-signatures for Tx~0~ are known--but if they know the signatures for
-Tx~0~, one of them can broadcast that transaction before signing the
-refund transaction, eliminating the guarantee of a refund.  This is a
-_circular dependency_.
+레거시 트랜잭션 형식에서 이런 구성의 문제는, 서명이 담기는 입력 스크립트 필드를
+포함해 모든 필드가 [.keep-together]#트랜잭션의# 식별자(txid)를 유도하는 데 쓰인다는
+점입니다. Tx~0~ 의 txid는 Tx~1~ 에 있는 입력의 아웃포인트 일부입니다. 즉 Tx~0~ 에
+대한 두 서명이 모두 알려지기 전에는 앨리스와 밥이 Tx~1~ 을 구성할 방법이 없습니다.
+그런데 Tx~0~ 의 서명을 알고 있다면, 둘 중 하나가 환불 트랜잭션에 서명하기 전에 그
+트랜잭션을 방송해 버릴 수 있어 환불 보장이 사라집니다. 이것이 _순환 의존_ 입니다.
 
-==== Third-Party Transaction Malleability
+==== 제삼자 트랜잭션 가변성
 
-A more ((("transactions", "witnesses", "third-party transaction malleability", id="transaction-witness-third-party")))((("witnesses", "third-party transaction malleability", id="witness-circular-third-party")))((("third-party transaction malleability", id="third-party")))complex series of transactions can sometimes eliminate a circular
-dependency, but many protocols will then encounter a new concern: it's
-often possible to solve the same script in different ways.  For example,
-consider our simple script from <<witness_structure>>:
+더 ((("transactions", "witnesses", "third-party transaction malleability", id="transaction-witness-third-party")))((("witnesses", "third-party transaction malleability", id="witness-circular-third-party")))((("third-party transaction malleability", id="third-party")))복잡하게 트랜잭션을 이어 붙이면 순환 의존을 없앨 수 있는 경우도 있지만,
+그러면 많은 프로토콜이 새로운 문제에 부딪힙니다. 같은 스크립트를 여러 방식으로 풀 수
+있는 경우가 많다는 점입니다. 예를 들어 <<witness_structure>>에 나온 간단한 스크립트를
+다시 봅시다.
 
 ----
 2 OP_ADD 4 OP_EQUAL
 ----
 
-We can make this script pass by providing the value _2_ in an input script,
-but there are several ways to put that value on the stack in Bitcoin.
-Here are just a few:
+입력 스크립트에 값 _2_ 를 넣으면 이 스크립트를 통과시킬 수 있는데, 비트코인에서 그
+값을 스택에 올리는 방법은 여러 가지입니다. 몇 가지만 들면 다음과 같습니다.
 
 ----
 OP_2
@@ -839,291 +697,237 @@ OP_PUSHDATA4 0x000000020002
 ...
 ----
 
-Each alternative encoding of the number _2_ in an input script will produce
-a slightly different transaction with a completely different txid.  Each
-different version of the transaction spends the same inputs (outpoints)
-as every other version of the transaction, making them all _conflict_
-with each other.  Only one version of a set of conflicting transactions
-can be contained within a valid blockchain.
+입력 스크립트에서 숫자 _2_ 를 인코딩하는 방식이 달라질 때마다 조금씩 다른 트랜잭션이
+만들어지고, txid는 완전히 달라집니다. 각기 다른 버전의 트랜잭션은 모두 같은
+입력(아웃포인트)을 쓰므로 서로 _충돌_ 합니다. 충돌하는 트랜잭션 집합 중에서 유효한
+블록체인에 담길 수 있는 것은 하나뿐입니다.
 
-Imagine Alice creates one version of the transaction with +OP_2+ in the
-input script and an output that pays Bob.  Bob then immediately spends that
-output to Carol.  Anyone on the network can replace +OP_2+ with
-+OP_PUSH1 0x02+, creating a conflict with Alice's original version.  If
-that conflicting transaction is confirmed, then there's no way to
-include Alice's original version in the same blockchain, which means
-there's no way for Bob's transaction to spend its output.
-Bob's payment to Carol has been made invalid even though neither Alice,
-Bob, nor Carol did anything wrong.  Someone not involved in the
-transaction (a third party) was able to change (mutate) Alice's
-transaction, a problem called _unwanted third-party transaction
-malleability_.
+앨리스가 입력 스크립트에 +OP_2+ 를 넣고 밥에게 지불하는 출력을 담은 버전의 트랜잭션을
+만들었다고 상상해 봅시다. 그러면 밥은 곧바로 그 출력을 써서 캐럴에게 지불합니다.
+네트워크의 누구든 +OP_2+ 를 +OP_PUSH1 0x02+ 로 바꿔 앨리스의 원래 버전과 충돌하는
+트랜잭션을 만들 수 있습니다. 그 충돌 트랜잭션이 확인되면 앨리스의 원래 버전을 같은
+블록체인에 포함시킬 방법이 없고, 따라서 밥의 트랜잭션이 그 출력을 쓸 방법도 없습니다.
+앨리스도 밥도 캐럴도 잘못한 것이 없는데 밥이 캐럴에게 한 지불이 무효가 된 것입니다.
+그 트랜잭션과 무관한 사람(제삼자)이 앨리스의 트랜잭션을 바꿀(변형할) 수 있었던 것인데,
+이 문제를 _원치 않는 제삼자 트랜잭션 가변성_ 이라고 합니다.
 
 [TIP]
 ====
-There are cases when people want their transactions to be malleable and
-Bitcoin provides several features to support that, most notably the
-signature hashes (sighash) we'll learn about in <<sighash_types>>.  For
-example, Alice can use a sighash to allow Bob to help her pay some
-transaction fees.  This mutates Alice's transaction but only in a way
-that Alice wants.  For that reason, we will occasionally prefix the
-word _unwanted_ to the term _transaction malleability_.  Even when we
-and other Bitcoin technical writers use the shorter term, we're almost
-certainly talking about the unwanted variant of((("transactions", "witnesses", "third-party transaction malleability", startref="transaction-witness-third-party")))((("witnesses", "third-party transaction malleability", startref="witness-circular-third-party")))((("third-party transaction malleability", startref="third-party"))) malleability.
+트랜잭션이 변형 가능하기를 사람들이 원하는 경우도 있고, 비트코인은 이를 지원하는 여러
+기능을 제공합니다. 가장 대표적인 것이 <<sighash_types>>에서 배울 서명 해시(sighash)
+입니다. 예를 들어 앨리스는 sighash를 사용해 밥이 트랜잭션 수수료 일부를 대신 내도록
+도울 수 있습니다. 이는 앨리스의 트랜잭션을 변형하지만 앨리스가 원하는 방식으로만
+변형합니다. 그래서 우리는 _트랜잭션 가변성_ 이라는 용어 앞에 이따금 _원치 않는_ 을
+붙일 것입니다. 우리나 다른 비트코인 기술 저자들이 짧은 쪽 용어를 쓸 때도, 거의 틀림없이
+원치 않는 쪽의((("transactions", "witnesses", "third-party transaction malleability", startref="transaction-witness-third-party")))((("witnesses", "third-party transaction malleability", startref="witness-circular-third-party")))((("third-party transaction malleability", startref="third-party"))) 가변성을 말하는 것입니다.
 ====
 
-==== Second-Party Transaction Malleability
+==== 제이자 트랜잭션 가변성
 
-When the ((("transactions", "witnesses", "second-party transaction malleability", id="transaction-witness-second-party")))((("witnesses", "second-party transaction malleability", id="witness-circular-second-party")))((("second-party transaction malleability", id="second-party")))legacy transaction format was the only transaction format,
-developers worked on proposals to minimize third-party malleability,
-such as BIP62.  However, even if they were able to entirely eliminate
-third-party malleability, users of contract protocols faced another problem:
-if they required a signature from someone else involved in the protocol,
-that person could generate alternative signatures and change the txid.
+((("transactions", "witnesses", "second-party transaction malleability", id="transaction-witness-second-party")))((("witnesses", "second-party transaction malleability", id="witness-circular-second-party")))((("second-party transaction malleability", id="second-party")))레거시 트랜잭션 형식이 유일한 트랜잭션 형식이던 시절, 개발자들은
+BIP62처럼 제삼자 가변성을 최소화하는 제안을 작업했습니다. 하지만 제삼자 가변성을
+완전히 없앨 수 있었다 해도 계약 프로토콜 사용자들은 또 다른 문제에 부딪혔습니다.
+프로토콜에 참여한 다른 사람의 서명이 필요하다면, 그 사람이 대체 서명을 만들어 txid를
+바꿀 수 있다는 점입니다.
 
-For example, Alice and Bob have deposited their money into a script
-requiring a signature from both of them to spend.  They've also created
-a refund transaction that allows each of them to get their money back at
-any time.  Alice decides she wants to spend just some of the
-money, so she cooperates with Bob to create a chain of transactions:
+예를 들어 앨리스와 밥이 둘 모두의 서명이 있어야 쓸 수 있는 스크립트에 돈을 넣었습니다.
+그리고 각자 언제든 자기 돈을 돌려받을 수 있는 환불 트랜잭션도 만들어 두었습니다.
+앨리스가 그 돈 중 일부만 쓰고 싶어져서 밥과 협력해 트랜잭션 사슬을 만듭니다.
 
-- Tx~0~ includes signatures from both Alice and Bob, spending its
-  bitcoins to two outputs.  The first output spends some of Alice's
-  money; the second output returns the remainder of the bitcoins back to
-  the script requiring Alice and [.keep-together]#Bob's signatures.#  Before signing this
-  transaction, they create a new refund transaction, Tx~1~.
+- Tx~0~ 에는 앨리스와 밥 둘의 서명이 들어가며, 그 비트코인을 두 개의 출력으로 씁니다.
+  첫 번째 출력은 앨리스의 돈 일부를 쓰고, 두 번째 출력은 남은 비트코인을 앨리스와
+  [.keep-together]#밥의 서명이# 필요한 스크립트로 되돌립니다. 이 트랜잭션에 서명하기
+  전에 두 사람은 새 환불 트랜잭션 Tx~1~ 을 만듭니다.
 
-- Tx~1~ spends the second output of Tx~0~ to two new outputs, one to
-  Alice for her share of the joint funds, and one to Bob for his share.
-  Alice and Bob both sign this transaction before they sign Tx~0~.
+- Tx~1~ 은 Tx~0~ 의 두 번째 출력을 두 개의 새 출력으로 씁니다. 하나는 공동 자금 중
+  앨리스 몫을 앨리스에게, 다른 하나는 밥 몫을 밥에게 보냅니다. 앨리스와 밥은 Tx~0~ 에
+  서명하기 전에 이 트랜잭션에 서명합니다.
 
-There's no circular dependency here and, if we ignore third-party
-transaction malleability, this looks like it should provide us with a
-trustless protocol.  However, it's a property of Bitcoin signatures that
-the signer has to choose a large random number when creating their
-signature.  Choosing a different random number will produce a different
-signature even if everything being signed stays the same.  It's sort of
-like how, if you provide a handwritten signature for two copies of the
-same contract, each of those physical signatures will look slightly
-different.
+여기에는 순환 의존이 없고, 제삼자 트랜잭션 가변성을 무시한다면 무신뢰 프로토콜이
+만들어진 것처럼 보입니다. 하지만 비트코인 서명에는 서명자가 서명을 만들 때 큰 무작위
+수를 골라야 한다는 성질이 있습니다. 서명되는 대상이 모두 그대로여도 다른 무작위 수를
+고르면 다른 서명이 나옵니다. 같은 계약서 두 부에 손으로 서명하면 두 서명이 조금씩
+달라 보이는 것과 비슷합니다.
 
-This mutability of signatures means that, if Alice tries to broadcast
-Tx~0~ (which contains Bob's signature), Bob can generate an alternative
-signature to create a conflicting transaction with a different txid.  If
-Bob's alternative version of Tx~0~ gets confirmed, then Alice can't use
-the presigned version of Tx~1~ to claim her refund.  This type of
-mutation ((("transactions", "witnesses", "second-party transaction malleability", startref="transaction-witness-second-party")))((("witnesses", "second-party transaction malleability", startref="witness-circular-second-party")))((("second-party transaction malleability", startref="second-party")))is called _unwanted second-party transaction malleability_.
-
+서명이 이렇게 변할 수 있다는 것은, 앨리스가 (밥의 서명이 담긴) Tx~0~ 을 방송하려 할 때
+밥이 대체 서명을 만들어 txid가 다른 충돌 트랜잭션을 만들 수 있다는 뜻입니다. 밥이 만든
+대체 버전의 Tx~0~ 이 확인되면, 앨리스는 미리 서명해 둔 Tx~1~ 로 환불을 청구할 수
+없습니다. 이런 유형의 변형을 ((("transactions", "witnesses", "second-party transaction malleability", startref="transaction-witness-second-party")))((("witnesses", "second-party transaction malleability", startref="witness-circular-second-party")))((("second-party transaction malleability", startref="second-party")))_원치 않는 제이자 트랜잭션 가변성_ 이라고 합니다.
 [[segwit]]
-==== Segregated Witness
+==== 분리된 증인
 
-As ((("transactions", "witnesses", "segregated witness", id="transaction-witness-segwit")))((("witnesses", "segregated witness", id="witness-segwit")))((("segregated witness (segwit)", id="segregated-witness-segwit")))early as https://oreil.ly/---bp[2011],
-protocol developers knew how to solve the problems of circular
-dependence, third-party malleability, and second-party malleability.  The
-idea was to avoid including the input script in the calculation that
-produces a transaction's txid.  Recall that an abstract name for the data
-held by an input script is a _witness_.  The idea of separating the rest of
-the data in a transaction from its witness for the purpose of generating
-a txid is called _segregated witness_ (segwit).
+((("transactions", "witnesses", "segregated witness", id="transaction-witness-segwit")))((("witnesses", "segregated witness", id="witness-segwit")))((("segregated witness (segwit)", id="segregated-witness-segwit")))이미 https://oreil.ly/---bp[2011년]에 프로토콜 개발자들은 순환 의존과
+제삼자 가변성, 제이자 가변성 문제를 푸는 방법을 알고 있었습니다. 트랜잭션의 txid를
+만들어내는 계산에서 입력 스크립트를 빼자는 발상이었습니다. 입력 스크립트가 담는
+데이터를 추상적으로 부르는 이름이 _위트니스_ 였음을 떠올려 보세요. txid를 생성할 때
+트랜잭션의 나머지 데이터를 위트니스와 분리한다는 이 발상을 _분리된 증인(세그윗)_
+이라고 합니다.
 
-The obvious method for implementing segwit requires a
-change to Bitcoin's consensus rules that would not be compatible with
-older full nodes, also ((("hard forks")))((("forks", "hard forks")))called
-a _hard fork_.  Hard forks come with a lot of challenges, as we'll
-discuss further in <<hard_forks>>.
+세그윗을 구현하는 뻔한 방법은 비트코인의 합의 규칙을 바꾸는 것인데, 이는 더 오래된
+풀 노드와 호환되지 않습니다. 이를 ((("hard forks")))((("forks", "hard forks")))_하드 포크_ 라고도 합니다. 하드 포크에는
+난제가 많이 따르며, <<hard_forks>>에서 더 다룹니다.
 
-An alternative approach to segwit was described in late 2015.  This
-would use a backward-compatible change to the consensus rules, ((("soft forks")))((("forks", "soft forks")))called a
-_soft fork_.  Backward compatible means that full nodes implementing
-the change must not accept any blocks that full nodes without the change
-would consider invalid.  As long as they obey that rule, newer full
-nodes can reject blocks that older full nodes would accept, giving them
-the ability to enforce new consensus rules (but only if the newer full
-nodes represent the economic consensus among Bitcoin users--we'll
-explore the details of upgrading Bitcoin's consensus rules in
-<<mining>>).
+세그윗에 대한 다른 접근법이 2015년 말에 제시되었습니다. 합의 규칙을 하위 호환되는
+방식으로 바꾸는 것으로, 이를 ((("soft forks")))((("forks", "soft forks")))_소프트 포크_ 라고 합니다. 하위 호환이란, 그 변경을
+구현한 풀 노드가 변경하지 않은 풀 노드라면 유효하지 않다고 볼 블록을 받아들여서는
+안 된다는 뜻입니다. 그 규칙을 지키기만 한다면 더 새로운 풀 노드는 더 오래된 풀 노드가
+받아들일 블록을 거부할 수 있고, 그럼으로써 새 합의 규칙을 집행할 수 있게 됩니다(다만
+그 더 새로운 풀 노드들이 비트코인 사용자 사이의 경제적 합의를 대표할 때만 그렇습니다.
+비트코인 합의 규칙 업그레이드의 세부 내용은 <<mining>>에서 살펴봅니다).
 
-The soft fork segwit approach is based on anyone-can-spend
-output scripts.  A script that starts with any of the numbers 0 to 16
-and followed by 2 to 40 bytes of data is defined as a segwit
-output script template.  The number indicates its version (e.g., 0 is
-segwit version 0, or _segwit v0_).  The data is called a _witness
-program_.  It's also possible to wrap the segwit template in a P2SH
-commitment, but we won't deal with that in this chapter.
+소프트 포크 방식의 세그윗은 누구나 사용 가능한 출력 스크립트에 기반합니다. 0부터
+16까지의 숫자 중 하나로 시작하고 그 뒤에 2~40바이트의 데이터가 오는 스크립트를 세그윗
+출력 스크립트 형판으로 정의합니다. 숫자는 버전을 나타냅니다(예: 0은 세그윗 버전 0, 즉
+_세그윗 v0_). 데이터는 _위트니스 프로그램_ 이라고 합니다. 세그윗 형판을 P2SH
+커밋먼트로 감쌀 수도 있지만, 이 장에서는 다루지 않습니다.
 
-From the perspective of old nodes, these output script templates can be
-spent with an empty input script.  From the perspective of a new node that
-is aware of the new segwit rules, any payment to a segwit output script
-template must only be spent with an empty input script.  Notice the
-difference here: old nodes _allow_ an empty input script; new nodes
-_require_ an empty input script.
+옛 노드의 관점에서 이 출력 스크립트 형판은 빈 입력 스크립트로 쓸 수 있습니다. 새
+세그윗 규칙을 아는 새 노드의 관점에서는, 세그윗 출력 스크립트 형판으로 지불된 것은
+반드시 빈 입력 스크립트로만 쓸 수 있습니다. 여기서 차이를 눈여겨보세요. 옛 노드는 빈
+입력 스크립트를 _허용_ 하고, 새 노드는 빈 입력 스크립트를 _요구_ 합니다.
 
 [role="less_space pagebreak-before"]
-An empty input script keeps witnesses from affecting the txid, eliminating
-circular dependencies, third-party transaction malleability, and
-second-party transaction malleability.  But, with no ability to put
-data in an input script, users of segwit output script templates need a
-new field.  That field is called the _witness structure_.
+입력 스크립트를 비우면 위트니스가 txid에 영향을 주지 못하므로, 순환 의존과 제삼자
+트랜잭션 가변성, 제이자 트랜잭션 가변성이 모두 사라집니다. 하지만 입력 스크립트에
+데이터를 넣을 수 없으니 세그윗 출력 스크립트 형판을 쓰는 사용자에게는 새 필드가
+필요합니다. 그 필드를 _위트니스 구조_ 라고 합니다.
 
-The introduction of witness programs and the witness structure complicates Bitcoin,
-but it follows an existing trend of increasing abstraction.  Recall from
-<<ch04_keys_addresses>> that the original Bitcoin whitepaper describes a system
-where bitcoins were received to public keys (pubkeys) and spent with
-signatures (sigs).  The public key defined who was _authorized_ to spend
-the bitcoins (whoever controlled the corresponding private key) and the
-signature provided _authentication_ that the spending transaction came
-from someone who controlled the private key.  To make that system more
-flexible, the initial release of Bitcoin introduced scripts that allow
-bitcoins to be received to output scripts and spent with input scripts.
-Later experience with contract protocols inspired allowing bitcoins to
-be received to witness programs and spent with the witness structure. The terms and fields used in different versions of Bitcoin((("transactions", "witnesses", "segregated witness", startref="transaction-witness-segwit")))((("witnesses", "segregated witness", startref="witness-segwit")))((("segregated witness (segwit)", startref="segregated-witness-segwit"))) are shown in <<terms_used_authorization_authentication>>.
+위트니스 프로그램과 위트니스 구조의 도입은 비트코인을 복잡하게 만들지만, 추상화를
+높여 온 기존 흐름을 따르는 것이기도 합니다. <<ch04_keys_addresses>>에서 비트코인 원
+백서가 비트코인을 공개키(pubkey)로 받고 서명(sig)으로 쓰는 시스템을 설명했다는 것을
+떠올려 보세요. 공개키는 누가 그 비트코인을 쓸 _권한을 부여받았는지_ (대응하는 비밀키를
+통제하는 사람이 누구든) 정의했고, 서명은 그 지출 트랜잭션이 비밀키를 통제하는 사람에게서
+왔다는 _인증_ 을 제공했습니다. 그 시스템을 더 유연하게 만들기 위해, 비트코인 최초
+릴리스는 비트코인을 출력 스크립트로 받고 입력 스크립트로 쓸 수 있게 하는 스크립트를
+도입했습니다. 이후 계약 프로토콜을 다루며 얻은 경험은 비트코인을 위트니스 프로그램으로
+받고 위트니스 구조로 쓸 수 있게 하는 데로 이어졌습니다. 비트코인의 여러 버전에서 쓰이는
+용어와 필드를((("transactions", "witnesses", "segregated witness", startref="transaction-witness-segwit")))((("witnesses", "segregated witness", startref="witness-segwit")))((("segregated witness (segwit)", startref="segregated-witness-segwit"))) <<terms_used_authorization_authentication>>에 나타냈습니다.
 
 ++++
 <table id="terms_used_authorization_authentication">
-<caption>Terms used for authorization and authentication data in different parts of Bitcoin</caption>
+<caption>비트코인의 여러 부분에서 권한 부여 및 인증 데이터에 쓰이는 용어</caption>
 <thead>
 <tr>
 <th/>
-<th><p>Authorization</p></th>
-<th class="right"><p>Authentication</p></th>
+<th><p>권한 부여</p></th>
+<th class="right"><p>인증</p></th>
 </tr></thead>
 <tbody>
 <tr>
-<td class="fakeheader"><p><strong>Whitepaper</strong></p></td>
-<td><p>Public key</p></td>
-<td class="right"><p>Signature</p></td>
+<td class="fakeheader"><p><strong>백서</strong></p></td>
+<td><p>공개키</p></td>
+<td class="right"><p>서명</p></td>
 </tr>
 <tr>
-<td  class="fakeheader"><p><strong>Original (Legacy)</strong></p></td>
-<td><p>Output script</p></td>
-<td class="right"><p>Input script</p></td>
+<td  class="fakeheader"><p><strong>최초(레거시)</strong></p></td>
+<td><p>출력 스크립트</p></td>
+<td class="right"><p>입력 스크립트</p></td>
 </tr>
 <tr>
-<td  class="fakeheader"><p><strong>Segwit</strong></p></td>
-<td><p>Witness program</p></td>
-<td class="right"><p>Witness structure</p></td>
+<td  class="fakeheader"><p><strong>세그윗</strong></p></td>
+<td><p>위트니스 프로그램</p></td>
+<td class="right"><p>위트니스 구조</p></td>
 </tr>
 </tbody>
 </table>
 ++++
 
-==== Witness Structure Serialization
+==== 위트니스 구조 직렬화
 
-Similar to((("transactions", "witnesses", "count", id="transaction-witness-count")))((("witnesses", "count", id="witness-count"))) the inputs and outputs fields, the witness structure contains
-other fields, so we'll start with a map of those bytes from
-Alice's transaction in <<alice_tx_witness_map>>.
+입력·출력 필드와((("transactions", "witnesses", "count", id="transaction-witness-count")))((("witnesses", "count", id="witness-count"))) 마찬가지로 위트니스 구조에도 다른 필드가 들어 있으므로,
+앨리스 트랜잭션의 해당 바이트 맵을 <<alice_tx_witness_map>>에서 보는 것으로
+시작하겠습니다.
 
 [[alice_tx_witness_map]]
-.A byte map of the witness structure from Alice's transaction.
+.앨리스 트랜잭션의 위트니스 구조 바이트 맵.
 image::images/mbc3_0605.png["A byte map of the witness from Alice's transaction"]
 
-Unlike the inputs and outputs fields, the overall witness structure doesn't
-start with any indication of the total number of witness stacks it contains.
-Instead, this is implied by the inputs field--there's one witness
-stack for every input in a transaction.
+입력·출력 필드와 달리 위트니스 구조 전체는 그 안에 든 위트니스 스택의 총 개수를
+나타내는 값으로 시작하지 않습니다. 대신 그 값은 입력 필드에서 암묵적으로 정해집니다.
+트랜잭션의 입력마다 위트니스 스택이 하나씩 있습니다.
 
-The witness structure for a particular input does start with a count of the
-number of elements they contain.  Those elements are ((("witness items")))called _witness
-items_.  We'll explore them in detail in
-<<c_authorization_authentication>>, but for now we need to know that
-each witness item is prefixed by a compactSize integer indicating its
-size.
+다만 개별 입력의 위트니스 구조는 그 안에 든 요소의 개수로 시작합니다. 그 요소들을
+((("witness items")))_위트니스 항목_ 이라고 합니다. 자세한 내용은
+<<c_authorization_authentication>>에서 살펴보고, 지금은 각 위트니스 항목 앞에 그
+크기를 나타내는 compactSize 정수가 붙는다는 것만 알면 됩니다.
 
-Legacy inputs don't contain any witness items, so their witness stack
-consists entirely of a count of zero (0x00).
+레거시 입력에는 위트니스 항목이 전혀 없으므로, 그 위트니스 스택은 전적으로 개수
+0(0x00)만으로 이루어집니다.
 
-Alice's transaction contains one input and one ((("transactions", "witnesses", startref="transaction-witness")))((("witnesses", startref="witness")))((("transactions", "witnesses", "count", startref="transaction-witness-count")))((("witnesses", "count", startref="witness-count")))witness item.
+앨리스의 트랜잭션에는 입력 하나와 위트니스 항목 ((("transactions", "witnesses", startref="transaction-witness")))((("witnesses", startref="witness")))((("transactions", "witnesses", "count", startref="transaction-witness-count")))((("witnesses", "count", startref="witness-count")))하나가 들어 있습니다.
 
 [[lock_time]]
-=== Lock Time
+=== 잠금 시간
 
-The ((("transactions", "lock time")))((("lock time")))final field in a serialized transaction is its lock time.  This
-field was part of Bitcoin's original serialization format, but it was
-initially only enforced by Bitcoin's policy for choosing which
-transactions to mine.  Bitcoin's earliest known soft fork added a rule
-that, starting at block height 31,000, forbid the inclusion of a
-transaction in a block unless it satisfies one of the following rules:
+((("transactions", "lock time")))((("lock time")))직렬화된 트랜잭션의 마지막 필드는 잠금 시간입니다. 이 필드는
+비트코인의 원래 직렬화 형식의 일부였지만, 처음에는 어떤 트랜잭션을 채굴할지 고르는
+비트코인의 정책으로만 집행되었습니다. 알려진 비트코인 최초의 소프트 포크는 블록 높이
+31,000부터, 다음 규칙 중 하나를 만족하지 않는 트랜잭션은 블록에 포함할 수 없다는
+규칙을 추가했습니다.
 
-- The transaction indicates that it should be eligible for inclusion in
-  any block by setting its lock time to 0.
+- 트랜잭션이 잠금 시간을 0으로 설정해 어떤 블록에든 포함될 수 있음을 나타냅니다.
 
-- The transaction indicates that it wants to restrict which blocks it
-  can be included in by setting its lock time to a value less than
-  500,000,000.  In this case, the transaction can only be included in a
-  block that has a height equal to the lock time or higher.  For
-  example, a transaction with a lock time of 123,456 can be included in
-  block 123,456 or any later block.
+- 트랜잭션이 잠금 시간을 500,000,000보다 작은 값으로 설정해, 어떤 블록에 포함될 수
+  있는지 제한하고자 함을 나타냅니다. 이 경우 그 트랜잭션은 높이가 잠금 시간과 같거나
+  더 높은 블록에만 포함될 수 있습니다. 예를 들어 잠금 시간이 123,456인 트랜잭션은
+  123,456번 블록이나 그 이후의 어떤 블록에든 포함될 수 있습니다.
 
-- The transaction indicates that it wants to restrict when it can be
-  included in the blockchain by setting its lock time to a value of
-  500,000,000 or greater.  In this case, the field is parsed as epoch
-  time (the number of seconds since 1970-01-01T00:00 UTC) and the
-  transaction can only be included in a ((("median time past (MTP)")))((("MTP (median time past)")))block with a _median time past_
-  (MTP) greater than the lock time.  MTP is normally about an hour or
-  two behind the current time.  The rules for MTP are described in
-  <<mtp>>.
-
+- 트랜잭션이 잠금 시간을 500,000,000 이상의 값으로 설정해, 언제 블록체인에 포함될 수
+  있는지 제한하고자 함을 나타냅니다. 이 경우 그 필드는 에포크 시각(1970-01-01T00:00
+  UTC 이후의 초 수)으로 파싱되며, 그 트랜잭션은 잠금 시간보다 큰
+  ((("median time past (MTP)")))((("MTP (median time past)")))_중앙값 과거 시각_ (MTP)을 가진 블록에만 포함될 수
+  있습니다. MTP는 보통 현재 시각보다 한두 시간 정도 뒤처져 있습니다. MTP 규칙은
+  <<mtp>>에서 설명합니다.
 [[coinbase_transactions]]
-=== Coinbase Transactions
+=== 코인베이스 트랜잭션
 
-The first ((("transactions", "coinbase", id="transaction-coinbase2")))((("coinbase transactions", id="coinbase-transaction")))((("generation transactions")))transaction in each block is a special case.  Most older
-documentation calls this a _generation transaction_, but most newer
-documentation calls it a _coinbase transaction_ (not to be confused with
-transactions created by the company named "Coinbase").
+각 ((("transactions", "coinbase", id="transaction-coinbase2")))((("coinbase transactions", id="coinbase-transaction")))((("generation transactions")))블록의 첫 번째 트랜잭션은 특별한 경우입니다. 오래된 문서 대부분은
+이를 _생성 트랜잭션_ 이라고 부르지만, 최근 문서 대부분은 _코인베이스 트랜잭션_
+이라고 부릅니다("Coinbase"라는 회사가 만든 트랜잭션과 혼동하지 마세요).
 
-Coinbase transactions are created by the miner of the block that
-includes them and gives the miner the option to claim any fees paid by
-transactions in that block.  Additionally, up until block 6,720,000,
-miners are allowed to claim a subsidy consisting of bitcoins that have
-never previously been circulated, called ((("block subsidy")))((("block reward")))the _block subsidy_.  The total
-amount a miner can claim for a block--the combination of fees and
-subsidy--is called the _block reward_.
+코인베이스 트랜잭션은 그것을 담은 블록의 채굴자가 만들며, 그 블록의 트랜잭션들이
+지불한 수수료를 채굴자가 가져갈 수 있게 해줍니다. 또한 6,720,000번 블록까지 채굴자는
+이전에 유통된 적이 없는 비트코인으로 이루어진 보조금을 청구할 수 있는데, 이를
+((("block subsidy")))((("block reward")))_블록 보조금_ 이라고 합니다. 한 블록에서 채굴자가 가져갈 수 있는
+총액, 즉 수수료와 보조금을 합한 것을 _블록 보상_ 이라고 합니다.
 
-Some of the special rules for coinbase transactions include:
+코인베이스 트랜잭션에 적용되는 특별 규칙에는 다음과 같은 것들이 있습니다.
 
-- They may only have one input.
+- 입력을 하나만 가질 수 있습니다.
 
-- The single input must have an outpoint with a null txid (consisting entirely
-  of zeros) and a maximal output index (0xffffffff).  This prevents the
-  coinbase transaction from referencing a previous transaction output,
-  which would (at the very least) be confusing given that the coinbase
-  transaction pays out fees and subsidy.
+- 그 유일한 입력의 아웃포인트는 널 txid(전부 0으로 이루어진 값)와 최댓값 출력
+  인덱스(0xffffffff)를 가져야 합니다. 이는 코인베이스 트랜잭션이 이전 트랜잭션 출력을
+  참조하지 못하게 막는데, 코인베이스 트랜잭션이 수수료와 보조금을 지급한다는 점을
+  생각하면 그런 참조는 (최소한) 혼란스러울 것입니다.
 
-- The field that would contain an input script in a normal transaction is
-  called a _coinbase_.  It's this field that gives the coinbase
-  transaction its name.  The coinbase field must be at least two bytes
-  and not longer than 100 bytes.  This script is not executed but legacy
-  transaction limits on the number of signature-checking operations
-  (sigops) do apply to it, so any arbitrary data placed in it should be
-  prefixed by a data-pushing opcode.  Since a 2013 soft fork defined in
-  BIP34, the first few bytes of this field must follow additional rules
-  we'll describe in <<duplicate_transactions>>.
+- 보통의 트랜잭션이라면 입력 스크립트가 들어갈 필드를 _코인베이스_ 라고 합니다.
+  코인베이스 트랜잭션이라는 이름은 바로 이 필드에서 왔습니다. 코인베이스 필드는 최소
+  2바이트여야 하고 100바이트를 넘지 않아야 합니다. 이 스크립트는 실행되지 않지만
+  서명 검사 연산(sigop) 수에 대한 레거시 트랜잭션 제한은 적용되므로, 여기에 넣는 임의
+  데이터 앞에는 데이터 푸시 옵코드를 붙여야 합니다. BIP34에 정의된 2013년 소프트 포크
+  이후로 이 필드의 앞부분 몇 바이트는 추가 규칙을 따라야 하는데,
+  <<duplicate_transactions>>에서 설명합니다.
 
-- The sum of the outputs must not exceed the value of the fees collected
-  from all the transactions in that block plus the subsidy.  The subsidy
-  started at 50 BTC per block and halves every 210,000 blocks
-  (approximately every four years).  Subsidy values are rounded down to the
-  nearest satoshi.
+- 출력의 합은 그 블록의 모든 트랜잭션에서 걷은 수수료에 보조금을 더한 값을 넘지
+  않아야 합니다. 보조금은 블록당 50 BTC에서 시작해 210,000블록마다(대략 4년마다)
+  절반으로 줄어듭니다. 보조금 값은 사토시 단위로 내림합니다.
 
-- Since the 2017 segwit soft fork documented in BIP141, any block that contains
-  a transaction spending a segwit output must contain an output to the
-  coinbase transaction that commits to all of the transactions in the
-  block (including their witnesses).  We'll explore this commitment in
-  <<mining>>.
+- BIP141에 문서화된 2017년 세그윗 소프트 포크 이후로, 세그윗 출력을 쓰는 트랜잭션이
+  담긴 블록은 그 블록의 모든 트랜잭션(위트니스 포함)에 커밋하는 출력을 코인베이스
+  트랜잭션에 담아야 합니다. 이 커밋먼트는 <<mining>>에서 살펴봅니다.
 
-A coinbase transaction can have any other outputs that would be valid in
-a normal transaction.  However, a transaction spending one of those
-outputs cannot be included in any block until after the coinbase
-transaction has received 100 confirmations.  This is called the
-_maturity rule_, and ((("maturity rule")))coinbase transaction outputs that don't yet have
-100 confirmations are called _immature_.
+코인베이스 트랜잭션은 보통의 트랜잭션에서 유효한 다른 어떤 출력이든 가질 수 있습니다.
+다만 그런 출력 중 하나를 쓰는 트랜잭션은 코인베이스 트랜잭션이 확인 100회를 받기
+전까지는 어떤 블록에도 포함될 수 없습니다. 이를 _성숙 규칙_ 이라고 하며,
+((("maturity rule")))아직 확인 100회를 받지 못한 코인베이스 트랜잭션 출력을
+_미성숙_ 하다고 합니다.
 
 //TODO:stretch goal to describe the reason for the maturity rule and,
 //by extension the reason for no expiring timelocks
 
-Most Bitcoin software doesn't need to deal with coinbase transactions,
-but their special nature does mean they can occasionally be the cause of
-unusual problems in software that's not designed to expect((("transactions", "coinbase", startref="transaction-coinbase2")))((("coinbase transactions", startref="coinbase-transaction"))) them.
+대부분의 비트코인 소프트웨어는 코인베이스 트랜잭션을 다룰 일이 없지만, 그 특별한
+성질 때문에 이를 염두에 두지 않고 만든 소프트웨어에서 이따금 특이한 문제의 원인이
+되기도 ((("transactions", "coinbase", startref="transaction-coinbase2")))((("coinbase transactions", startref="coinbase-transaction")))합니다.
 
 // Useful content deleted
 // - no input amount in transactions
@@ -1133,107 +937,100 @@ unusual problems in software that's not designed to expect((("transactions", "co
 // Change
 // Inability for lightweight clients to get old UTXOs
 
-=== Weight and Vbytes
+=== 가중치와 vbyte
 
-Each ((("transactions", "weights", id="transactions-weight")))((("weights (of transactions)", id="weights")))((("vbytes", id="vbytes")))Bitcoin block is limited in the amount of transaction data it can
-contain, so most Bitcoin software needs to be able to measure the
-transactions it creates or processes.  The modern unit of measurement
-for Bitcoin is called _weight_.  An alternative version of weight is
-_vbytes_, where four units of weight equal one vbyte, providing an easy
-comparison to the original _byte_ measurement unit used in legacy
-Bitcoin blocks.
+각 ((("transactions", "weights", id="transactions-weight")))((("weights (of transactions)", id="weights")))((("vbytes", id="vbytes")))비트코인 블록은 담을 수 있는 트랜잭션 데이터의 양이 제한되어 있으므로,
+대부분의 비트코인 소프트웨어는 자신이 만들거나 처리하는 트랜잭션을 측정할 수 있어야
+합니다. 비트코인의 현대적인 측정 단위를 _가중치(weight)_ 라고 합니다. 가중치의 다른
+형태로 _vbyte_ 가 있는데, 가중치 4단위가 1 vbyte에 해당하며 레거시 비트코인 블록에서
+쓰던 원래의 _바이트_ 측정 단위와 쉽게 비교할 수 있게 해줍니다.
 
-Blocks are limited to 4 million weight.  The block header takes up 240
-weight.  An additional field, the transaction count, uses either 4 or
-12 weight.  All of the remaining weight may be used for transaction
-data.
+블록은 400만 가중치로 제한됩니다. 블록 헤더가 240 가중치를 차지합니다. 추가 필드인
+트랜잭션 개수는 4 또는 12 가중치를 씁니다. 남은 가중치는 모두 트랜잭션 데이터에 쓸 수
+있습니다.
 
-To calculate the weight of a particular field in a transaction, the size
-of that serialized field in bytes is multiplied by a factor.  To
-calculate the weight of a transaction, sum together the weights of all
-of its fields.  The factors for each of the fields in a transaction are
-shown in <<weight_factors>>.  To provide an example, we also calculate
-the weight of each field in this chapter's example transaction from
-Alice to Bob.
+트랜잭션의 특정 필드의 가중치를 계산하려면, 직렬화된 그 필드의 바이트 크기에 계수를
+곱합니다. 트랜잭션의 가중치를 계산하려면 모든 필드의 가중치를 더합니다. 트랜잭션 각
+필드의 계수를 <<weight_factors>>에 나타냈습니다. 예시를 위해 이 장에서 다룬, 앨리스가
+밥에게 보낸 트랜잭션의 각 필드 가중치도 함께 계산했습니다.
 
-The factors, and the fields to which they are applied, were chosen to
-reduce the weight used when spending a UTXO.  This helps discourage the
-creation of uneconomical outputs as described in
-<<uneconomical_outputs>>.
+계수와 그것이 적용되는 필드는 UTXO를 쓸 때 사용되는 가중치를 줄이도록 선택되었습니다.
+이는 <<uneconomical_outputs>>에서 설명한 비경제적 출력이 만들어지는 것을 억제하는 데
+도움이 됩니다.
 
 ++++
 <table id="weight_factors">
-<caption>Weight factors for all fields in a Bitcoin transaction</caption>
+<caption>비트코인 트랜잭션 전체 필드의 가중치 계수</caption>
 <thead>
 <tr>
-<th><p>Field</p></th>
-<th><p>Factor</p></th>
-<th><p>Weight in Alice’s Tx</p></th>
+<th><p>필드</p></th>
+<th><p>계수</p></th>
+<th><p>앨리스 Tx에서의 가중치</p></th>
 </tr> </thead>
 <tbody>
 <tr>
-<td><p>Version</p></td>
+<td><p>버전</p></td>
 <td><p>4</p></td>
 <td><p>16</p></td>
 </tr>
 <tr>
-<td><p>Marker &amp; Flag</p></td>
+<td><p>마커 &amp; 플래그</p></td>
 <td><p>1</p></td>
 <td><p>2</p></td>
 </tr>
 <tr>
-<td><p>Inputs Count</p></td>
+<td><p>입력 개수</p></td>
 <td><p>4</p></td>
 <td><p>4</p></td>
 </tr>
 <tr>
-<td><p>Outpoint</p></td>
+<td><p>아웃포인트</p></td>
 <td><p>4</p></td>
 <td><p>144</p></td>
 </tr>
 <tr>
-<td><p>Input script</p></td>
+<td><p>입력 스크립트</p></td>
 <td><p>4</p></td>
 <td><p>4</p></td>
 </tr>
 <tr>
-<td><p>Sequence</p></td>
+<td><p>시퀀스</p></td>
 <td><p>4</p></td>
 <td><p>16</p></td>
 </tr>
 <tr>
-<td><p>Outputs Count</p></td>
+<td><p>출력 개수</p></td>
 <td><p>4</p></td>
 <td><p>4</p></td>
 </tr>
 <tr>
-<td><p>Amount</p></td>
+<td><p>금액</p></td>
 <td><p>4</p></td>
-<td><p>64 (2 outputs)</p></td>
+<td><p>64 (출력 2개)</p></td>
 </tr>
 <tr>
-<td><p>Output script</p></td>
+<td><p>출력 스크립트</p></td>
 <td><p>4</p></td>
-<td><p>232 (2 outputs with different scripts)</p></td>
+<td><p>232 (서로 다른 스크립트를 가진 출력 2개)</p></td>
 </tr>
 <tr>
-<td><p>Witness Count</p></td>
+<td><p>위트니스 개수</p></td>
 <td><p>1</p></td>
 <td><p>1</p></td>
 </tr>
 <tr>
-<td><p>Witness items</p></td>
+<td><p>위트니스 항목</p></td>
 <td><p>1</p></td>
 <td><p>66</p></td>
 </tr>
 <tr>
-<td><p>Lock time</p></td>
+<td><p>잠금 시간</p></td>
 <td><p>4</p></td>
 <td><p>16</p></td>
 </tr>
 <tr>
-<td><p><strong>Total</strong></p></td>
-<td><p><em>N/A</em></p></td>
+<td><p><strong>합계</strong></p></td>
+<td><p><em>해당 없음</em></p></td>
 <td><p><strong>569</strong></p></td>
 </tr>
 </tbody>
@@ -1241,8 +1038,7 @@ creation of uneconomical outputs as described in
 ++++
 
 [role="less_space pagebreak-before"]
-We can verify our weight calculation by getting the total for Alice's
-transaction from Bitcoin Core:
+비트코인 코어에서 앨리스 트랜잭션의 합계를 가져와 가중치 계산을 확인할 수 있습니다.
 
 ----
 $ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
@@ -1250,38 +1046,32 @@ $ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
 569
 ----
 
-Alice's transaction from <<alice_tx_serialized_reprint>> at the beginning of
-this chapter is shown represented in weight units in
-<<alice_tx_weight_map>>.  You can see the factor at work by comparing
-the difference in size between the various fields in the ((("transactions", "weights", startref="transactions-weight")))((("weights (of transactions)", startref="weights")))((("vbytes", startref="vbytes")))two images.
+이 장 첫머리 <<alice_tx_serialized_reprint>>에 나온 앨리스의 트랜잭션을 가중치 단위로
+나타낸 것이 <<alice_tx_weight_map>>입니다. 두 그림에서 여러 필드의 크기 차이를 비교해
+보면 계수가 어떻게 작용하는지 ((("transactions", "weights", startref="transactions-weight")))((("weights (of transactions)", startref="weights")))((("vbytes", startref="vbytes")))볼 수 있습니다.
 
 [[alice_tx_weight_map]]
-.A byte map of Alice's transaction.
+.앨리스 트랜잭션의 바이트 맵.
 image::images/mbc3_0606.png["A weight map of Alice's transaction"]
 
 [[legacy_serialization]]
-=== Legacy Serialization
+=== 레거시 직렬화
 
-The ((("transactions", "legacy serialization")))((("legacy serialization")))serialization format described in this chapter is used for the
-majority of new Bitcoin transactions as of the writing of this book, but
-an older serialization format is still used for many transactions.  That
-older format, called _legacy serialization_, must be used on the Bitcoin
-P2P network for any transaction with an empty witness structure (which is only
-valid if the transaction doesn't spend any witness programs).
+이 ((("transactions", "legacy serialization")))((("legacy serialization")))장에서 설명한 직렬화 형식은 이 책을 쓰는 시점에 새로 만들어지는
+비트코인 트랜잭션 대부분에 쓰이지만, 더 오래된 직렬화 형식도 여전히 많은 트랜잭션에
+쓰입니다. _레거시 직렬화_ 라고 하는 그 오래된 형식은, 위트니스 구조가 빈 트랜잭션
+(위트니스 프로그램을 전혀 쓰지 않는 트랜잭션에서만 유효합니다)이라면 비트코인 P2P
+네트워크에서 반드시 써야 합니다.
 
-Legacy serialization does not include the marker, flag, and witness structure
-fields.
+레거시 직렬화에는 마커, 플래그, 위트니스 구조 필드가 들어가지 않습니다.
 
 ++++
 <p class="fix_tracking2">
-In this chapter, we looked at each of the fields in a transaction and
-discovered how they communicate to full nodes the details about the
-bitcoins to be transferred between users.  We only briefly looked at the
-output script, input script, and witness structure that allow specifying and
-satisfying conditions that restrict who can spend what bitcoins.
-Understanding how to construct and use these conditions is essential to
-ensuring that only Alice can spend her bitcoins, so they will be the
-subject of the next chapter.</p>
+이 장에서는 트랜잭션의 각 필드를 살펴보며, 그 필드들이 사용자 사이에 이전될 비트코인에
+대한 세부 정보를 풀 노드에 어떻게 전달하는지 알아봤습니다. 누가 어떤 비트코인을 쓸 수
+있는지 제한하는 조건을 지정하고 충족시키는 출력 스크립트, 입력 스크립트, 위트니스
+구조는 짧게만 다뤘습니다. 이 조건들을 구성하고 사용하는 방법을 이해하는 것은 앨리스만이
+자기 비트코인을 쓸 수 있도록 보장하는 데 필수적이므로, 다음 장의 주제로 다루겠습니다.</p>
 ++++
 
 //TODO:text long section or full chapter about psbts

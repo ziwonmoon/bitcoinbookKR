@@ -23,7 +23,7 @@
 
 - [x] `ch04_keys.adoc`
 - [x] `ch05_wallets.adoc`
-- [ ] `ch06_transactions.adoc`
+- [x] `ch06_transactions.adoc`
 
 ## 4단계 — 나머지 본문
 
