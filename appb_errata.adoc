@@ -1,35 +1,31 @@
 [appendix]
-== Errata to the Bitcoin Whitepaper
+== 비트코인 백서 정오표
 
-This ((("Bitcoin whitepaper", "errata", id="bitcoin-whitepaper-errata")))((("whitepaper (Bitcoin)", "errata", id="whitepaper-errata")))appendix contains a description of known problems in Satoshi Nakamoto’s paper, "Bitcoin:
-A Peer-to-Peer Electronic Cash System," as well as notes on terminology
-changes and how Bitcoin's implementation differs from that described in
-the paper.
+이 ((("Bitcoin whitepaper", "errata", id="bitcoin-whitepaper-errata")))((("whitepaper (Bitcoin)", "errata", id="whitepaper-errata")))부록은 사토시 나카모토의 논문 "비트코인: P2P 전자화폐 시스템"에서
+알려진 문제점과 함께, 용어가 바뀐 부분 그리고 비트코인의 실제 구현이
+논문에 기술된 것과 어떻게 다른지에 대한 설명을 담고 있습니다.
 
-This document was originally published by a coauthor of this book in
-2016; it is reproduced here with updates.  The names of
-sections in this errata correspond to the names of the
-sections in Nakamoto's original paper.
+이 문서는 원래 이 책의 공저자가 2016년에 발표한 것이며, 여기에는 내용을
+갱신해 실었습니다. 이 정오표의 절 제목은 나카모토 원 논문의 절 제목에
+대응합니다.
 
-=== Abstract
+=== 초록
 
 ____
-"The longest chain not only serves as proof of the sequence of events
-witnessed, but proof that it came from the largest pool of CPU power."
+"가장 긴 사슬은 목격된 사건들의 순서를 증명할 뿐 아니라, 그것이 가장 큰
+CPU 연산력 풀에서 나왔음을 증명한다."
 ____
 
-* *Implementation detail:* If each link in the chain (called "blocks"
-in Bitcoin) was built using the same amount of _proof of work_ (PoW), the
-longest chain would be the one backed by the largest pool of
-computational power. However, Bitcoin was implemented in such a way that
-the amount of PoW can vary between blocks, so it became important not to
-check for the "the longest chain" but rather "the chain demonstrating
-the most PoW"; this is often shortened to "most-work chain."
+* *구현 세부:* 사슬의 각 고리(비트코인에서는 "블록"이라 부릅니다)가 같은
+양의 _작업증명_(PoW)으로 만들어진다면, 가장 긴 사슬이 곧 가장 큰 연산력
+풀이 뒷받침하는 사슬일 것입니다. 하지만 비트코인은 블록마다 PoW의 양이
+달라질 수 있는 방식으로 구현되었기에, "가장 긴 사슬"이 아니라 "가장 많은
+PoW를 보여주는 사슬"을 확인하는 것이 중요해졌습니다. 이는 흔히 "최다 작업
+사슬(most-work chain)"로 줄여 부릅니다.
 +
-The
-https://oreil.ly/XYZzx[change]
-from checking for the longest chain to checking for the most-work chain
-occurred in July 2010, long after Bitcoin’s initial release:
+가장 긴 사슬을 확인하던 것에서 최다 작업 사슬을 확인하는 것으로의
+https://oreil.ly/XYZzx[변경]은
+비트코인이 처음 공개되고 한참 뒤인 2010년 7월에 이뤄졌습니다.
 +
 [source,diff]
 ----
@@ -38,208 +34,183 @@ occurred in July 2010, long after Bitcoin’s initial release:
 ----
 
 [role="less_space pagebreak-before"]
-* *Terminology change:* General CPUs were used to generate the PoW for
-the earliest Bitcoin blocks, but PoW generation today is mostly performed
-by specialist Application Specific Integrated Circuits (ASICs), so
-instead of saying "CPU power" it is perhaps more correct to say
-"computational power" or, simply, "hash rate" for the hashing used
-in generating the PoW.
+* *용어 변경:* 초기 비트코인 블록의 PoW는 범용 CPU로 만들어졌지만, 오늘날
+PoW 생성은 대부분 전용 주문형 반도체(ASIC)가 수행합니다. 따라서 "CPU
+연산력"이라기보다 "연산력"이라고 하거나, PoW 생성에 쓰이는 해싱을 가리켜
+간단히 "해시레이트"라고 하는 편이 더 정확할 것입니다.
 
 ____
-"As long as a majority of CPU power is controlled by nodes that are not
-cooperating to attack the network, they’ll generate the longest chain
-and outpace attackers."
+"CPU 연산력의 다수가 네트워크를 공격하기 위해 협력하지 않는 노드들의
+통제 아래 있는 한, 그 노드들이 가장 긴 사슬을 만들어 공격자를 앞지를
+것이다."
 ____
 
-* *Terminology change:* The term "nodes" today is used to refer to
-full validation nodes, which are programs that enforce all the rules of
-the system. Programs (and hardware) that extend the chain today are
-called "miners" based on Nakamoto’s analogy to gold miners in section
-6 of the paper. Nakamoto expected all miners to be nodes but the
-software he released did not require all nodes to be miners. In the
-original software, a simple menu item in the node GUI allowed toggling
-the mining function on or off.
+* *용어 변경:* 오늘날 "노드"라는 말은 시스템의 모든 규칙을 강제하는
+프로그램인 완전 검증 노드를 가리키는 데 쓰입니다. 오늘날 사슬을 늘리는
+프로그램(과 하드웨어)은 논문 6절에서 나카모토가 든 금 채굴자 비유를 따라
+"채굴자"라고 부릅니다. 나카모토는 모든 채굴자가 노드일 것이라 예상했지만,
+그가 공개한 소프트웨어는 모든 노드가 채굴자여야 한다고 요구하지 않았습니다.
+초기 소프트웨어에서는 노드 GUI의 간단한 메뉴 항목으로 채굴 기능을 켜고
+끌 수 있었습니다.
 +
-Today it is the case that the overwhelming number of nodes are not
-miners and that many individuals who own mining hardware do not use it
-with their own nodes (and even those that do mine with their own nodes
-often mine for short periods of time on top of newly discovered blocks
-without ensuring their node considers the new block valid). The early
-parts of the paper where "nodes" is mostly used without modification
-refer to mining using a full validation node; the later parts of the
-paper which refer to "network nodes" is mainly about what nodes can do
-even if they aren’t mining.
-* *Post-publication discovery:* When a new block is produced, the miner
-who produces that block can begin working on its sequel immediately but
-all other miners are unaware of the new block and cannot begin working
-on it until it has propagated across the
-network to them. This gives miners who produce many blocks an edge over
-miners who produce fewer blocks, and this can be exploited in what’s
-known as the _selfish mining attack_ to allow an attacker with around
-30% of total network hash rate to make other miners less profitable,
-perhaps driving them into following the attacking miner’s policy. So
-instead of saying "a majority of CPU power is controlled by nodes that
-are not cooperating to attack the network," it is perhaps more correct
-to say "as long as nodes cooperating to attack the network control less
-than about 30% of the network."
+오늘날은 압도적으로 많은 노드가 채굴자가 아니며, 채굴 하드웨어를 가진
+많은 사람이 그것을 자기 노드와 함께 쓰지 않습니다(자기 노드로 채굴하는
+사람들조차 새로 발견된 블록이 유효하다고 자기 노드가 판단했는지 확인하지
+않은 채 그 위에서 짧은 시간 채굴하는 일이 흔합니다). 논문의 앞부분에서
+수식어 없이 "노드"라고 쓰인 대부분은 완전 검증 노드를 이용한 채굴을
+가리킵니다. "네트워크 노드"를 언급하는 뒷부분은 주로 채굴을 하지 않더라도
+노드가 할 수 있는 일에 관한 것입니다.
+* *발표 이후 발견:* 새 블록이 만들어지면 그 블록을 만든 채굴자는 곧바로
+다음 블록 작업을 시작할 수 있지만, 다른 모든 채굴자는 그 새 블록을 아직
+모르며 그것이 네트워크를 가로질러 자신에게 전파되기 전까지는 작업을
+시작할 수 없습니다. 이는 블록을 많이 만들어 내는 채굴자에게 적게 만드는
+채굴자보다 유리한 고지를 줍니다. 그리고 이는 _이기적 채굴 공격(selfish
+mining attack)_ 으로 알려진 방식으로 악용될 수 있어, 전체 네트워크
+해시레이트의 30% 안팎을 가진 공격자가 다른 채굴자들의 수익성을 떨어뜨리고
+어쩌면 그들을 공격자의 방침에 따르도록 몰아갈 수 있습니다. 따라서 "CPU
+연산력의 다수가 네트워크를 공격하기 위해 협력하지 않는 노드들의 통제
+아래 있는 한"이라고 하기보다는, "네트워크를 공격하기 위해 협력하는
+노드들이 네트워크의 약 30% 미만을 통제하는 한"이라고 하는 편이 더
+정확할 것입니다.
 
-=== Transactions
+=== 트랜잭션
 
 ____
-"We define((("transactions", "errata in Bitcoin whitepaper", id="transaction-errata"))) an electronic coin as a chain of digital signatures. Each
-owner transfers the coin to the next by digitally signing a hash of the
-previous transaction and the public key of the next owner and adding
-these to the end of the coin."
+"우리는((("transactions", "errata in Bitcoin whitepaper", id="transaction-errata"))) 전자 코인을 디지털 서명의 사슬로 정의한다. 각 소유자는 이전
+트랜잭션의 해시와 다음 소유자의 공개키에 디지털 서명을 하고 이를 코인
+끝에 덧붙임으로써 코인을 다음 사람에게 이전한다."
 ____
 
-* *Implementation detail:* Bitcoin implements a more general version of
-this system where digital signatures are not used directly but rather a
-"deterministic expression" is used instead. Just as a signature that
-matches a known public key can be used to enable a payment, the data
-that satisfies a known expression can also enable a payment.
-Generically, the expression that must be satisfied in Bitcoin in order
-to spend a coin is known as an "encumbrance." Almost all encumbrances
-in Bitcoin to date require providing at least one signature. So instead
-of saying "a chain of digital signatures," it is more correct to say
-"a chain of encumbrances." Given that transactions often have more
-than one input and more than one output, the structure is not very
-chain-like; it’s more accurately described as a directed acyclic ((("transactions", "errata in Bitcoin whitepaper", startref="transaction-errata")))graph
-(DAG).
+* *구현 세부:* 비트코인은 이 체계를 더 일반화한 형태로 구현합니다. 디지털
+서명을 직접 쓰는 대신 "결정적 표현식(deterministic expression)"을 씁니다.
+알려진 공개키에 맞는 서명으로 결제를 가능하게 할 수 있듯이, 알려진
+표현식을 만족시키는 데이터로도 결제를 가능하게 할 수 있습니다. 일반적으로
+비트코인에서 코인을 사용하기 위해 만족시켜야 하는 표현식을 "제약
+조건(encumbrance)"이라고 합니다. 지금까지 비트코인의 거의 모든 제약
+조건은 최소한 하나의 서명을 제시할 것을 요구합니다. 따라서 "디지털 서명의
+사슬"이라고 하기보다 "제약 조건의 사슬"이라고 하는 편이 더 정확합니다.
+트랜잭션에는 입력이 여럿, 출력도 여럿인 경우가 많다는 점을 생각하면 그
+구조는 그리 사슬 같지 않습니다. 방향성 비순환 ((("transactions", "errata in Bitcoin whitepaper", startref="transaction-errata")))그래프(DAG)라고
+기술하는 편이 더 정확합니다.
 
-=== Proof of Work
+=== 작업증명
 
 ____
-"...we((("proof-of-work algorithm", "errata in Bitcoin whitepaper", id="proof-errata"))) implement the proof-of-work by incrementing a nonce in the block
-until a value is found that gives the block’s hash the required zero
-bits."
+"...우리는((("proof-of-work algorithm", "errata in Bitcoin whitepaper", id="proof-errata"))) 블록의 해시에 요구되는 0 비트를 주는 값이 나올 때까지 블록
+안의 논스를 증가시키는 방식으로 작업증명을 구현한다."
 ____
 
-* *Implementation detail:* Adam Back’s Hashcash implementation requires
-finding a hash with the required number of leading zero bits. Bitcoin
-treats the hash as an integer and requires that it be less than a
-specified integer, which effectively allows a fractional number of bits
-to be specified.
+* *구현 세부:* 애덤 백의 해시캐시 구현은 요구되는 수만큼 선행 0 비트를
+가진 해시를 찾을 것을 요구합니다. 비트코인은 해시를 정수로 다루며 그것이
+지정된 정수보다 작을 것을 요구하는데, 이는 사실상 비트 수를 소수 단위로
+지정할 수 있게 해 줍니다.
 
 ____
-"Proof-of-work is essentially one-CPU-one-vote."
+"작업증명은 본질적으로 CPU 하나당 한 표다."
 ____
 
-* *Important note:* The vote here is not on the rules of the system but
-merely on the ordering of the transactions in order to provide
-assurances that an "electronic coin" cannot be easily double spent.
-This is described in more detail in section 11 of the paper where it
-says, "We consider the scenario of an attacker trying to generate an
-alternate chain faster than the honest chain. Even if this is
-accomplished, it does not throw the system open to arbitrary changes,
-such as creating value out of thin air or taking money that never
-belonged to the attacker. Nodes are not going to accept an invalid
-transaction as payment, and honest nodes will never accept a block
-containing them."
+* *중요한 참고:* 여기서 말하는 투표는 시스템의 규칙에 대한 것이 아니라,
+"전자 코인"이 쉽게 이중지불될 수 없다는 보장을 제공하기 위한 트랜잭션의
+순서에 대한 것일 뿐입니다. 이는 논문 11절에 더 자세히 기술되어 있습니다.
+거기서는 이렇게 말합니다. "우리는 공격자가 정직한 사슬보다 빠르게 대체
+사슬을 만들어 내려 하는 시나리오를 살펴본다. 이것이 이뤄진다 해도 시스템이
+임의의 변경에 활짝 열리는 것은 아니다. 허공에서 가치를 만들어 내거나
+애초에 공격자의 것이 아니었던 돈을 가져가는 일 같은 것은 할 수 없다.
+노드들은 유효하지 않은 트랜잭션을 결제로 받아들이지 않을 것이고, 정직한
+노드들은 그런 트랜잭션이 담긴 블록을 결코 받아들이지 않을 것이다."
 
 ____
-"...proof-of-work difficulty is determined by a moving average targeting an
-average number of blocks per hour."
+"...작업증명 난이도는 시간당 평균 블록 수를 목표로 하는 이동 평균으로
+정해진다."
 ____
 
-* *Implementation detail:* A moving average is not used. Instead, every
-2,016th block has its reported generation time compared to the
-generation time for an earlier block, and the difference between them is
-used to calculate the average used for adjustment.
+* *구현 세부:* 이동 평균은 쓰이지 않습니다. 대신 2,016번째 블록마다 그
+블록이 보고한 생성 시각을 더 앞선 블록의 생성 시각과 비교하고, 그 차이로
+조정에 쓸 평균을 계산합니다.
 +
-Further, the average implemented in Bitcoin targets an average number of
-blocks per two weeks (not per hour as might be implied by the text).
-Other implemented rules may further slow adjustments, such as a rule
-that the adjustment cannot increase block production speed by more than
-300% per period, nor slow it by more ((("proof-of-work algorithm", "errata in Bitcoin whitepaper", startref="proof-errata")))than 75%.
+또한 비트코인에 구현된 평균은 (본문에서 암시될 법한 시간당이 아니라)
+2주당 평균 블록 수를 목표로 합니다. 다른 구현 규칙들이 조정을 더 늦추기도
+합니다. 예컨대 한 주기에 블록 생성 속도를 300% 넘게 높이거나 75% 넘게
+((("proof-of-work algorithm", "errata in Bitcoin whitepaper", startref="proof-errata")))늦출 수 없다는 규칙이 있습니다.
 
-=== Reclaiming Disk Space
-
-____
-"Once the ((("disk space, reclaiming")))((("reclaiming disk space")))((("blocks", "reclaiming disk space")))latest transaction in a coin is buried under enough blocks, the
-spent transactions before it can be discarded to save disk space."
-____
-
-* *Possible post-publication discovery:* Although the merkle tree
-structure described in this section can prove a transaction was included
-in a particular block, there is currently no way in Bitcoin to prove
-that a transaction has not been spent except to process all subsequent
-data in the blockchain. This means the method described here cannot be
-universally used for reclaiming disk space among all nodes, as all new
-nodes will need to process all transactions.
-
-=== Simplified Payment Verification
+=== 디스크 공간 되찾기
 
 ____
-"One strategy((("payment verification", "errata in Bitcoin whitepaper")))((("verifying", "payment", "errata in Bitcoin whitepaper"))) to protect against this would be to accept alerts from
-network nodes when they detect an invalid block, prompting the user’s
-software to download the full block and alerted transactions to confirm
-the inconsistency."
+"코인의 ((("disk space, reclaiming")))((("reclaiming disk space")))((("blocks", "reclaiming disk space")))최신 트랜잭션이 충분한 수의 블록 아래 묻히고 나면, 그 앞의
+사용된 트랜잭션들은 디스크 공간을 아끼기 위해 버릴 수 있다."
 ____
 
-* *Important Note:* Although software has been produced that implements
-some parts of this section and calls that Simplified Payment
-Verification (SPV), none of these programs currently accepts alerts from
-network nodes (full validation nodes) when invalid blocks have been
-detected. This has placed bitcoins in so-called SPV wallets at risk in
-the past.
+* *발표 이후 발견 가능성:* 이 절에 기술된 머클 트리 구조는 어떤 트랜잭션이
+특정 블록에 포함되었음을 증명할 수 있지만, 현재 비트코인에는 블록체인의
+이후 데이터를 모두 처리하는 것 말고는 어떤 트랜잭션이 사용되지 않았음을
+증명할 방법이 없습니다. 이는 여기 기술된 방법을 모든 노드가 디스크 공간을
+되찾는 데 두루 쓸 수는 없다는 뜻입니다. 새로 들어오는 모든 노드는 모든
+트랜잭션을 처리해야 하기 때문입니다.
 
-=== Privacy
+=== 단순 지불 검증
 
 ____
-"Some linking((("privacy", "errata in Bitcoin whitepaper"))) is still unavoidable with multi-input transactions, which
-necessarily reveal that their inputs were owned by the same owner."
+"이를 막는((("payment verification", "errata in Bitcoin whitepaper")))((("verifying", "payment", "errata in Bitcoin whitepaper"))) 한 가지 전략은 네트워크 노드가 유효하지 않은 블록을 감지했을
+때 보내는 경보를 받아들여, 사용자의 소프트웨어가 전체 블록과 경보된
+트랜잭션을 내려받아 불일치를 확인하도록 하는 것이다."
 ____
 
-* *Post-publication invention:* It isn't clear that different inputs
-in the same transaction have the same owner if owners often mix their
-inputs with
-inputs belonging to other owners. For example, there’s no public
-difference between Alice and Bob each contributing one of their inputs
-toward paying Charlie and Dan than there is between just Alice
-contributing two of her inputs toward paying Charlie and Dan.
+* *중요한 참고:* 이 절의 일부를 구현하고 그것을 단순 지불 검증(SPV)이라
+부르는 소프트웨어가 나왔지만, 그 가운데 유효하지 않은 블록이 감지되었을
+때 네트워크 노드(완전 검증 노드)로부터 경보를 받아들이는 프로그램은 현재
+하나도 없습니다. 이 때문에 이른바 SPV 지갑에 든 비트코인이 과거에 위험에
+놓인 적이 있습니다.
+
+=== 프라이버시
+
+____
+"여러 입력을((("privacy", "errata in Bitcoin whitepaper"))) 쓰는 트랜잭션에서는 그 입력들이 같은 소유자의 것이었음이
+필연적으로 드러나므로 어느 정도의 연결은 여전히 피할 수 없다."
+____
+
+* *발표 이후 고안:* 소유자들이 자기 입력을 다른 소유자의 입력과 자주
+섞는다면, 같은 트랜잭션의 서로 다른 입력이 같은 소유자의 것인지는 분명하지
+않습니다. 예를 들어 앨리스와 밥이 각자 입력을 하나씩 내어 찰리와 댄에게
+지불하는 경우와, 앨리스 혼자 자기 입력 두 개를 내어 찰리와 댄에게
+지불하는 경우 사이에는 공개적으로 드러나는 차이가 없습니다.
 +
-This technique is known today as
-https://oreil.ly/UBEJX[CoinJoin], and software implementing
-it has been in use since 2015.
+오늘날 이 기법은
+https://oreil.ly/UBEJX[코인조인(CoinJoin)]이라 불리며, 이를 구현한
+소프트웨어가 2015년부터 쓰이고 있습니다.
 
-=== Calculations
+=== 계산
 
 ____
-"The receiver ((("calculations", "errata in Bitcoin whitepaper")))generates a new key pair and gives the public key to the
-sender shortly before signing. This prevents the sender from preparing a
-chain of blocks ahead of time by working on it continuously until he is
-lucky enough to get far enough ahead, then executing the transaction at
-that moment."
+"수취인은 ((("calculations", "errata in Bitcoin whitepaper")))새 키 쌍을 만들어 서명 직전에 공개키를 보낸 사람에게 준다.
+이는 보낸 사람이 운 좋게 충분히 앞설 때까지 계속 작업해 블록 사슬을 미리
+준비해 두었다가 바로 그 순간에 트랜잭션을 실행하는 것을 막아 준다."
 ____
 
-* *Post-publication discovery:* Nothing about the receiver generating a
-public key shortly before the spender signs a transaction prevents the
-spender from preparing a chain of blocks ahead of time. Early Bitcoin
-user Hal Finney discovered this attack and
-https://oreil.ly/kg_Xe[described
-it]: "Suppose the attacker is generating blocks occasionally. In each
-block he generates, he includes a transfer from address A to address B,
-both of which he controls.
+* *발표 이후 발견:* 보내는 사람이 트랜잭션에 서명하기 직전에 수취인이
+공개키를 만든다고 해서, 보내는 사람이 블록 사슬을 미리 준비하는 것을 막을
+수 있는 것은 전혀 아닙니다. 초기 비트코인 사용자 할 피니가 이 공격을
+발견하고
+https://oreil.ly/kg_Xe[기술했습니다]. "공격자가 이따금
+블록을 만들어 내고 있다고 하자. 그는 자신이 만드는 블록마다 주소 A에서
+주소 B로 보내는 이전을 끼워 넣는데, 둘 다 그가 통제하는 주소다.
 +
-"To cheat you, when he generates a block, he doesn’t broadcast it.
-Instead, he runs down to your store and makes a payment to your address
-C with his address A. You wait a few seconds, don’t hear anything, and
-transfer the goods. He broadcasts his block now, and his transaction
-will take precedence over yours."
+"당신을 속이기 위해, 그는 블록을 만들어도 전파하지 않는다. 대신 당신의
+상점으로 달려가 자기 주소 A로 당신의 주소 C에 결제를 한다. 당신은 몇 초
+기다렸다가 아무 소식이 없으니 물건을 건넨다. 그러면 그는 그때 자기 블록을
+전파하고, 그의 트랜잭션이 당신의 것보다 우선하게 된다."
 +
-The attack works for any number of confirmations, and is sometimes named
-the Finney Attack.
+이 공격은 확인 수가 얼마든 통하며, 때로 피니 공격(Finney Attack)이라
+불립니다.
 
 '''''
 
-*Disclaimer:* The author of this document was not the first person to
-identify any of the problems described here—he has merely collected them
-into a single document.
+*고지:* 이 문서의 저자는 여기 기술된 문제들을 처음 찾아낸 사람이 아니며,
+단지 그것들을 한 문서에 모았을 뿐입니다.
 
-*License:* This errata document is released under the
+*라이선스:* 이 정오표 문서는
 https://oreil.ly/xZeBR[CC0] 1.0 Universal
-Public Domain Dedication
+Public Domain Dedication으로 배포됩니다.
 
-For updates made ((("Bitcoin whitepaper", "errata", startref="bitcoin-whitepaper-errata")))((("whitepaper (Bitcoin)", "errata", startref="whitepaper-errata")))after the publication of this book, please see the
-https://oreil.ly/ygExa[Original
-document].
+이 책이 출간된 뒤의 갱신 내용은 ((("Bitcoin whitepaper", "errata", startref="bitcoin-whitepaper-errata")))((("whitepaper (Bitcoin)", "errata", startref="whitepaper-errata")))
+https://oreil.ly/ygExa[원 문서]를
+참고하세요.

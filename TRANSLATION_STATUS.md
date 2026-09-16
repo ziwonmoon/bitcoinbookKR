@@ -40,7 +40,7 @@
 ## 5단계 — 부록
 
 - [x] `appa_whitepaper.adoc`
-- [ ] `appb_errata.adoc`
+- [x] `appb_errata.adoc`
 - [ ] `appc_bips.adoc`
 
 ## 미포함
