@@ -27,7 +27,7 @@
 
 ## 4단계 — 나머지 본문
 
-- [ ] `ch03_bitcoin-core.adoc`
+- [x] `ch03_bitcoin-core.adoc`
 - [ ] `ch07_authorization-authentication.adoc`
 - [ ] `ch08_signatures.adoc`
 - [ ] `ch09_fees.adoc`

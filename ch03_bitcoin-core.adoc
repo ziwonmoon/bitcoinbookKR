@@ -1,108 +1,85 @@
 [[ch03_bitcoin_client]]
-== Bitcoin Core: The Reference Implementation
+== 비트코인 코어: 참조 구현
 
-People only accept money in exchange for their valuable goods and
-services if they believe that they'll be able to spend that money later.
-Money that is counterfeit or unexpectedly debased may not be spendable
-later, so every person accepting bitcoins has a strong incentive to
-verify the integrity of the bitcoins they receive.  The Bitcoin system
-was designed so that it's possible for software running entirely on your
-local computer to perfectly prevent counterfeiting, debasement, and
-several other critical problems.  Software which provides that function
-is called a _full verification node_ because it verifies every confirmed
-Bitcoin transaction against every rule in the system.  Full ((("full nodes")))verification
-nodes, _full nodes_ for short, may also provide tools and data for
-understanding how Bitcoin works and what is currently happening in the
-network.
+사람들이 자기 값진 재화와 서비스를 내주고 돈을 받는 것은, 나중에 그 돈을 쓸 수
+있으리라 믿기 때문입니다. 위조되었거나 예기치 않게 가치가 떨어진 돈은 나중에 쓰지
+못할 수 있으므로, 비트코인을 받는 사람이라면 누구나 자신이 받는 비트코인의 무결성을
+검증할 강한 유인이 있습니다. 비트코인 시스템은 여러분의 로컬 컴퓨터에서만 돌아가는
+소프트웨어로도 위조와 가치 하락을 비롯한 몇 가지 결정적인 문제를 완벽히 막을 수
+있도록 설계되었습니다. 그런 기능을 제공하는 소프트웨어를 _완전 검증 노드_ 라고
+하는데, 확인된 모든 비트코인 트랜잭션을 시스템의 모든 규칙에 비추어 검증하기
+때문입니다. 완전 검증 노드는 ((("full nodes")))줄여서 _풀 노드_ 라고 하며, 비트코인이 어떻게
+작동하고 네트워크에서 지금 무슨 일이 일어나고 있는지 이해하는 데 필요한 도구와
+데이터도 제공할 수 있습니다.
 
-In this chapter, we'll install Bitcoin Core, the implementation that
-most full node operators have used since the beginning of the Bitcoin
-network.   We'll then inspect blocks, transactions, and other data from
-your node, data which is authoritative--not because some powerful entity
-designated it as such but because your node independently verified it.
-Throughout the rest of this book, we'll continue using Bitcoin Core to
-create and examine data related to the blockchain and network.
+이 장에서는 비트코인 네트워크 초창기부터 대부분의 풀 노드 운영자가 써온 구현인
+비트코인 코어를 설치합니다. 그런 다음 여러분의 노드에서 블록과 트랜잭션을 비롯한
+데이터를 살펴봅니다. 이 데이터가 권위 있는 이유는 어떤 강력한 주체가 그렇게 지정해
+주어서가 아니라, 여러분의 노드가 독립적으로 검증했기 때문입니다. 이 책의 나머지
+부분에서도 비트코인 코어를 계속 사용해 블록체인 및 네트워크와 관련된 데이터를
+만들고 살펴보겠습니다.
 
-=== From Bitcoin to Bitcoin Core
+=== 비트코인에서 비트코인 코어로
 
-Bitcoin ((("Bitcoin Core", "explained", id="bitcoin-core-explain")))is an _open
-source_ project and the source code is available under an open (MIT)
-license, free to download and use for any purpose.  More than just being
-open source, Bitcoin is developed by
-an open community of volunteers. At first, that community consisted of
-only ((("Nakamoto, Satoshi")))Satoshi Nakamoto. By 2023, Bitcoin's source code had more than 1,000
-contributors with about a dozen developers working on the code almost
-full time and several dozen more on a part-time basis. Anyone can
-contribute to the code&#x2014;including you!
+비트코인은 ((("Bitcoin Core", "explained", id="bitcoin-core-explain")))_오픈소스_ 프로젝트이며, 소스 코드는 개방형(MIT)
+라이선스로 공개되어 있어 어떤 목적으로든 무료로 내려받아 쓸 수 있습니다. 오픈소스일
+뿐 아니라 비트코인은 자원봉사자들의 열린 커뮤니티가 개발합니다. 처음에 그 커뮤니티는
+((("Nakamoto, Satoshi")))사토시 나카모토 한 사람뿐이었습니다. 2023년에 이르러 비트코인 소스
+코드의 기여자는 1,000명이 넘었고, 그중 열두어 명은 거의 전업으로, 수십 명은 시간제로
+코드를 작업하고 있습니다. 누구나 코드에 기여할 수 있습니다&#x2014;여러분도요!
 
-When Bitcoin was created by Satoshi Nakamoto, the
-software was mostly completed before publication of the whitepaper (reproduced in
-<<satoshi_whitepaper>>). Satoshi wanted to make sure the
-implementation worked before publishing a paper about it. That first implementation, then simply
-known as "Bitcoin," has been heavily modified and
-improved. It has evolved into what is known as _Bitcoin Core_, to
-differentiate it from other implementations. Bitcoin Core is
-the _reference implementation_ of the Bitcoin system, meaning that it
-provides a reference for how each part of the technology should be
-implemented. Bitcoin Core implements all aspects of Bitcoin, including
-wallets, a transaction and block validation engine, tools for block construction, and all modern parts
-of Bitcoin peer-to-peer communication.
+사토시 나카모토가 비트코인을 만들었을 때, 소프트웨어는 백서(<<satoshi_whitepaper>>에
+수록)가 발표되기 전에 거의 완성되어 있었습니다. 사토시는 그것에 관한 논문을 내기 전에
+구현이 실제로 작동하는지 확인하고 싶어 했습니다. 그냥 "Bitcoin"이라고 불리던 그 첫
+구현은 이후 크게 수정되고 개선되었습니다. 그리고 다른 구현들과 구별하기 위해 _비트코인
+코어_ 라고 불리는 것으로 발전했습니다. 비트코인 코어는 비트코인 시스템의 _참조 구현_
+이며, 이는 기술의 각 부분을 어떻게 구현해야 하는지에 대한 기준을 제공한다는 뜻입니다.
+비트코인 코어는 지갑, 트랜잭션 및 블록 검증 엔진, 블록 구성 도구, 그리고 비트코인 P2P
+통신의 모든 현대적 요소를 포함해 비트코인의 모든 측면을 구현합니다.
 
-<<bitcoin_core_architecture>> shows the architecture of Bitcoin
-Core.
+<<bitcoin_core_architecture>>에 비트코인 코어의 아키텍처를 나타냈습니다.
 
 [[bitcoin_core_architecture]]
-.Bitcoin Core architecture (Source: Eric Lombrozo).
+.비트코인 코어 아키텍처 (출처: Eric Lombrozo).
 image::images/mbc3_0301.png["Bitcoin Core Architecture"]
 
-Although Bitcoin Core serves as a reference implementation for many
-major parts of the system, the Bitcoin whitepaper describes several
-early parts of the system.  Most major parts of the system since 2011
-have been documented in a set of
-https://oreil.ly/BCXAQ[Bitcoin Improvement
-Proposals (BIPs)].  Throughout((("BIPs (Bitcoin Improvement Proposals)")))((("Bitcoin Improvement Proposals", see="BIPs"))) this book, we refer to BIP specifications
-by their number; for example, BIP9 describes a mechanism used for
-several major upgrades to((("Bitcoin Core", "explained", startref="bitcoin-core-explain"))) Bitcoin.
+비트코인 코어가 시스템의 여러 주요 부분에 대한 참조 구현 역할을 하지만, 비트코인
+백서도 시스템의 초기 요소 몇 가지를 설명합니다. 2011년 이후 시스템의 주요 부분은
+대부분 https://oreil.ly/BCXAQ[비트코인 개선 제안(BIP)] 모음에 문서화되었습니다. 이
+책 전반에서는 ((("BIPs (Bitcoin Improvement Proposals)")))((("Bitcoin Improvement Proposals", see="BIPs")))BIP 규격을 번호로 지칭합니다. 예를 들어 BIP9는 비트코인의
+여러 주요 업그레이드에 쓰인 방식을((("Bitcoin Core", "explained", startref="bitcoin-core-explain"))) 설명합니다.
 
-=== Bitcoin Development Environment
+=== 비트코인 개발 환경
 
-If you're a
-developer, you will want to set up a development environment with all
-the tools, libraries, and support software for writing Bitcoin
-applications. In this highly technical chapter, we'll walk through that
-process step by step. If the material becomes too dense (and you're not
-actually setting up a development environment) feel free to skip to the
-next chapter, which is less technical.
+여러분이 개발자라면 비트코인 애플리케이션을 작성하는 데 필요한 도구와 라이브러리,
+지원 소프트웨어를 갖춘 개발 환경을 마련하고 싶을 것입니다. 이 장은 기술적인 내용이
+많은데, 그 과정을 단계별로 짚어 보겠습니다. 내용이 너무 빽빽하게 느껴진다면(그리고
+실제로 개발 환경을 구축하는 것이 아니라면) 덜 기술적인 다음 장으로 건너뛰어도
+좋습니다.
 
 [[compiling_core]]
-=== Compiling Bitcoin Core from the Source Code
+=== 소스 코드에서 비트코인 코어 컴파일하기
 
-Bitcoin Core's
-source code((("Bitcoin Core", "compiling from source code", id="bitcoin-core-compile")))((("compiling Bitcoin Core from source code", id="compile-bitcoin-core")))((("source code, compiling Bitcoin Core", id="source-code-compile"))) can be downloaded as an archive or by cloning the
-source repository from GitHub.  On the https://oreil.ly/hN9g1[Bitcoin Core download
-page], select the most recent version and download the compressed
-archive of the source code. Alternatively, use the Git command line to create a
-local copy of the source code from the
-https://oreil.ly/BdOwl[GitHub Bitcoin page].
+비트코인 코어의
+소스 코드는((("Bitcoin Core", "compiling from source code", id="bitcoin-core-compile")))((("compiling Bitcoin Core from source code", id="compile-bitcoin-core")))((("source code, compiling Bitcoin Core", id="source-code-compile"))) 압축 파일로 내려받거나 깃허브에서 소스 저장소를 클론해
+가져올 수 있습니다. https://oreil.ly/hN9g1[비트코인 코어 다운로드 페이지]에서 가장
+최근 버전을 골라 소스 코드 압축 파일을 내려받으세요. 아니면 Git 명령줄로
+https://oreil.ly/BdOwl[깃허브 비트코인 페이지]에서 소스 코드의 로컬 사본을 만들 수도
+있습니다.
 
 [TIP]
 ====
-In
-many of the examples in this chapter, we will be using the operating
-system's command-line interface (also known as a "shell"), accessed via
-a "terminal" application. The shell will display a prompt, you type a
-command, and the shell responds with some text and a new prompt for your
-next command. The prompt may look different on your system, but in the
-following examples, it is denoted by a +$+ symbol. In the examples, when
-you see text after a +$+ symbol, don't type the +$+ symbol but type the
-command immediately following it, then press Enter to execute the
-command. In the examples, the lines below each command are the operating
-system's responses to that command. When you see the next +$+ prefix,
-you'll know it's a new command and you should repeat the process.
+이 장의 여러 예제에서는 "터미널" 애플리케이션으로 접근하는 운영체제의 명령줄
+인터페이스("셸"이라고도 합니다)를 사용합니다. 셸은 프롬프트를 표시하고, 여러분이
+명령을 입력하면 셸이 어떤 텍스트와 함께 다음 명령을 위한 새 프롬프트로 응답합니다.
+프롬프트는 시스템마다 다르게 보일 수 있지만, 아래 예제에서는 +$+ 기호로 나타냅니다.
+예제에서 +$+ 기호 뒤의 텍스트를 볼 때 +$+ 기호는 입력하지 말고 바로 뒤에 오는 명령만
+입력한 다음 엔터를 눌러 실행하세요. 예제에서 각 명령 아래의 줄들은 그 명령에 대한
+운영체제의 응답입니다. 다음 +$+ 접두사가 보이면 새 명령이라는 뜻이니 같은 과정을
+반복하면 됩니다.
 ====
 
-Here, we use the +git+ command to create a
-local copy ("clone") of the source code:
+여기서는 +git+ 명령으로 소스 코드의 로컬 사본("클론")을 만듭니다.
 
 ----
 $ git clone https://github.com/bitcoin/bitcoin.git
@@ -117,30 +94,25 @@ Resolving deltas: 100% (175649/175649), done.
 
 [TIP]
 ====
-Git is the most widely used
-distributed version control system, an essential part of any software
-developer's toolkit. You may need to install the +git+ command, or a
-graphical user interface for Git, on your operating system if you do not
-have it already.
+Git은 가장 널리 쓰이는 분산 버전 관리 시스템으로, 소프트웨어 개발자의 도구 상자에
+빠질 수 없는 요소입니다. 아직 없다면 운영체제에 +git+ 명령이나 Git용 그래픽 사용자
+인터페이스를 설치해야 할 수 있습니다.
 ====
 
-When the Git cloning operation has completed, you will have a complete
-local copy of the source code repository in the directory _bitcoin_.
-Change to this directory using the +cd+ command:
+Git 클론 작업이 끝나면 _bitcoin_ 디렉터리에 소스 코드 저장소의 완전한 로컬 사본이
+생깁니다. +cd+ 명령으로 이 디렉터리로 이동하세요.
 
 ----
 $ cd bitcoin
 ----
+==== 비트코인 코어 릴리스 고르기
 
-==== Selecting a Bitcoin Core Release
-
-By default,((("Bitcoin Core", "compiling from source code", "selecting release version", id="bitcoin-core-compile-release")))((("compiling Bitcoin Core from source code", "selecting release version", id="compile-bitcoin-core-release")))((("source code, compiling Bitcoin Core", "selecting release version", id="source-code-compile-release")))((("release version (Bitcoin Core), selecting", id="release-select")))((("selecting", "release version (Bitcoin Core)", id="select-release"))) the local copy will be synchronized with the
-most recent code, which might be an unstable or beta version of Bitcoin.
-Before compiling the code, select a specific version by checking out a
-release _tag_. This will synchronize the local copy with a specific
-snapshot of the code repository identified by a keyword tag. Tags are
-used by the developers to mark specific releases of the code by version
-number. First, to find the available tags, we use the +git tag+ command:
+기본적으로((("Bitcoin Core", "compiling from source code", "selecting release version", id="bitcoin-core-compile-release")))((("compiling Bitcoin Core from source code", "selecting release version", id="compile-bitcoin-core-release")))((("source code, compiling Bitcoin Core", "selecting release version", id="source-code-compile-release")))((("release version (Bitcoin Core), selecting", id="release-select")))((("selecting", "release version (Bitcoin Core)", id="select-release"))) 로컬 사본은 가장 최근 코드와 동기화되는데, 이는 불안정
+버전이거나 비트코인의 베타 버전일 수 있습니다. 코드를 컴파일하기 전에 릴리스 _태그_
+를 체크아웃해 특정 버전을 고르세요. 그러면 로컬 사본이 키워드 태그로 식별되는 코드
+저장소의 특정 스냅숏과 동기화됩니다. 태그는 개발자들이 코드의 특정 릴리스를 버전
+번호로 표시하는 데 씁니다. 먼저 사용할 수 있는 태그를 찾기 위해 +git tag+ 명령을
+사용합니다.
 
 ----
 $ git tag
@@ -155,12 +127,11 @@ v0.12.0rc2
 ...
 ----
 
-The list of tags shows all the released versions of Bitcoin. By
-convention, _release candidates_, which ((("release candidates")))are intended for testing, have
-the suffix "rc." Stable releases that can be run on production systems
-have no suffix. From the preceding list, select the highest version
-release, which at the time of writing was v24.0.1. To synchronize the
-local code with this version, use the +git checkout+ command:
+태그 목록은 비트코인의 모든 릴리스 버전을 보여줍니다. 관례적으로 테스트용인
+((("release candidates")))_릴리스 후보_ 에는 접미사 "rc"가 붙습니다. 운영 시스템에서 돌릴 수
+있는 안정 릴리스에는 접미사가 없습니다. 앞의 목록에서 가장 높은 버전의 릴리스를
+고르는데, 이 글을 쓰는 시점에는 v24.0.1이었습니다. 로컬 코드를 이 버전과 동기화하려면
++git checkout+ 명령을 사용합니다.
 
 ----
 $ git checkout v24.0.1
@@ -173,35 +144,30 @@ state without impacting any branches by switching back to a branch.
 HEAD is now at b3f866a8d Merge bitcoin/bitcoin#26647: 24.0.1 final changes
 ----
 
-You can confirm you have the desired version "checked out" by((("Bitcoin Core", "compiling from source code", "selecting release version", startref="bitcoin-core-compile-release")))((("compiling Bitcoin Core from source code", "selecting release version", startref="compile-bitcoin-core-release")))((("source code, compiling Bitcoin Core", "selecting release version", startref="source-code-compile-release")))((("release version (Bitcoin Core), selecting", startref="release-select")))((("selecting", "release version (Bitcoin Core)", startref="select-release"))) issuing
-the command +git status+:
++git status+ 명령을 실행하면 원하는 버전이 "체크아웃"되었는지((("Bitcoin Core", "compiling from source code", "selecting release version", startref="bitcoin-core-compile-release")))((("compiling Bitcoin Core from source code", "selecting release version", startref="compile-bitcoin-core-release")))((("source code, compiling Bitcoin Core", "selecting release version", startref="source-code-compile-release")))((("release version (Bitcoin Core), selecting", startref="release-select")))((("selecting", "release version (Bitcoin Core)", startref="select-release"))) 확인할 수
+있습니다.
 
 ----
 HEAD detached at v24.0.1
 nothing to commit, working tree clean
 ----
 
-==== Configuring the Bitcoin Core Build
+==== 비트코인 코어 빌드 설정하기
 
-The((("Bitcoin Core", "compiling from source code", "configuring build", id="bitcoin-core-compile-configure")))((("compiling Bitcoin Core from source code", "configuring build", id="compile-bitcoin-core-configure")))((("source code, compiling Bitcoin Core", "configuring build", id="source-code-compile-configure")))((("configuring", "Bitcoin Core build", id="configure-build"))) source code includes documentation, which
-can be found in a number of files. Review the main documentation located
-in _README.md_ in the _bitcoin_ directory.
-In this chapter, we will build the Bitcoin Core daemon
-(server), also known as +bitcoind+ on Linux (a Unix-like system). Review the instructions for
-compiling the +bitcoind+ command-line client on your platform by reading
-_doc/build-unix.md_.  Alternative instructions can be found in
-the _doc_ directory; for example, _build-windows.md_ for Windows
-instructions.  As of this writing, instructions are available for
-Android, FreeBSD, NetBSD, OpenBSD, macOS (OSX), Unix, and Windows.
+((("Bitcoin Core", "compiling from source code", "configuring build", id="bitcoin-core-compile-configure")))((("compiling Bitcoin Core from source code", "configuring build", id="compile-bitcoin-core-configure")))((("source code, compiling Bitcoin Core", "configuring build", id="source-code-compile-configure")))((("configuring", "Bitcoin Core build", id="configure-build")))소스 코드에는 여러 파일에 걸쳐 문서가 들어 있습니다. _bitcoin_
+디렉터리의 _README.md_ 에 있는 주 문서를 살펴보세요. 이 장에서는 리눅스(유닉스 계열
+시스템)에서 +bitcoind+ 라고 부르는 비트코인 코어 데몬(서버)을 빌드합니다.
+_doc/build-unix.md_ 를 읽고 여러분의 플랫폼에서 +bitcoind+ 명령줄 클라이언트를
+컴파일하는 방법을 확인하세요. 다른 방법은 _doc_ 디렉터리에서 찾을 수 있습니다.
+예를 들어 윈도우용 안내는 _build-windows.md_ 에 있습니다. 이 글을 쓰는 시점에는
+안드로이드, FreeBSD, NetBSD, OpenBSD, macOS(OSX), 유닉스, 윈도우용 안내가 제공됩니다.
 
-Carefully review the build prerequisites, which are in the first part of
-the build documentation. These are libraries that must be present on
-your system before you can begin to compile Bitcoin. If these
-prerequisites are missing, the build process will fail with an error. If
-this happens because you missed a prerequisite, you can install it and
-then resume the build process from where you left off. Assuming the
-prerequisites are installed, you start the build process by generating a
-set of build scripts using the _autogen.sh_ script:
+빌드 문서의 앞부분에 있는 빌드 선행 조건을 꼼꼼히 살펴보세요. 비트코인 컴파일을
+시작하기 전에 시스템에 반드시 있어야 하는 라이브러리들입니다. 이 선행 조건이 빠져
+있으면 빌드 과정이 오류와 함께 실패합니다. 선행 조건을 놓쳐서 그런 일이 생겼다면, 그
+라이브러리를 설치한 뒤 멈춘 지점부터 빌드를 이어갈 수 있습니다. 선행 조건이 설치되어
+있다고 보고, _autogen.sh_ 스크립트로 빌드 스크립트 모음을 생성하는 것으로 빌드 과정을
+시작합니다.
 
 ----
 $ ./autogen.sh
@@ -214,12 +180,10 @@ src/Makefile.am: installing 'build-aux/depcomp'
 parallel-tests: installing 'build-aux/test-driver'
 ----
 
-The _autogen.sh_ script creates a set of automatic configuration scripts
-that will interrogate your system to discover the correct settings and
-ensure you have all the necessary libraries to compile the code. The
-most important of these is the +configure+ script that offers a number
-of different options to customize the build process. Use the
-+--help+ flag to see the various options:
+_autogen.sh_ 스크립트는 자동 설정 스크립트 모음을 만듭니다. 이 스크립트들은 여러분의
+시스템을 조사해 올바른 설정을 찾아내고, 코드를 컴파일하는 데 필요한 라이브러리가 모두
+있는지 확인합니다. 그중 가장 중요한 것이 +configure+ 스크립트인데, 빌드 과정을 맞춤
+설정할 수 있는 여러 옵션을 제공합니다. +--help+ 플래그로 다양한 옵션을 볼 수 있습니다.
 
 ----
 $ ./configure --help
@@ -237,37 +201,33 @@ Optional Features:
 ...
 ----
 
-The +configure+ script allows you to enable or disable certain features
-of +bitcoind+ through the use of the +--enable-FEATURE+ and
-+--disable-FEATURE+ flags, where pass:[<span
-class="keep-together"><code>FEATURE</code></span>] is replaced by the
-feature name, as listed in the help output. In this chapter, we will
-build the +bitcoind+ client with all the default features. We won't be
-using the configuration flags, but you should review them to understand
-what optional features are part of the client. If you are in an academic
-setting, computer lab restrictions may require you to install
-applications in your home directory (e.g., using +--prefix=$HOME+).
++configure+ 스크립트는 +--enable-FEATURE+ 와 +--disable-FEATURE+ 플래그로
++bitcoind+ 의 특정 기능을 켜거나 끌 수 있게 해줍니다. 여기서 pass:[<span
+class="keep-together"><code>FEATURE</code></span>] 자리에는 도움말 출력에 나열된 기능
+이름이 들어갑니다. 이 장에서는 기본 기능을 모두 켠 채로 +bitcoind+ 클라이언트를
+빌드합니다. 설정 플래그를 쓰지는 않겠지만, 클라이언트에 어떤 선택 기능이 있는지
+이해하기 위해 한번 살펴보시기를 권합니다. 학교 환경이라면 컴퓨터실 제약 때문에
+홈 디렉터리에 애플리케이션을 설치해야 할 수도 있습니다(예: +--prefix=$HOME+ 사용).
 
-Here are some useful options that override the default behavior of the
-+configure+ script:
+다음은 +configure+ 스크립트의 기본 동작을 바꾸는 유용한 옵션 몇 가지입니다.
 
 ++++
 <dl>
 <dt><code>--prefix=$HOME</code></dt>
-<dd><p>This overrides the default installation location (which is <em>/usr/local/</em>) for the resulting executable. Use <code>$HOME</code> to put everything in your home directory, or a different path.</p></dd>
+<dd><p>결과 실행 파일의 기본 설치 위치(<em>/usr/local/</em>)를 덮어씁니다. 모든 것을 홈 디렉터리에 두려면 <code>$HOME</code> 을, 또는 다른 경로를 쓰세요.</p></dd>
 
 <dt><code>--disable-wallet</code></dt>
-<dd><p>This is used to disable the reference wallet implementation.</p></dd>
+<dd><p>참조 지갑 구현을 끕니다.</p></dd>
 
 <dt><code>--with-incompatible-bdb</code></dt>
-<dd><p>If you are building a wallet, allow the use of an incompatible version of the Berkeley DB library.</p></dd>
+<dd><p>지갑을 빌드하는 경우, 호환되지 않는 버전의 Berkeley DB 라이브러리 사용을 허용합니다.</p></dd>
 
 <dt><code>--with-gui=no</code></dt>
-<dd><p>Don't build the graphical user interface, which requires the Qt library. This builds server and command-line Bitcoin Core only.</p></dd>
+<dd><p>Qt 라이브러리가 필요한 그래픽 사용자 인터페이스를 빌드하지 않습니다. 서버와 명령줄 비트코인 코어만 빌드합니다.</p></dd>
 </dl>
 ++++
 
-Next, run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for your system:
+다음으로 +configure+ 스크립트를 실행해 필요한 라이브러리를 모두 자동으로 찾아내고 여러분의 시스템에 맞는 빌드 스크립트를 만듭니다.
 
 ----
 $ ./configure
@@ -281,24 +241,19 @@ checking for a BSD-compatible install... /usr/bin/install -c
 ...
 ----
 
-If all went well, the +configure+ command will end by creating the
-customized build scripts that will allow us to compile +bitcoind+. If
-there are any missing libraries or errors, the +configure+ command will
-terminate with an error instead of creating the build scripts. If an
-error occurs, it is most likely because of a missing or incompatible
-library. Review the build documentation again and make sure you install
-the missing prerequisites. Then run +configure+ again and see if that
-fixes the((("Bitcoin Core", "compiling from source code", "configuring build", startref="bitcoin-core-compile-configure")))((("compiling Bitcoin Core from source code", "configuring build", startref="compile-bitcoin-core-configure")))((("source code, compiling Bitcoin Core", "configuring build", startref="source-code-compile-configure")))((("configuring", "Bitcoin Core build", startref="configure-build"))) error.
+모든 것이 잘 되었다면 +configure+ 명령은 +bitcoind+ 를 컴파일할 수 있게 해주는 맞춤
+빌드 스크립트를 만들며 끝납니다. 빠진 라이브러리가 있거나 오류가 있으면 +configure+
+명령은 빌드 스크립트를 만드는 대신 오류와 함께 종료됩니다. 오류가 났다면 십중팔구
+라이브러리가 빠졌거나 호환되지 않기 때문입니다. 빌드 문서를 다시 살펴보고 빠진 선행
+조건을 설치했는지 확인하세요. 그런 다음 +configure+ 를 다시 실행해 오류가
+((("Bitcoin Core", "compiling from source code", "configuring build", startref="bitcoin-core-compile-configure")))((("compiling Bitcoin Core from source code", "configuring build", startref="compile-bitcoin-core-configure")))((("source code, compiling Bitcoin Core", "configuring build", startref="source-code-compile-configure")))((("configuring", "Bitcoin Core build", startref="configure-build")))해결되었는지 확인하세요.
+==== 비트코인 코어 실행 파일 빌드하기
 
-==== Building the Bitcoin Core Executables
-
-Next, you
-will ((("Bitcoin Core", "compiling from source code", "building executables")))((("compiling Bitcoin Core from source code", "building executables")))((("source code, compiling Bitcoin Core", "building executables")))((("executables (Bitcoin Core), building")))compile the source code, a process that can take up to an hour to
-complete, depending on the speed of your CPU and available memory.
-If an error
-occurs, or the compilation process is interrupted, it can be resumed any
-time by typing +make+ again. Type *+make+* to start compiling the
-executable application:
+다음으로
+((("Bitcoin Core", "compiling from source code", "building executables")))((("compiling Bitcoin Core from source code", "building executables")))((("source code, compiling Bitcoin Core", "building executables")))((("executables (Bitcoin Core), building")))소스 코드를 컴파일합니다. CPU 속도와 사용 가능한 메모리에 따라
+한 시간까지 걸릴 수 있는 과정입니다. 오류가 나거나 컴파일 과정이 중단되면 언제든
++make+ 를 다시 입력해 이어갈 수 있습니다. *+make+* 를 입력해 실행 애플리케이션 컴파일을
+시작하세요.
 
 ----
 $ make
@@ -312,14 +267,12 @@ Making all in src
 [... many more compilation messages follow ...]
 ----
 
-On a fast system with more than one CPU, you might want to set the
-number of parallel compile jobs. For instance, +make -j 2+ will use two
-cores if they are available. If all goes well, Bitcoin Core is now
-compiled. You should run the unit test suite with +make check+ to ensure
-the linked libraries are not broken in obvious ways. The final step is
-to install the various executables on your system using the +make
-install+ command. You may be prompted for your user password because
-this step requires administrative privileges:
+CPU가 여러 개인 빠른 시스템이라면 병렬 컴파일 작업 수를 지정하고 싶을 수 있습니다.
+예를 들어 +make -j 2+ 는 코어가 있다면 두 개를 사용합니다. 모든 것이 잘 되었다면
+비트코인 코어가 컴파일된 것입니다. +make check+ 로 단위 테스트 모음을 실행해 링크된
+라이브러리가 눈에 띄게 망가지지는 않았는지 확인하는 것이 좋습니다. 마지막 단계는
++make install+ 명령으로 여러 실행 파일을 시스템에 설치하는 것입니다. 이 단계에는 관리자
+권한이 필요하므로 사용자 암호를 묻는 메시지가 나올 수 있습니다.
 
 ----
 $ make check && sudo make install
@@ -332,10 +285,9 @@ libtool: install: /usr/bin/install -c bitcoin-tx /usr/local/bin/bitcoin-tx
 ...
 ----
 
-The default installation of +bitcoind+
-puts it in _/usr/local/bin_. You can confirm that Bitcoin Core is
-correctly installed by asking the system for the path of the
-executables, ((("Bitcoin Core", "compiling from source code", startref="bitcoin-core-compile")))((("compiling Bitcoin Core from source code", startref="compile-bitcoin-core")))((("source code, compiling Bitcoin Core", startref="source-code-compile")))as follows:
++bitcoind+ 의 기본 설치 위치는 _/usr/local/bin_ 입니다. 다음과 같이 시스템에 실행
+파일의 경로를 물어 비트코인 코어가 제대로 설치되었는지 확인할 수
+((("Bitcoin Core", "compiling from source code", startref="bitcoin-core-compile")))((("compiling Bitcoin Core from source code", startref="compile-bitcoin-core")))((("source code, compiling Bitcoin Core", startref="source-code-compile")))있습니다.
 
 ----
 $ which bitcoind
@@ -345,93 +297,70 @@ $ which bitcoin-cli
 /usr/local/bin/bitcoin-cli
 ----
 
-=== Running a Bitcoin Core Node
+=== 비트코인 코어 노드 실행하기
 
-Bitcoin's ((("Bitcoin Core", "nodes", "running", id="bitcoin-core-nodes-running")))((("nodes", "running", id="nodes-running")))((("running nodes", id="running-nodes")))peer-to-peer
-network is composed of network "nodes," run mostly by individuals and
-some of the businesses that provide Bitcoin services. Those running
-Bitcoin nodes have a direct and authoritative view of the Bitcoin
-blockchain, with a local copy of all the spendable bitcoins
-independently validated by their own system. By running a node, you
-don't have to rely on any third party to validate a transaction.
-Additionally, by using a Bitcoin node to fully validate the transactions
-you receive to your wallet, you contribute to the Bitcoin network and
-help make it more robust.
+비트코인의 ((("Bitcoin Core", "nodes", "running", id="bitcoin-core-nodes-running")))((("nodes", "running", id="nodes-running")))((("running nodes", id="running-nodes")))P2P 네트워크는 네트워크 "노드"들로 이루어지는데, 대부분 개인이
+운영하고 일부는 비트코인 서비스를 제공하는 사업자가 운영합니다. 비트코인 노드를
+운영하는 사람은 비트코인 블록체인을 직접적이고 권위 있게 볼 수 있으며, 자기 시스템이
+독립적으로 검증한, 쓸 수 있는 모든 비트코인의 로컬 사본을 갖게 됩니다. 노드를 운영하면
+트랜잭션을 검증하는 데 제삼자에게 의존할 필요가 없습니다. 게다가 비트코인 노드로
+여러분의 지갑이 받는 트랜잭션을 온전히 검증하면 비트코인 네트워크에 기여하고 그것을
+더 견고하게 만드는 데 보탬이 됩니다.
 
-Running a node, however, requires downloading and processing over 500 GB
-of data initially and about 400 MB of Bitcoin transactions per day.
-These figures are for 2023 and will likely increase over time.  If you
-shut down your node or get disconnected from the internet for several
-days, your node will need to download the data that it missed.  For
-example, if you close Bitcoin Core for 10 days, you will need to
-download approximately 4 GB the next time you start it.
+다만 노드를 운영하려면 처음에 500GB가 넘는 데이터를 내려받아 처리해야 하고, 이후에도
+하루에 약 400MB의 비트코인 트랜잭션을 처리해야 합니다. 이 수치는 2023년 기준이며
+시간이 지나면서 늘어날 가능성이 높습니다. 노드를 끄거나 며칠 동안 인터넷 연결이
+끊기면, 노드는 놓친 데이터를 내려받아야 합니다. 예를 들어 비트코인 코어를 10일 동안
+꺼두었다면 다음에 실행할 때 약 4GB를 내려받아야 합니다.
 
-Depending on whether you choose to index all transactions and keep a
-full copy of the blockchain, you may also need a lot of disk space--at
-least 1 TB if you plan to run Bitcoin Core for several years.  By
-default, Bitcoin nodes also transmit transactions and blocks to other
-nodes (called "peers"), consuming upload internet bandwidth. If your
-internet connection is limited, has a low data cap, or is metered
-(charged by the gigabit), you should probably not run a Bitcoin node on
-it, or run it in a way that constrains its bandwidth (see
-<<bitcoincorenode_config>>).  You may connect your node instead to an
-alternative network, such as a free satellite data provider like
-https://oreil.ly/cIwf3[Blockstream Satellite].
+모든 트랜잭션을 인덱싱하고 블록체인 전체 사본을 보관할지에 따라 디스크 공간도 많이
+필요할 수 있습니다. 비트코인 코어를 몇 년 동안 운영할 계획이라면 최소 1TB는 있어야
+합니다. 기본적으로 비트코인 노드는 트랜잭션과 블록을 다른 노드("피어"라고 합니다)에
+전송하기도 하므로 업로드 인터넷 대역폭을 소비합니다. 인터넷 연결이 제한적이거나 데이터
+상한이 낮거나 종량제(기가비트 단위 과금)라면 그 회선에서는 비트코인 노드를 운영하지
+않는 편이 좋고, 운영하더라도 대역폭을 제한하는 방식으로 하세요
+(<<bitcoincorenode_config>> 참고). 대신 https://oreil.ly/cIwf3[Blockstream Satellite]
+같은 무료 위성 데이터 제공자처럼 다른 네트워크에 노드를 연결할 수도 있습니다.
 
 [TIP]
 ====
-Bitcoin Core keeps a full
-copy of the blockchain by default, with nearly every transaction that has ever
-been confirmed on the Bitcoin network since its inception in 2009. This
-dataset is hundreds of gigabytes in size and is downloaded incrementally
-over several hours or days, depending on the speed of your CPU and
-internet connection. Bitcoin Core will not be able to process
-transactions or update account balances until the full blockchain
-dataset is downloaded. Make sure you have enough disk space, bandwidth,
-and time to complete the initial synchronization. You can configure
-Bitcoin Core to reduce the size of the blockchain by discarding old
-blocks, but it will still download the
-entire dataset.
+비트코인 코어는 기본적으로 블록체인의 전체 사본을 보관하며, 2009년 시작 이후 비트코인
+네트워크에서 확인된 거의 모든 트랜잭션이 여기 들어 있습니다. 이 데이터셋은 수백
+기가바이트 크기이며, CPU와 인터넷 연결 속도에 따라 몇 시간에서 며칠에 걸쳐 조금씩
+내려받습니다. 블록체인 데이터셋 전체를 내려받기 전까지 비트코인 코어는 트랜잭션을
+처리하거나 잔액을 갱신할 수 없습니다. 최초 동기화를 마칠 만큼 디스크 공간과 대역폭,
+시간이 충분한지 확인하세요. 오래된 블록을 버려 블록체인의 크기를 줄이도록 비트코인
+코어를 설정할 수 있지만, 그래도 데이터셋 전체를 내려받기는 합니다.
 ====
 
-Despite these resource requirements, thousands of people run Bitcoin
-nodes. Some are running on systems as simple as a Raspberry Pi (a $35
-USD computer the size of a pack of cards).
+이런 자원 요구에도 불구하고 수천 명이 비트코인 노드를 운영합니다. 어떤 사람은 라즈베리
+파이(카드 한 팩 크기의 35달러짜리 컴퓨터)처럼 단순한 시스템에서 돌리기도 합니다.
 
 [role="less_space pagebreak-before"]
-Why would you want to run a node? Here are some of the most common
-reasons:
+노드를 운영할 이유가 무엇일까요? 가장 흔한 이유는 다음과 같습니다.
 
-- You do not want to rely on any third party to validate the
-  transactions you receive.
+- 여러분이 받는 트랜잭션을 검증하는 데 제삼자에게 의존하고 싶지 않습니다.
 
-- You do not want to disclose to third parties which transactions belong
-  to your wallet.
+- 어떤 트랜잭션이 여러분의 지갑에 속하는지 제삼자에게 알리고 싶지 않습니다.
 
-- You are developing Bitcoin software and need to rely on a Bitcoin
-  node for programmable (API) access to the network and blockchain.
+- 비트코인 소프트웨어를 개발하고 있어서, 네트워크와 블록체인에 프로그래밍 방식(API)으로
+  접근하기 위해 비트코인 노드가 필요합니다.
 
-- You are building applications that must validate transactions
-  according to Bitcoin's consensus rules. Typically, Bitcoin software
-  companies run several nodes.
+- 비트코인의 합의 규칙에 따라 트랜잭션을 검증해야 하는 애플리케이션을 만들고 있습니다.
+  보통 비트코인 소프트웨어 회사는 노드를 여러 개 운영합니다.
 
-- You want to support Bitcoin. Running a node that you use to
-  validate the transactions you receive to your wallet makes the network
-  more robust.
+- 비트코인을 지원하고 싶습니다. 여러분의 지갑이 받는 트랜잭션을 검증하는 데 쓰는 노드를
+  운영하면 네트워크가 더 견고해집니다.
 
-If you're reading this book and interested in strong security, superior
-privacy, or developing Bitcoin software, you should be running your ((("Bitcoin Core", "nodes", "running", startref="bitcoin-core-nodes-running")))((("nodes", "running", startref="nodes-running")))((("running nodes", startref="running-nodes")))own
-node.
-
+이 책을 읽고 있고 강력한 보안이나 뛰어난 프라이버시에 관심이 있거나 비트코인 소프트웨어를
+개발한다면, 여러분 ((("Bitcoin Core", "nodes", "running", startref="bitcoin-core-nodes-running")))((("nodes", "running", startref="nodes-running")))((("running nodes", startref="running-nodes")))자신의 노드를 운영해야 합니다.
 [[bitcoincorenode_config]]
-=== Configuring the Bitcoin Core Node
+=== 비트코인 코어 노드 설정하기
 
-Bitcoin Core will((("Bitcoin Core", "nodes", "configuring", id="bitcoin-core-nodes-configure")))((("nodes", "configuring", id="nodes-configure")))((("configuring", "nodes", id="configure-nodes"))) look for a
-configuration file in its data directory on every start. In this section
-we will examine the various configuration options and set up a
-configuration file. To locate the configuration file, run +bitcoind
--printtoconsole+ in your terminal and look for the first couple of
-lines:
+비트코인 코어는((("Bitcoin Core", "nodes", "configuring", id="bitcoin-core-nodes-configure")))((("nodes", "configuring", id="nodes-configure")))((("configuring", "nodes", id="configure-nodes"))) 시작할 때마다 데이터 디렉터리에서 설정 파일을
+찾습니다. 이 절에서는 여러 설정 옵션을 살펴보고 설정 파일을 만들어 보겠습니다. 설정
+파일의 위치를 찾으려면 터미널에서 +bitcoind -printtoconsole+ 을 실행하고 처음 몇 줄을
+보세요.
 
 ----
 $ bitcoind -printtoconsole
@@ -447,15 +376,13 @@ $ bitcoind -printtoconsole
 ...
 ----
 
-You can hit Ctrl-C to shut down the node once you determine the location
-of the config file. Usually the configuration file is inside the
-_.bitcoin_ data directory under your user's home directory. Open the
-configuration file in your preferred editor.
+설정 파일 위치를 확인했으면 Ctrl-C를 눌러 노드를 종료해도 됩니다. 보통 설정 파일은
+사용자 홈 디렉터리 아래 _.bitcoin_ 데이터 디렉터리 안에 있습니다. 즐겨 쓰는 편집기로
+설정 파일을 여세요.
 
-Bitcoin Core offers more than 100 configuration options that modify the
-behavior of the network node, the storage of the blockchain, and many
-other aspects of its operation. To see a listing of these options, run
-+bitcoind  --help+:
+비트코인 코어는 네트워크 노드의 동작, 블록체인 저장 방식을 비롯해 운영의 여러 측면을
+바꾸는 설정 옵션을 100가지 넘게 제공합니다. 이 옵션 목록을 보려면 +bitcoind --help+ 를
+실행하세요.
 
 ----
 $ bitcoind --help
@@ -475,67 +402,57 @@ Options:
 [many more options]
 ----
 
-Here are some of
-the most important options that you can set in the configuration file,
-or as command-line parameters to +bitcoind+:
+설정 파일이나 +bitcoind+ 의 명령줄 매개변수로 지정할 수 있는 가장 중요한 옵션 몇 가지는
+다음과 같습니다.
 
-++alertnotify++:: Run ((("alertnotify option (bitcoind option)")))a specified command or script to send emergency alerts
-to the owner of this node.
+++alertnotify++:: 이 ((("alertnotify option (bitcoind option)")))노드의 소유자에게 긴급 경보를 보내도록 지정한 명령이나
+스크립트를 실행합니다.
 
-++conf++:: An ((("conf option (bitcoind option)")))alternative location for the configuration file. This only
-makes sense as a command-line parameter to +bitcoind+, as it can't be
-inside the configuration file it refers to.
+++conf++:: 설정 ((("conf option (bitcoind option)")))파일의 다른 위치를 지정합니다. 자기가 가리키는 설정 파일
+안에는 넣을 수 없으므로, +bitcoind+ 의 명령줄 매개변수로만 의미가 있습니다.
 
-++datadir++:: Select((("datadir option (bitcoind option)"))) the directory and filesystem in which to put all the
-blockchain data. By default this is the _.bitcoin_ subdirectory of your
-home directory. Depending on your configuration, this can use from about 10
-GB to almost 1 TB as of this writing, with the maximum size
-expected to increase by several hundred gigabytes per year.
+++datadir++:: 블록체인((("datadir option (bitcoind option)"))) 데이터를 모두 넣을 디렉터리와 파일시스템을 고릅니다.
+기본값은 홈 디렉터리의 _.bitcoin_ 하위 디렉터리입니다. 설정에 따라 이 글을 쓰는
+시점에 약 10GB에서 거의 1TB까지 쓸 수 있으며, 최대 크기는 해마다 수백 기가바이트씩
+늘어날 것으로 예상됩니다.
 
-++prune++:: Reduce the((("prune option (bitcoind option)"))) blockchain disk space requirements to this many megabytes by
-deleting old blocks. Use this on a resource-constrained node that can't
-fit the full blockchain.  Other parts of the system will use other disk
-space that can't currently be pruned, so you will still need at least
-the minimum amount of space mentioned in the +datadir+ option.
+++prune++:: 오래된((("prune option (bitcoind option)"))) 블록을 삭제해 블록체인의 디스크 공간 요구량을 지정한
+메가바이트 수로 줄입니다. 전체 블록체인을 담을 수 없는 자원 제약이 있는 노드에서
+사용하세요. 시스템의 다른 부분은 현재 가지치기할 수 없는 디스크 공간을 쓰므로,
++datadir+ 옵션에서 언급한 최소 공간은 여전히 필요합니다.
 
-++txindex++:: Maintain ((("txindex option (bitcoind option)")))an index of all transactions. This allows you to
-programmatically retrieve any transaction by its ID provided that the
-block containing that transaction hasn't been pruned.
+++txindex++:: 모든 ((("txindex option (bitcoind option)")))트랜잭션의 인덱스를 유지합니다. 그러면 해당 트랜잭션이 담긴
+블록이 가지치기되지 않은 한, 어떤 트랜잭션이든 ID로 프로그래밍 방식으로 가져올 수
+있습니다.
 
 [role="less_space pagebreak-before"]
-++dbcache++:: The size((("dbcache option (bitcoind option)"))) of the UTXO cache. The default is 450 mebibytes (MiB). Increase
-this size on high-end hardware to read and write from your disk less
-often, or reduce the size on low-end hardware to save memory at the
-expense of using your disk more frequently.
+++dbcache++:: UTXO((("dbcache option (bitcoind option)"))) 캐시의 크기입니다. 기본값은 450메비바이트(MiB)입니다.
+고사양 하드웨어에서는 이 크기를 늘려 디스크 읽기·쓰기 횟수를 줄이고, 저사양
+하드웨어에서는 디스크를 더 자주 쓰는 대신 메모리를 아끼도록 크기를 줄이세요.
 
-++blocksonly++:: Minimize ((("blocksonly option (bitcoind option)")))your bandwidth usage by only accepting blocks of
-confirmed transactions from your peers instead of relaying unconfirmed
-transactions.
+++blocksonly++:: 미확인((("blocksonly option (bitcoind option)"))) 트랜잭션을 중계하는 대신 피어에게서 확인된 트랜잭션이 담긴
+블록만 받아 대역폭 사용을 최소화합니다.
 
-++maxmempool++:: Limit ((("maxmempool option (bitcoind option)")))the transaction memory pool to this many megabytes.
-Use it to reduce memory use on memory-constrained nodes.
+++maxmempool++:: 트랜잭션((("maxmempool option (bitcoind option)"))) 메모리 풀을 지정한 메가바이트 수로 제한합니다.
+메모리 제약이 있는 노드에서 메모리 사용을 줄이는 데 쓰세요.
 
 [[txindex]]
-.Transaction Database Index and txindex Option
+.트랜잭션 데이터베이스 인덱스와 txindex 옵션
 ****
-By default,
-Bitcoin Core builds((("txindex option (bitcoind option)")))((("transactions", "building complete index"))) a database containing _only_ the transactions
-related to the user's wallet. If you want to be able to access _any_
-transaction with commands like +getrawtransaction+ (see
-<<exploring_and_decoding_transactions>>), you need to configure Bitcoin
-Core to build a complete transaction index, which can be achieved with
-the +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration
-file. If you don't set this option at first and later set it to full
-indexing, you need to
-wait for it to rebuild the index.
+기본적으로
+비트코인 코어는((("txindex option (bitcoind option)")))((("transactions", "building complete index"))) 사용자 지갑과 관련된 트랜잭션 _만_ 담은 데이터베이스를
+만듭니다. +getrawtransaction+ 같은 명령으로 _어떤_ 트랜잭션이든 접근할 수 있게 하려면
+(<<exploring_and_decoding_transactions>> 참고) 비트코인 코어가 완전한 트랜잭션 인덱스를
+만들도록 설정해야 하며, 이는 +txindex+ 옵션으로 할 수 있습니다. 비트코인 코어 설정
+파일에 +txindex=1+ 을 넣으세요. 처음에 이 옵션을 설정하지 않았다가 나중에 전체 인덱싱으로
+바꾸면, 인덱스를 다시 만들 때까지 기다려야 합니다.
 ****
 
-<<full_index_node>> shows how you might combine the preceding options
-with a fully indexed node, running as an API backend for a bitcoin
-application.
+<<full_index_node>>는 앞의 옵션들을 조합해, 비트코인 애플리케이션의 API 백엔드로
+동작하는 완전 인덱스 노드를 구성하는 예입니다.
 
 [[full_index_node]]
-.Sample configuration of a full-index node
+.완전 인덱스 노드 설정 예시
 ====
 ----
 alertnotify=myemailscript.sh "Alert: %s"
@@ -544,11 +461,10 @@ txindex=1
 ----
 ====
 
-<<constrained_resources>> shows a resource-constrained node running on a
-smaller server.
+<<constrained_resources>>는 더 작은 서버에서 돌아가는 자원 제약 노드의 예입니다.
 
 [[constrained_resources]]
-.Sample configuration of a resource-constrained system
+.자원 제약 시스템 설정 예시
 ====
 ----
 alertnotify=myemailscript.sh "Alert: %s"
@@ -559,10 +475,9 @@ maxmempool=150
 ----
 ====
 
-After you've edited the configuration file and set the options that best
-represent your needs, you can test +bitcoind+ with this configuration.
-Run Bitcoin Core with the option +printtoconsole+ to run in the
-foreground with output to the console:
+설정 파일을 편집해 필요에 가장 잘 맞는 옵션을 지정했다면, 그 설정으로 +bitcoind+ 를
+시험해 볼 수 있습니다. +printtoconsole+ 옵션으로 비트코인 코어를 실행하면 출력이
+콘솔에 나오면서 포그라운드로 실행됩니다.
 
 ----
 $ bitcoind -printtoconsole
@@ -596,14 +511,14 @@ $ bitcoind -printtoconsole
 [... more startup messages ...]
 ----
 
-You can hit Ctrl-C to interrupt the process once you are satisfied that
-it is loading the correct settings and running as you expect.
+올바른 설정을 불러와 기대한 대로 동작한다는 것을 확인했다면 Ctrl-C를 눌러 프로세스를
+중단해도 됩니다.
 
-To run Bitcoin Core in the background as a process, start it with the
-+daemon+ option, as +bitcoind -daemon+.
+비트코인 코어를 백그라운드 프로세스로 실행하려면 +bitcoind -daemon+ 처럼 +daemon+
+옵션과 함께 시작하세요.
 
-To monitor the progress and runtime status of your Bitcoin node, start
-it in daemon mode and then use the command +bitcoin-cli getblockchaininfo+:
+비트코인 노드의 진행 상황과 실행 상태를 확인하려면 데몬 모드로 시작한 뒤
++bitcoin-cli getblockchaininfo+ 명령을 사용하세요.
 
 ----
 $ bitcoin-cli getblockchaininfo
@@ -628,27 +543,21 @@ $ bitcoin-cli getblockchaininfo
 }
 ----
 
-This shows a node with a blockchain height of 0 blocks and 83,999
-headers. The node first fetches the block headers from its peers in
-order to find the blockchain with the most proof of work and
-afterward continues to download the full blocks, validating them as it
-goes.
+이는 블록체인 높이가 0블록이고 헤더가 83,999개인 노드를 보여줍니다. 노드는 작업증명이
+가장 많은 블록체인을 찾기 위해 먼저 피어들에게서 블록 헤더를 가져오고, 그 뒤에 전체
+블록을 내려받으며 검증해 나갑니다.
 
-Once you are happy with the configuration options you have selected, you
-should add Bitcoin Core to the startup scripts in your operating system, so
-that it runs continuously and restarts when the operating system
-restarts. You will find a number of example startup scripts for various
-operating systems in Bitcoin Core's source directory under _contrib/init_ and
-a _README.md_ file showing which system uses ((("Bitcoin Core", "nodes", "configuring", startref="bitcoin-core-nodes-configure")))((("nodes", "configuring", startref="nodes-configure")))((("configuring", "nodes", startref="configure-nodes")))which script.
+고른 설정 옵션에 만족했다면, 비트코인 코어를 운영체제의 시작 스크립트에 추가해 계속
+실행되고 운영체제가 재시작될 때 함께 재시작되도록 하는 것이 좋습니다. 비트코인 코어
+소스 디렉터리의 _contrib/init_ 아래에서 여러 운영체제용 시작 스크립트 예시와, 어떤
+시스템이 어떤 스크립트를 쓰는지 알려주는 _README.md_ 파일을 ((("Bitcoin Core", "nodes", "configuring", startref="bitcoin-core-nodes-configure")))((("nodes", "configuring", startref="nodes-configure")))((("configuring", "nodes", startref="configure-nodes")))찾을 수 있습니다.
+=== 비트코인 코어 API
 
-=== Bitcoin Core API
-
-Bitcoin Core
-implements((("Bitcoin Core", "command-line interface", "help command", id="bitcoin-core-command-help")))((("command-line interface (Bitcoin Core)", "help command", id="command-help")))((("help command (Bitcoin Core)", id="help")))((("RPC commands", see="command-line interface (Bitcoin Core)")))((("bitcoin-cli command", see="command-line interface (Bitcoin Core)"))) a JSON-RPC interface that can also be accessed using
-the command-line helper +bitcoin-cli+. The command line allows us to
-experiment interactively with the capabilities that are also available
-programmatically via the API. To start, invoke the +help+ command to see a list of
-the available Bitcoin Core RPC commands:
+비트코인 코어는
+((("Bitcoin Core", "command-line interface", "help command", id="bitcoin-core-command-help")))((("command-line interface (Bitcoin Core)", "help command", id="command-help")))((("help command (Bitcoin Core)", id="help")))((("RPC commands", see="command-line interface (Bitcoin Core)")))((("bitcoin-cli command", see="command-line interface (Bitcoin Core)")))JSON-RPC 인터페이스를 구현하며, 명령줄 도우미인
++bitcoin-cli+ 로도 접근할 수 있습니다. 명령줄을 쓰면 API를 통해 프로그래밍 방식으로도
+쓸 수 있는 기능들을 대화식으로 실험해 볼 수 있습니다. 먼저 +help+ 명령을 실행해 사용
+가능한 비트코인 코어 RPC 명령 목록을 확인하세요.
 
 [[bitcoind_commands]]
 
@@ -664,10 +573,9 @@ walletpassphrasechange "oldpassphrase" "newpassphrase"
 walletprocesspsbt "psbt" ( sign "sighashtype" bip32derivs finalize )
 ----
 
-Each of these commands may take a number of parameters. To get
-additional help, a detailed description, and information on the
-parameters, add the command name after +help+. For example, to see help
-on the +getblockhash+ RPC command:
+이 명령들은 각각 여러 매개변수를 받을 수 있습니다. 추가 도움말과 상세한 설명, 매개변수
+정보를 보려면 +help+ 뒤에 명령 이름을 붙이세요. 예를 들어 +getblockhash+ RPC 명령의
+도움말을 보려면 다음과 같이 합니다.
 
 ----
 $ bitcoin-cli help getblockhash
@@ -688,35 +596,32 @@ Examples:
   "params": [1000]}' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 ----
 
-At the end of the help information you will see two examples of the RPC
-command, using the +bitcoin-cli+ helper or the HTTP client +curl+. These
-examples demonstrate how you might call the command. Copy the first
-example and see the result:
+도움말 정보 끝에는 +bitcoin-cli+ 도우미나 HTTP 클라이언트 +curl+ 을 사용한 RPC 명령
+예시 두 개가 나옵니다. 이 예시는 그 명령을 어떻게 호출하는지 보여줍니다. 첫 번째 예시를
+복사해 결과를 확인해 보세요.
 
 ----
 $ bitcoin-cli getblockhash 1000
 00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09
 ----
 
-The result is a block hash, which is described in more detail in the
-following chapters. But for now, this command should return the same
-result on your system, demonstrating that your Bitcoin Core node is
-running, is accepting commands, and has information about block 1,000 to
-return to you.
+결과는 블록 해시이며, 이어지는 장들에서 더 자세히 설명합니다. 지금으로서는 이 명령이
+여러분의 시스템에서도 같은 결과를 돌려주어야 하며, 이는 비트코인 코어 노드가 실행 중이고
+명령을 받아들이며 1,000번 블록에 대한 정보를 여러분에게 돌려줄 수 있다는 것을 보여줍니다.
 
-In the next sections we will demonstrate some very useful RPC commands
-and their expected ((("Bitcoin Core", "command-line interface", "help command", startref="bitcoin-core-command-help")))((("command-line interface (Bitcoin Core)", "help command", startref="command-help")))((("help command (Bitcoin Core)", startref="help")))output.
+다음 절들에서는 아주 유용한 RPC 명령 몇 가지와 그 예상 출력을
+((("Bitcoin Core", "command-line interface", "help command", startref="bitcoin-core-command-help")))((("command-line interface (Bitcoin Core)", "help command", startref="command-help")))((("help command (Bitcoin Core)", startref="help")))보여주겠습니다.
 
-==== Getting Information on Bitcoin Core's Status
+==== 비트코인 코어의 상태 정보 얻기
 
-Bitcoin
-Core provides((("Bitcoin Core", "command-line interface", "status information", id="bitcoin-core-command-status")))((("command-line interface (Bitcoin Core)", "status information", id="command-status")))((("status information (Bitcoin Core)", id="status-bitcoin-core"))) status reports on different modules through the JSON-RPC
-interface. The most important commands include +getblockchaininfo+,
-+getmempoo&#x2060;l&#x200b;info+, +getnetworkinfo+, and +getwalletinfo+.
+비트코인
+코어는((("Bitcoin Core", "command-line interface", "status information", id="bitcoin-core-command-status")))((("command-line interface (Bitcoin Core)", "status information", id="command-status")))((("status information (Bitcoin Core)", id="status-bitcoin-core"))) JSON-RPC 인터페이스를 통해 여러 모듈의 상태 보고를 제공합니다.
+가장 중요한 명령으로는 +getblockchaininfo+, +getmempoo&#x2060;l&#x200b;info+,
++getnetworkinfo+, +getwalletinfo+ 가 있습니다.
 
-Bitcoin's +getblockchaininfo+ RPC command was introduced earlier. The
-+getnetwor&#x2060;k&#x200b;info+ command displays basic information about the status of
-the Bitcoin network node. Use +bitcoin-cli+ to run it:
+비트코인의 +getblockchaininfo+ RPC 명령은 앞에서 소개했습니다.
++getnetwor&#x2060;k&#x200b;info+ 명령은 비트코인 네트워크 노드의 상태에 대한 기본 정보를
+보여줍니다. +bitcoin-cli+ 로 실행해 보세요.
 
 ----
 $ bitcoin-cli getnetworkinfo
@@ -750,37 +655,29 @@ $ bitcoin-cli getnetworkinfo
 }
 ----
 
-The data is returned in JavaScript Object Notation (JSON), a format that
-can easily be "consumed" by all programming languages but is also quite
-human-readable. Among this data we see the version numbers for the
-Bitcoin Core software and Bitcoin protocol.  We see
-the current number of connections and various information about the
-Bitcoin network and the settings related to this node.
+데이터는 JSON(JavaScript Object Notation) 형식으로 반환됩니다. 모든 프로그래밍 언어가
+손쉽게 "소비"할 수 있으면서 사람이 읽기에도 꽤 편한 형식입니다. 이 데이터에서 비트코인
+코어 소프트웨어와 비트코인 프로토콜의 버전 번호를 볼 수 있습니다. 현재 연결 수와
+비트코인 네트워크에 대한 여러 정보, 그리고 이 노드와 관련된 설정도 볼 수 있습니다.
 
 [TIP]
 ====
-It will take some time, perhaps more than a day, for +bitcoind+
-to catch up to the current blockchain height as it downloads blocks from
-other Bitcoin nodes and validates every transaction in those
-blocks--almost a billion transactions as of this writing. You can check
-its progress using
-+getblockchaininfo+ to see the number of known blocks.  The examples in
-the rest of this chapter assume you're at least at block 775,072.
-Because the security of Bitcoin transactions depends on blocks, some of
-the information in the following examples will change slightly depending
-on how many blocks your ((("Bitcoin Core", "command-line interface", "status information", startref="bitcoin-core-command-status")))((("command-line interface (Bitcoin Core)", "status information", startref="command-status")))((("status information (Bitcoin Core)", startref="status-bitcoin-core")))node has.
++bitcoind+ 가 다른 비트코인 노드에서 블록을 내려받고 그 블록의 모든 트랜잭션(이 글을
+쓰는 시점에 거의 10억 건)을 검증하며 현재 블록체인 높이를 따라잡기까지는 시간이 꽤
+걸리며, 하루 이상일 수도 있습니다. +getblockchaininfo+ 로 알려진 블록 수를 확인해
+진행 상황을 볼 수 있습니다. 이 장의 나머지 예제들은 여러분이 최소한 775,072번 블록까지
+와 있다고 가정합니다. 비트코인 트랜잭션의 보안은 블록에 달려 있으므로, 여러분의 노드가
+가진 블록 수에 따라 다음 예제의 일부 정보는 조금씩 ((("Bitcoin Core", "command-line interface", "status information", startref="bitcoin-core-command-status")))((("command-line interface (Bitcoin Core)", "status information", startref="command-status")))((("status information (Bitcoin Core)", startref="status-bitcoin-core")))달라집니다.
 ====
-
 [[exploring_and_decoding_transactions]]
-==== Exploring and Decoding Transactions
+==== 트랜잭션 살펴보고 디코딩하기
 
-In <<spending_bitcoin>>, Alice ((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", id="bitcoin-core-command-transaction")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", id="command-transaction")))((("transactions", "exploring/decoding", id="transactions-explore-decode")))((("exploring", "transactions", id="explore-transaction")))((("decoding", "transactions", id="decode-transaction")))made a purchase from Bob's store. Her
-transaction was recorded on the blockchain.
-Let's use the API to retrieve and examine that transaction by passing
-the transaction ID (txid) as a parameter:
+<<spending_bitcoin>>에서 앨리스는 ((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", id="bitcoin-core-command-transaction")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", id="command-transaction")))((("transactions", "exploring/decoding", id="transactions-explore-decode")))((("exploring", "transactions", id="explore-transaction")))((("decoding", "transactions", id="decode-transaction")))밥의 상점에서 물건을 샀습니다. 그
+트랜잭션은 블록체인에 기록되었습니다. API로 트랜잭션 ID(txid)를 매개변수로 넘겨 그
+트랜잭션을 가져와 살펴봅시다.
 
 [[alice_tx_serialized]]
-.Alice's serialized transaction
+.앨리스의 직렬화된 트랜잭션
 ----
 $ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
 38ecdfdfaa2a8029c1f9bcecd1f96177
@@ -796,21 +693,18 @@ e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
 
 [TIP]
 ====
-A transaction ID (txid)
-is ((("transaction IDs (txid)")))not authoritative. Absence of a txid in the blockchain does not mean
-the transaction was not processed. This is known as "transaction
-malleability," because transactions can be modified prior to
-confirmation in a block, changing their txids.  After a transaction is
-included in a block, its txid cannot change unless there is a blockchain
-reorganization where that block is removed from the best blockchain.
-Reorganizations are rare after a transaction has several confirmations.
+트랜잭션 ID(txid)는 ((("transaction IDs (txid)")))권위 있는 값이 아닙니다. 블록체인에 특정 txid가 없다고
+해서 그 트랜잭션이 처리되지 않았다는 뜻은 아닙니다. 이를 "트랜잭션 가변성"이라고 하는데,
+트랜잭션이 블록에서 확인되기 전에 수정되어 txid가 바뀔 수 있기 때문입니다. 트랜잭션이
+블록에 포함된 뒤에는, 그 블록이 최선의 블록체인에서 제거되는 블록체인 재구성이 일어나지
+않는 한 txid가 바뀌지 않습니다. 트랜잭션이 확인을 여러 번 받은 뒤에는 재구성이
+드뭅니다.
 ====
 
-The command +getrawtransaction+ returns a serialized transaction in
-hexadecimal notation. To decode that, we use the +decoderawtransaction+
-command, passing the hex data as a parameter. You can copy the hex
-returned by +getrawtransaction+ and paste it as a parameter to
-+decoderawtransaction+:
++getrawtransaction+ 명령은 직렬화된 트랜잭션을 16진수 표기로 돌려줍니다. 이를
+디코딩하려면 +decoderawtransaction+ 명령에 그 16진수 데이터를 매개변수로 넘깁니다.
++getrawtransaction+ 이 돌려준 16진수를 복사해 +decoderawtransaction+ 의 매개변수로
+붙여 넣으면 됩니다.
 
 ++++
 <pre data-type="programlisting">
@@ -875,27 +769,22 @@ dab0d2fa2b42a45182fc83e817130100000000
 </pre>
 ++++
 
-The transaction decode shows all the components of this transaction,
-including the transaction inputs and outputs. In this case we see that
-the transaction used one input and generated two outputs. The input to
-this transaction was the output from a previously confirmed transaction
-(shown as the input +txid+). The two outputs correspond to the payment to
-Bob and the change back to Alice.
+트랜잭션 디코딩 결과는 트랜잭션 입력과 출력을 포함해 이 트랜잭션의 모든 구성 요소를
+보여줍니다. 여기서는 이 트랜잭션이 입력 하나를 쓰고 출력 두 개를 만들었음을 알 수
+있습니다. 이 트랜잭션의 입력은 이전에 확인된 트랜잭션의 출력이었습니다(입력의 +txid+ 로
+표시). 두 출력은 각각 밥에게 보내는 지불과 앨리스에게 돌아가는 거스름돈에 해당합니다.
 
-We can further explore the blockchain by examining the previous
-transaction referenced by its +txid+ in this transaction using the same
-commands (e.g., [.keep-together]#+getrawtransaction+).# Jumping from transaction to
-transaction, we can follow a chain of transactions back as the coins are
-transmitted from one owner to the((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", startref="bitcoin-core-command-transaction")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", startref="command-transaction")))((("transactions", "exploring/decoding", startref="transactions-explore-decode")))((("exploring", "transactions", startref="explore-transaction")))((("decoding", "transactions", startref="decode-transaction"))) next.
+같은 명령들(예: [.keep-together]#+getrawtransaction+)을# 사용해 이 트랜잭션에서
++txid+ 로 참조된 이전 트랜잭션을 살펴보면 블록체인을 더 깊이 탐색할 수 있습니다.
+트랜잭션에서 트랜잭션으로 건너뛰며, 코인이 한 소유자에게서 다음 소유자에게로 옮겨지는
+트랜잭션의 사슬을 거슬러 ((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", startref="bitcoin-core-command-transaction")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", startref="command-transaction")))((("transactions", "exploring/decoding", startref="transactions-explore-decode")))((("exploring", "transactions", startref="explore-transaction")))((("decoding", "transactions", startref="decode-transaction")))따라갈 수 있습니다.
+==== 블록 살펴보기
 
-==== Exploring Blocks
-
-Exploring
-blocks is((("Bitcoin Core", "command-line interface", "exploring blocks", id="bitcoin-core-command-blocks")))((("command-line interface (Bitcoin Core)", "exploring blocks", id="command-blocks")))((("blocks", "exploring", id="blocks-explore")))((("exploring", "blocks", id="explore-blocks"))) similar to exploring transactions. However, blocks can be
-referenced either by the block _height_ or by the block _hash_. First,
-let's find a block by its height.
-We use the +getblockhash+ command, which takes the block height as the
-parameter and returns the block _header hash_ for that block:
+블록을
+살펴보는 ((("Bitcoin Core", "command-line interface", "exploring blocks", id="bitcoin-core-command-blocks")))((("command-line interface (Bitcoin Core)", "exploring blocks", id="command-blocks")))((("blocks", "exploring", id="blocks-explore")))((("exploring", "blocks", id="explore-blocks")))일은 트랜잭션을 살펴보는 것과 비슷합니다. 다만 블록은 블록
+_높이_ 로도, 블록 _해시_ 로도 참조할 수 있습니다. 먼저 높이로 블록을 찾아봅시다.
+블록 높이를 매개변수로 받아 그 블록의 _블록 헤더 해시_ 를 돌려주는 +getblockhash+
+명령을 사용합니다.
 
 ++++
 <pre data-type="programlisting">
@@ -904,9 +793,8 @@ $ bitcoin-cli getblockhash 123456
 </pre>
 ++++
 
-Now that we know the header hash for our chosen block, we can
-query that block. We use the +getblock+ command with the block hash as
-the parameter:
+이제 고른 블록의 헤더 해시를 알았으니 그 블록을 조회할 수 있습니다. 블록 해시를
+매개변수로 하여 +getblock+ 명령을 사용합니다.
 
 ++++
 <pre data-type="programlisting">
@@ -955,34 +843,27 @@ f6cd83c3ca
 </pre>
 ++++
 
-The +confirmations+ entry tells us the _depth_ of this block--how many
-blocks have been built on top of it, indicating the difficulty of
-changing any of the transactions in this block.  The +height+ tells us
-how many blocks preceeded this block.  We see the block's version, the
-time it was created (according to its miner), the median time of the 11
-blocks that precede this block (a time measurement that's harder for
-miners to manipulate), and the size of the block in three different
-measurements (its legacy stripped size, its full size, and its size in
-weight units).  We also see some fields used for security and
-proof of work (merkle root, nonce, bits, difficulty, and chainwork);
-we'll examine those ((("Bitcoin Core", "command-line interface", "exploring blocks", startref="bitcoin-core-command-blocks")))((("command-line interface (Bitcoin Core)", "exploring blocks", startref="command-blocks")))((("blocks", "exploring", startref="blocks-explore")))((("exploring", "blocks", startref="explore-blocks")))in detail in <<mining>>.
++confirmations+ 항목은 이 블록의 _깊이_ 를 알려줍니다. 즉 이 블록 위에 블록이 몇 개나
+쌓였는지를 나타내며, 이 블록의 트랜잭션을 바꾸기가 얼마나 어려운지를 보여줍니다.
++height+ 는 이 블록보다 앞선 블록이 몇 개인지 알려줍니다. 블록의 버전과 (채굴자 기준)
+생성 시각, 이 블록보다 앞선 11개 블록의 중앙값 시각(채굴자가 조작하기 더 어려운 시간
+측정값), 그리고 세 가지 방식으로 측정한 블록 크기(레거시 스트립 크기, 전체 크기, 가중치
+단위 크기)를 볼 수 있습니다. 보안과 작업증명에 쓰이는 몇몇 필드(머클 루트, 논스, bits,
+난이도, chainwork)도 보이는데, 이들은 ((("Bitcoin Core", "command-line interface", "exploring blocks", startref="bitcoin-core-command-blocks")))((("command-line interface (Bitcoin Core)", "exploring blocks", startref="command-blocks")))((("blocks", "exploring", startref="blocks-explore")))((("exploring", "blocks", startref="explore-blocks")))<<mining>>에서 자세히 살펴봅니다.
 
-==== Using Bitcoin Core's Programmatic Interface
+==== 비트코인 코어의 프로그래밍 인터페이스 사용하기
 
-The
-+bitcoin-cli+ helper is ((("Bitcoin Core", "command-line interface", "API access", id="bitcoin-core-command-api")))((("command-line interface (Bitcoin Core)", "API access", id="command-api")))((("API access", id="api")))very useful for exploring the Bitcoin Core API
-and testing functions. But the whole point of an API is to access functions programmatically. In this section we
-will demonstrate accessing Bitcoin Core from another program.
++bitcoin-cli+ 도우미는 ((("Bitcoin Core", "command-line interface", "API access", id="bitcoin-core-command-api")))((("command-line interface (Bitcoin Core)", "API access", id="command-api")))((("API access", id="api")))비트코인 코어 API를 탐색하고 기능을 시험하는 데
+아주 유용합니다. 하지만 API의 본래 목적은 기능에 프로그래밍 방식으로 접근하는 것입니다.
+이 절에서는 다른 프로그램에서 비트코인 코어에 접근하는 방법을 보여줍니다.
 
-Bitcoin Core's API is a JSON-RPC interface. JSON is a very convenient way to present data that
-both humans and programs can easily read. RPC stands for remote
-[.keep-together]#procedure# call, which means that we are calling procedures (functions)
-that are remote (on the Bitcoin Core node) via a network protocol. In
-this case, the network protocol is HTTP.
+비트코인 코어의 API는 JSON-RPC 인터페이스입니다. JSON은 사람과 프로그램 모두 쉽게 읽을
+수 있게 데이터를 표현하는 아주 편리한 방법입니다. RPC는 원격 [.keep-together]#프로시저#
+호출(remote procedure call)의 약자로, 네트워크 프로토콜을 통해 원격에 있는(비트코인 코어
+노드에 있는) 프로시저(함수)를 호출한다는 뜻입니다. 여기서 네트워크 프로토콜은 HTTP입니다.
 
-When we used the +bitcoin-cli+ command to get help on a command, it
-showed us an example of using +curl+, the versatile command-line HTTP
-client to construct one of these JSON-RPC calls:
++bitcoin-cli+ 명령으로 어떤 명령의 도움말을 볼 때, 다재다능한 명령줄 HTTP 클라이언트인
++curl+ 로 이런 JSON-RPC 호출을 구성하는 예시가 함께 나왔습니다.
 
 ----
 $ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest",
@@ -990,20 +871,18 @@ $ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest",
   "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 ----
 
-This command shows that +curl+ submits an HTTP request to the local host
-(127.0.0.1), connecting to the default Bitcoin RPC port (8332), and
-submitting a  +jsonrpc+ request for the +getblockchaininfo+ method using
-+text/plain+ encoding.
+이 명령은 +curl+ 이 로컬 호스트(127.0.0.1)로 HTTP 요청을 보내 기본 비트코인 RPC
+포트(8332)에 연결하고, +text/plain+ 인코딩으로 +getblockchaininfo+ 메서드에 대한
++jsonrpc+ 요청을 제출하는 모습을 보여줍니다.
 
-You might notice that +curl+ will ask for credentials to be sent along
-with the request. Bitcoin Core will create a random password on each
-start and place it in the data directory under the name +.cookie+. The
-+bitcoin-cli+ helper can read this password file given the data
-directory. Similarly, you can copy the password and pass it to +curl+ (or
-any higher-level Bitcoin Core RPC wrappers), ((("Bitcoin Core", "authentication")))((("authentication")))as seen in <<cookie_auth>>.
++curl+ 이 요청과 함께 보낼 자격 증명을 요구한다는 점을 눈치챘을 것입니다. 비트코인
+코어는 시작할 때마다 무작위 암호를 만들어 데이터 디렉터리에 +.cookie+ 라는 이름으로
+넣어 둡니다. +bitcoin-cli+ 도우미는 데이터 디렉터리만 알면 이 암호 파일을 읽을 수
+있습니다. 마찬가지로 <<cookie_auth>>에서 보듯 그 암호를 복사해 +curl+ 이나 (더 상위의
+비트코인 코어 RPC 래퍼에) 넘길 수 ((("Bitcoin Core", "authentication")))((("authentication")))있습니다.
 
 [[cookie_auth]]
-.Using cookie-based authentication with Bitcoin Core
+.비트코인 코어에서 쿠키 기반 인증 사용하기
 ====
 ----
 $ cat .bitcoin/.cookie
@@ -1025,28 +904,24 @@ $ curl
 ----
 ====
 
-Alternatively, you can
-create a static password with the helper script provided in
-[.keep-together]#_./share/rpcauth/rpcauth.py_# in Bitcoin Core's source directory.
+아니면 비트코인 코어 소스 디렉터리의
+[.keep-together]#_./share/rpcauth/rpcauth.py_# 에 있는 도우미 스크립트로 고정 암호를
+만들 수도 있습니다.
 
-If you're implementing a JSON-RPC call in your own program, you can use
-a generic HTTP library to construct the call, similar to what is shown
-in the preceding +curl+ example.
+직접 만든 프로그램에서 JSON-RPC 호출을 구현한다면, 앞의 +curl+ 예시와 비슷하게 범용
+HTTP 라이브러리로 호출을 구성할 수 있습니다.
 
-However, there ((("Bitcoin Core", "wrapper libraries")))((("wrapper libraries")))are libraries in most popular programming languages that
-"wrap" the Bitcoin Core API in a way that makes this a lot simpler. We
-will use the +python-bitcoinlib+ library to simplify API access.
-This library is not part of the Bitcoin Core project and needs to be
-installed the usual way you install Python libraries.
-Remember, this requires you to have a running Bitcoin Core instance,
-which will be used to make JSON-RPC calls.
+다만 널리 쓰이는 대부분의 프로그래밍 언어에는 ((("Bitcoin Core", "wrapper libraries")))((("wrapper libraries")))비트코인 코어 API를 "감싸서"
+훨씬 간단하게 만들어 주는 라이브러리가 있습니다. 여기서는 API 접근을 간단하게 하기 위해
++python-bitcoinlib+ 라이브러리를 사용합니다. 이 라이브러리는 비트코인 코어 프로젝트의
+일부가 아니므로, 파이썬 라이브러리를 설치하는 평소 방식대로 설치해야 합니다. JSON-RPC
+호출에 쓸 비트코인 코어 인스턴스가 실행 중이어야 한다는 점도 기억하세요.
 
-The Python script in <<rpc_example>> makes a simple +getblockchaininfo+
-call and prints the +block+ parameter from the data returned by Bitcoin
-Core.
+<<rpc_example>>의 파이썬 스크립트는 간단한 +getblockchaininfo+ 호출을 하고, 비트코인
+코어가 돌려준 데이터에서 +block+ 매개변수를 출력합니다.
 
 [[rpc_example]]
-.Running +getblockchaininfo+ via Bitcoin Core's JSON-RPC API
+.비트코인 코어의 JSON-RPC API로 +getblockchaininfo+ 실행하기
 ====
 [source,python]
 ----
@@ -1054,26 +929,25 @@ include::code/rpc_example.py[]
 ----
 ====
 
-Running it gives us the following result:
+실행하면 다음 결과가 나옵니다.
 
 ----
 $ python rpc_example.py
 773973
 ----
 
-It tells us how many blocks our local Bitcoin Core node has in its
-blockchain. Not a spectacular result, but it demonstrates the basic use
-of the library as a simplified interface to Bitcoin Core's JSON-RPC API.
+로컬 비트코인 코어 노드의 블록체인에 블록이 몇 개 있는지 알려줍니다. 대단한 결과는
+아니지만, 비트코인 코어 JSON-RPC API에 대한 간편한 인터페이스로서 이 라이브러리를 쓰는
+기본 방법을 보여줍니다.
 
-Next, let's((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", id="bitcoin-core-command-transaction2")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", id="command-transaction2")))((("transactions", "exploring/decoding", id="transactions-explore-decode2")))((("exploring", "transactions", id="explore-transaction2")))((("decoding", "transactions", id="decode-transaction2"))) use the +getrawtransaction+ and +decodetransaction+ calls to
-retrieve the details of Alice's payment to Bob. In <<rpc_transaction>>,
-we retrieve Alice's transaction and list the transaction's outputs. For
-each output, we show the recipient address and value. As a reminder,
-Alice's transaction had one output paying Bob and one output for
-change back to Alice.
+다음으로((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", id="bitcoin-core-command-transaction2")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", id="command-transaction2")))((("transactions", "exploring/decoding", id="transactions-explore-decode2")))((("exploring", "transactions", id="explore-transaction2")))((("decoding", "transactions", id="decode-transaction2"))) +getrawtransaction+ 과 +decodetransaction+ 호출로 앨리스가
+밥에게 지불한 내역을 가져와 봅시다. <<rpc_transaction>>에서는 앨리스의 트랜잭션을 가져와
+그 출력들을 나열합니다. 각 출력에 대해 수신 주소와 금액을 보여줍니다. 다시 말하지만
+앨리스의 트랜잭션에는 밥에게 지불하는 출력 하나와 앨리스에게 거스름돈을 돌려주는 출력
+하나가 있었습니다.
 
 [[rpc_transaction]]
-.Retrieving a transaction and iterating its outputs
+.트랜잭션을 가져와 출력을 순회하기
 ====
 [source,python]
 ----
@@ -1081,7 +955,7 @@ include::code/rpc_transaction.py[]
 ----
 ====
 
-Running this code, we get:
+이 코드를 실행하면 다음이 나옵니다.
 
 ----
 $ python rpc_transaction.py
@@ -1089,18 +963,16 @@ bc1p8dqa4wjvnt890qmfws83te0v3qxzsfu7ul63kp7u56w8qc0qwp5qv995qn 0.00020000
 bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w0zpkpg 0.00075000
 ----
 
-Both of the ((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", startref="bitcoin-core-command-transaction2")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", startref="command-transaction2")))((("transactions", "exploring/decoding", startref="transactions-explore-decode2")))((("exploring", "transactions", startref="explore-transaction2")))((("decoding", "transactions", startref="decode-transaction2")))preceding examples are rather simple. You don't really need
-a program to run them; you could just as easily use the +bitcoin-cli+
-helper. The next example, however, requires several hundred RPC calls
-and more clearly demonstrates the use of a programmatic interface.
+앞의 ((("Bitcoin Core", "command-line interface", "exploring/decoding transactions", startref="bitcoin-core-command-transaction2")))((("command-line interface (Bitcoin Core)", "exploring/decoding transactions", startref="command-transaction2")))((("transactions", "exploring/decoding", startref="transactions-explore-decode2")))((("exploring", "transactions", startref="explore-transaction2")))((("decoding", "transactions", startref="decode-transaction2")))두 예제는 꽤 단순합니다. 이런 일에 굳이 프로그램이 필요하지는
+않고, +bitcoin-cli+ 도우미로도 똑같이 쉽게 할 수 있습니다. 하지만 다음 예제는 수백 번의
+RPC 호출이 필요해서 프로그래밍 인터페이스의 쓸모를 더 분명히 보여줍니다.
 
-In <<rpc_block>>, we first ((("Bitcoin Core", "command-line interface", "exploring blocks", id="bitcoin-core-command-blocks2")))((("command-line interface (Bitcoin Core)", "exploring blocks", id="command-blocks2")))((("blocks", "exploring", id="blocks-explore2")))((("exploring", "blocks", id="explore-blocks2")))retrieve a block, then retrieve each of
-the transactions within it by reference to each transaction ID. Next,
-we iterate through each of the transaction's outputs and add up the
-value.
+<<rpc_block>>에서는 먼저 ((("Bitcoin Core", "command-line interface", "exploring blocks", id="bitcoin-core-command-blocks2")))((("command-line interface (Bitcoin Core)", "exploring blocks", id="command-blocks2")))((("blocks", "exploring", id="blocks-explore2")))((("exploring", "blocks", id="explore-blocks2")))블록을 가져온 다음, 각 트랜잭션 ID를 참조해
+그 안의 트랜잭션을 하나씩 가져옵니다. 그리고 각 트랜잭션의 출력을 순회하며 금액을
+더합니다.
 
 [[rpc_block]]
-.Retrieving a block and adding all the transaction outputs
+.블록을 가져와 모든 트랜잭션 출력을 더하기
 ====
 [source,python]
 ----
@@ -1108,7 +980,7 @@ include::code/rpc_block.py[]
 ----
 ====
 
-Running this code, we get:
+이 코드를 실행하면 다음이 나옵니다.
 
 ----
 $ python rpc_block.py
@@ -1116,61 +988,53 @@ $ python rpc_block.py
 Total value in block:  10322.07722534
 ----
 
-Our example code calculates that the total value transacted in this
-block is 10,322.07722534 BTC (including 25 BTC reward and 0.0909 BTC in
-fees). Compare that to the amount reported by a block explorer site by
-searching for the block hash or height. Some block explorers report the
-total value excluding the reward and excluding the fees. See if you can
-spot the ((("Bitcoin Core", "command-line interface", "API access", startref="bitcoin-core-command-api")))((("command-line interface (Bitcoin Core)", "API access", startref="command-api")))((("API access", startref="api")))((("Bitcoin Core", "command-line interface", "exploring blocks", startref="bitcoin-core-command-blocks2")))((("command-line interface (Bitcoin Core)", "exploring blocks", startref="command-blocks2")))((("blocks", "exploring", startref="blocks-explore2")))((("exploring", "blocks", startref="explore-blocks2")))difference.
-
+예제 코드는 이 블록에서 거래된 총액을 10,322.07722534 BTC로 계산합니다(25 BTC 보상과
+0.0909 BTC 수수료 포함). 블록 탐색기 사이트에서 블록 해시나 높이로 검색해 나오는 금액과
+비교해 보세요. 어떤 블록 탐색기는 보상과 수수료를 뺀 총액을 보여줍니다. 그 차이를 직접
+((("Bitcoin Core", "command-line interface", "API access", startref="bitcoin-core-command-api")))((("command-line interface (Bitcoin Core)", "API access", startref="command-api")))((("API access", startref="api")))((("Bitcoin Core", "command-line interface", "exploring blocks", startref="bitcoin-core-command-blocks2")))((("command-line interface (Bitcoin Core)", "exploring blocks", startref="command-blocks2")))((("blocks", "exploring", startref="blocks-explore2")))((("exploring", "blocks", startref="explore-blocks2")))찾아보세요.
 [[alt_libraries]]
-=== Alternative Clients, Libraries, and Toolkits
+=== 대안 클라이언트, 라이브러리, 툴킷
 
-There
-are many alternative clients, libraries, toolkits, and even full-node
-implementations in the Bitcoin ecosystem. These are implemented in a
-variety of programming languages, offering programmers native interfaces
-in their preferred language.
+비트코인 생태계에는 여러 대안 클라이언트와 라이브러리, 툴킷, 심지어 풀 노드 구현까지
+많이 있습니다. 이들은 다양한 프로그래밍 언어로 구현되어 있어, 프로그래머가 선호하는
+언어로 네이티브 인터페이스를 쓸 수 있게 해줍니다.
 
-The following sections list some of the best libraries, clients, and
-toolkits, organized by programming languages.
+이어지는 절들에서는 뛰어난 라이브러리와 클라이언트, 툴킷 몇 가지를 프로그래밍 언어별로
+정리했습니다.
 
 ==== C/C++
-https://oreil.ly/BdOwl[Bitcoin Core] :: The reference((("C/C++ toolkits")))((("Bitcoin Core"))) implementation of Bitcoin
+https://oreil.ly/BdOwl[Bitcoin Core] :: 비트코인의 ((("C/C++ toolkits")))((("Bitcoin Core")))참조 구현
 
 ==== JavaScript
-https://bcoin.io[bcoin]:: A modular((("JavaScript toolkits")))((("bcoin")))((("Bitcore"))) and scalable full-node implementation with API
-https://bitcore.io[Bitcore] :: Full node, API, and library by Bitpay
-https://oreil.ly/4iqf2[BitcoinJS] :: A pure JavaScript Bitcoin library for node.js and browsers
+https://bcoin.io[bcoin]:: 모듈식이고((("JavaScript toolkits")))((("bcoin")))((("Bitcore"))) 확장 가능한 풀 노드 구현이며 API 제공
+https://bitcore.io[Bitcore] :: Bitpay가 만든 풀 노드, API, 라이브러리
+https://oreil.ly/4iqf2[BitcoinJS] :: node.js와 브라우저용 순수 자바스크립트 비트코인 라이브러리
 
 ==== Java
-https://bitcoinj.github.io[bitcoinj]:: A ((("Java toolkits")))((("bitcoinj")))Java full-node client library
+https://bitcoinj.github.io[bitcoinj]:: ((("Java toolkits")))((("bitcoinj")))자바 풀 노드 클라이언트 라이브러리
 
 ==== Python
-https://oreil.ly/xn_rg[python-bitcoinlib]::  A ((("Python toolkits")))((("python-bitcoinlib")))((("pycoin")))Python bitcoin library, consensus library, and node by Peter Todd
-https://oreil.ly/wcpXP[pycoin]:: A Python bitcoin library by Richard Kiss
+https://oreil.ly/xn_rg[python-bitcoinlib]::  피터 ((("Python toolkits")))((("python-bitcoinlib")))((("pycoin")))토드가 만든 파이썬 비트코인 라이브러리, 합의 라이브러리, 노드
+https://oreil.ly/wcpXP[pycoin]:: 리처드 키스가 만든 파이썬 비트코인 라이브러리
 
 ==== Go
-https://oreil.ly/h5MEI[btcd]:: A ((("Go toolkits")))((("btcd")))Go language, full-node Bitcoin client
+https://oreil.ly/h5MEI[btcd]:: Go ((("Go toolkits")))((("btcd")))언어로 만든 풀 노드 비트코인 클라이언트
 
 ==== Rust
-https://oreil.ly/me6gf[rust-bitcoin]:: Rust ((("Rust toolkits")))((("rust-bitcoin")))bitcoin library for serialization, parsing, and API calls
+https://oreil.ly/me6gf[rust-bitcoin]:: 직렬화와 ((("Rust toolkits")))((("rust-bitcoin")))파싱, API 호출을 위한 러스트 비트코인 라이브러리
 
 ==== Scala
-https://bitcoin-s.org[bitcoin-s]:: A ((("Scala toolkits")))((("bitcoin-s")))Bitcoin implementation in Scala
+https://bitcoin-s.org[bitcoin-s]:: 스칼라로 ((("Scala toolkits")))((("bitcoin-s")))구현한 비트코인
 
 ==== C#
-https://oreil.ly/Qfjgq[NBitcoin]:: Comprehensive((("C# toolkits")))((("NBitcoin"))) bitcoin library for the .NET framework
+https://oreil.ly/Qfjgq[NBitcoin]:: .NET ((("C# toolkits")))((("NBitcoin")))프레임워크용 종합 비트코인 라이브러리
 
-Many more libraries exist in a variety of other programming languages,
-and more are created all the time.
+이 밖에도 다양한 프로그래밍 언어로 된 라이브러리가 훨씬 많이 있으며, 지금도 계속
+만들어지고 있습니다.
 
-If you followed the instructions in this chapter, you now have Bitcoin
-Core running and have begun exploring the network and blockchain using
-your own full node.  From now on you can independently use software you
-control—on a computer you control—to verify that any bitcoins you receive
-follow every rule in the Bitcoin system without having to trust any
-outside authority.  In the coming chapters, we'll learn more about the
-rules of the system and how your node and your wallet use them to secure
-your money, protect your privacy, and make spending and receiving
-[.keep-together]#convenient.#
+이 장의 안내를 따라왔다면 이제 비트코인 코어가 실행되고 있고, 여러분 자신의 풀 노드로
+네트워크와 블록체인을 탐색하기 시작했을 것입니다. 이제부터는 여러분이 통제하는 컴퓨터에서
+여러분이 통제하는 소프트웨어로, 바깥의 어떤 권위도 신뢰할 필요 없이 여러분이 받는
+비트코인이 비트코인 시스템의 모든 규칙을 따르는지 직접 검증할 수 있습니다. 이어지는
+장들에서는 시스템의 규칙과, 여러분의 노드와 지갑이 그 규칙을 이용해 어떻게 돈을 지키고
+프라이버시를 보호하며 지불과 수령을 [.keep-together]#편리하게# 만드는지 더 알아봅니다.
